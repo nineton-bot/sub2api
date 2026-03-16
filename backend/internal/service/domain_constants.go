@@ -62,6 +62,18 @@ const (
 	SubscriptionTypeSubscription = domain.SubscriptionTypeSubscription // 订阅模式（按限额控制）
 )
 
+// Subscription meter constants
+const (
+	SubscriptionMeterCostQuota    = domain.SubscriptionMeterCostQuota
+	SubscriptionMeterRequestQuota = domain.SubscriptionMeterRequestQuota
+)
+
+// Account quota meter constants
+const (
+	AccountQuotaMeterCost     = domain.AccountQuotaMeterCost
+	AccountQuotaMeterRequests = domain.AccountQuotaMeterRequests
+)
+
 // Subscription status constants
 const (
 	SubscriptionStatusActive    = domain.SubscriptionStatusActive

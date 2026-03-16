@@ -192,7 +192,27 @@ func (s *APIKeyService) applyAuthCacheEntry(key string, entry *APIKeyAuthCacheEn
 	if entry.Snapshot == nil {
 		return nil, false, nil
 	}
+	if authSnapshotNeedsReload(entry.Snapshot) {
+		return nil, false, nil
+	}
 	return s.snapshotToAPIKey(key, entry.Snapshot), true, nil
+}
+
+func authSnapshotNeedsReload(snapshot *APIKeyAuthSnapshot) bool {
+	if snapshot == nil || snapshot.Group == nil {
+		return false
+	}
+	group := snapshot.Group
+	if group.SubscriptionMeter == "" {
+		return true
+	}
+	if group.SubscriptionMeter == SubscriptionMeterRequestQuota &&
+		group.DailyRequestLimit == nil &&
+		group.WeeklyRequestLimit == nil &&
+		group.MonthlyRequestLimit == nil {
+		return true
+	}
+	return false
 }
 
 func (s *APIKeyService) snapshotFromAPIKey(apiKey *APIKey) *APIKeyAuthSnapshot {
@@ -227,10 +247,14 @@ func (s *APIKeyService) snapshotFromAPIKey(apiKey *APIKey) *APIKeyAuthSnapshot {
 			Platform:                        apiKey.Group.Platform,
 			Status:                          apiKey.Group.Status,
 			SubscriptionType:                apiKey.Group.SubscriptionType,
+			SubscriptionMeter:               apiKey.Group.SubscriptionMeter,
 			RateMultiplier:                  apiKey.Group.RateMultiplier,
 			DailyLimitUSD:                   apiKey.Group.DailyLimitUSD,
 			WeeklyLimitUSD:                  apiKey.Group.WeeklyLimitUSD,
 			MonthlyLimitUSD:                 apiKey.Group.MonthlyLimitUSD,
+			DailyRequestLimit:               apiKey.Group.DailyRequestLimit,
+			WeeklyRequestLimit:              apiKey.Group.WeeklyRequestLimit,
+			MonthlyRequestLimit:             apiKey.Group.MonthlyRequestLimit,
 			ImagePrice1K:                    apiKey.Group.ImagePrice1K,
 			ImagePrice2K:                    apiKey.Group.ImagePrice2K,
 			ImagePrice4K:                    apiKey.Group.ImagePrice4K,
@@ -286,10 +310,14 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			Status:                          snapshot.Group.Status,
 			Hydrated:                        true,
 			SubscriptionType:                snapshot.Group.SubscriptionType,
+			SubscriptionMeter:               snapshot.Group.SubscriptionMeter,
 			RateMultiplier:                  snapshot.Group.RateMultiplier,
 			DailyLimitUSD:                   snapshot.Group.DailyLimitUSD,
 			WeeklyLimitUSD:                  snapshot.Group.WeeklyLimitUSD,
 			MonthlyLimitUSD:                 snapshot.Group.MonthlyLimitUSD,
+			DailyRequestLimit:               snapshot.Group.DailyRequestLimit,
+			WeeklyRequestLimit:              snapshot.Group.WeeklyRequestLimit,
+			MonthlyRequestLimit:             snapshot.Group.MonthlyRequestLimit,
 			ImagePrice1K:                    snapshot.Group.ImagePrice1K,
 			ImagePrice2K:                    snapshot.Group.ImagePrice2K,
 			ImagePrice4K:                    snapshot.Group.ImagePrice4K,

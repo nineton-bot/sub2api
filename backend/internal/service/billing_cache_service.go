@@ -24,12 +24,19 @@ var (
 
 // subscriptionCacheData 订阅缓存数据结构（内部使用）
 type subscriptionCacheData struct {
-	Status       string
-	ExpiresAt    time.Time
-	DailyUsage   float64
-	WeeklyUsage  float64
-	MonthlyUsage float64
-	Version      int64
+	Status              string
+	ExpiresAt           time.Time
+	SubscriptionMeter   string
+	DailyWindowStart    *time.Time
+	WeeklyWindowStart   *time.Time
+	MonthlyWindowStart  *time.Time
+	DailyUsage          float64
+	WeeklyUsage         float64
+	MonthlyUsage        float64
+	DailyRequestCount   int
+	WeeklyRequestCount  int
+	MonthlyRequestCount int
+	Version             int64
 }
 
 // 缓存写入任务类型
@@ -39,6 +46,7 @@ const (
 	cacheWriteSetBalance cacheWriteKind = iota
 	cacheWriteSetSubscription
 	cacheWriteUpdateSubscriptionUsage
+	cacheWriteUpdateSubscriptionRequestCount
 	cacheWriteDeductBalance
 	cacheWriteUpdateRateLimitUsage
 )
@@ -73,6 +81,7 @@ type cacheWriteTask struct {
 	balance          float64
 	amount           float64
 	subscriptionData *subscriptionCacheData
+	requestCount     int
 }
 
 // apiKeyRateLimitLoader defines the interface for loading rate limit data from DB.
@@ -191,6 +200,12 @@ func (s *BillingCacheService) cacheWriteWorker(ch <-chan cacheWriteTask) {
 					logger.LegacyPrintf("service.billing_cache", "Warning: update subscription cache failed for user %d group %d: %v", task.userID, task.groupID, err)
 				}
 			}
+		case cacheWriteUpdateSubscriptionRequestCount:
+			if s.cache != nil {
+				if err := s.cache.UpdateSubscriptionRequestCount(ctx, task.userID, task.groupID, task.requestCount); err != nil {
+					logger.LegacyPrintf("service.billing_cache", "Warning: update subscription request count cache failed for user %d group %d: %v", task.userID, task.groupID, err)
+				}
+			}
 		case cacheWriteDeductBalance:
 			if s.cache != nil {
 				if err := s.cache.DeductUserBalance(ctx, task.userID, task.amount); err != nil {
@@ -217,6 +232,8 @@ func cacheWriteKindName(kind cacheWriteKind) string {
 		return "set_subscription"
 	case cacheWriteUpdateSubscriptionUsage:
 		return "update_subscription_usage"
+	case cacheWriteUpdateSubscriptionRequestCount:
+		return "update_subscription_request_count"
 	case cacheWriteDeductBalance:
 		return "deduct_balance"
 	case cacheWriteUpdateRateLimitUsage:
@@ -405,23 +422,37 @@ func (s *BillingCacheService) GetSubscriptionStatus(ctx context.Context, userID,
 
 func (s *BillingCacheService) convertFromPortsData(data *SubscriptionCacheData) *subscriptionCacheData {
 	return &subscriptionCacheData{
-		Status:       data.Status,
-		ExpiresAt:    data.ExpiresAt,
-		DailyUsage:   data.DailyUsage,
-		WeeklyUsage:  data.WeeklyUsage,
-		MonthlyUsage: data.MonthlyUsage,
-		Version:      data.Version,
+		Status:              data.Status,
+		ExpiresAt:           data.ExpiresAt,
+		SubscriptionMeter:   data.SubscriptionMeter,
+		DailyWindowStart:    data.DailyWindowStart,
+		WeeklyWindowStart:   data.WeeklyWindowStart,
+		MonthlyWindowStart:  data.MonthlyWindowStart,
+		DailyUsage:          data.DailyUsage,
+		WeeklyUsage:         data.WeeklyUsage,
+		MonthlyUsage:        data.MonthlyUsage,
+		DailyRequestCount:   data.DailyRequestCount,
+		WeeklyRequestCount:  data.WeeklyRequestCount,
+		MonthlyRequestCount: data.MonthlyRequestCount,
+		Version:             data.Version,
 	}
 }
 
 func (s *BillingCacheService) convertToPortsData(data *subscriptionCacheData) *SubscriptionCacheData {
 	return &SubscriptionCacheData{
-		Status:       data.Status,
-		ExpiresAt:    data.ExpiresAt,
-		DailyUsage:   data.DailyUsage,
-		WeeklyUsage:  data.WeeklyUsage,
-		MonthlyUsage: data.MonthlyUsage,
-		Version:      data.Version,
+		Status:              data.Status,
+		ExpiresAt:           data.ExpiresAt,
+		SubscriptionMeter:   data.SubscriptionMeter,
+		DailyWindowStart:    data.DailyWindowStart,
+		WeeklyWindowStart:   data.WeeklyWindowStart,
+		MonthlyWindowStart:  data.MonthlyWindowStart,
+		DailyUsage:          data.DailyUsage,
+		WeeklyUsage:         data.WeeklyUsage,
+		MonthlyUsage:        data.MonthlyUsage,
+		DailyRequestCount:   data.DailyRequestCount,
+		WeeklyRequestCount:  data.WeeklyRequestCount,
+		MonthlyRequestCount: data.MonthlyRequestCount,
+		Version:             data.Version,
 	}
 }
 
@@ -433,12 +464,19 @@ func (s *BillingCacheService) getSubscriptionFromDB(ctx context.Context, userID,
 	}
 
 	return &subscriptionCacheData{
-		Status:       sub.Status,
-		ExpiresAt:    sub.ExpiresAt,
-		DailyUsage:   sub.DailyUsageUSD,
-		WeeklyUsage:  sub.WeeklyUsageUSD,
-		MonthlyUsage: sub.MonthlyUsageUSD,
-		Version:      sub.UpdatedAt.Unix(),
+		Status:              sub.Status,
+		ExpiresAt:           sub.ExpiresAt,
+		SubscriptionMeter:   sub.Group.SubscriptionMeter,
+		DailyWindowStart:    sub.DailyWindowStart,
+		WeeklyWindowStart:   sub.WeeklyWindowStart,
+		MonthlyWindowStart:  sub.MonthlyWindowStart,
+		DailyUsage:          sub.DailyUsageUSD,
+		WeeklyUsage:         sub.WeeklyUsageUSD,
+		MonthlyUsage:        sub.MonthlyUsageUSD,
+		DailyRequestCount:   sub.DailyRequestCount,
+		WeeklyRequestCount:  sub.WeeklyRequestCount,
+		MonthlyRequestCount: sub.MonthlyRequestCount,
+		Version:             sub.UpdatedAt.Unix(),
 	}, nil
 }
 
@@ -478,6 +516,32 @@ func (s *BillingCacheService) QueueUpdateSubscriptionUsage(userID, groupID int64
 	defer cancel()
 	if err := s.UpdateSubscriptionUsage(ctx, userID, groupID, costUSD); err != nil {
 		logger.LegacyPrintf("service.billing_cache", "Warning: update subscription cache fallback failed for user %d group %d: %v", userID, groupID, err)
+	}
+}
+
+func (s *BillingCacheService) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID int64, count int) error {
+	if s.cache == nil {
+		return nil
+	}
+	return s.cache.UpdateSubscriptionRequestCount(ctx, userID, groupID, count)
+}
+
+func (s *BillingCacheService) QueueUpdateSubscriptionRequestCount(userID, groupID int64, count int) {
+	if s.cache == nil {
+		return
+	}
+	if s.enqueueCacheWrite(cacheWriteTask{
+		kind:         cacheWriteUpdateSubscriptionRequestCount,
+		userID:       userID,
+		groupID:      groupID,
+		requestCount: count,
+	}) {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), cacheWriteTimeout)
+	defer cancel()
+	if err := s.UpdateSubscriptionRequestCount(ctx, userID, groupID, count); err != nil {
+		logger.LegacyPrintf("service.billing_cache", "Warning: update subscription request count cache fallback failed for user %d group %d: %v", userID, groupID, err)
 	}
 }
 
@@ -645,9 +709,12 @@ func (s *BillingCacheService) CheckBillingEligibility(ctx context.Context, user 
 	}
 
 	// 判断计费模式
-	isSubscriptionMode := group != nil && group.IsSubscriptionType() && subscription != nil
+	isSubscriptionGroup := group != nil && group.IsSubscriptionType()
 
-	if isSubscriptionMode {
+	if isSubscriptionGroup {
+		if subscription == nil {
+			return ErrSubscriptionInvalid
+		}
 		if err := s.checkSubscriptionEligibility(ctx, user.ID, group, subscription); err != nil {
 			return err
 		}
@@ -711,6 +778,45 @@ func (s *BillingCacheService) checkSubscriptionEligibility(ctx context.Context, 
 	// 检查是否过期
 	if time.Now().After(subData.ExpiresAt) {
 		return ErrSubscriptionInvalid
+	}
+
+	if group.IsRequestQuotaSubscription() || subData.SubscriptionMeter == SubscriptionMeterRequestQuota {
+		dailyCount := subData.DailyRequestCount
+		weeklyCount := subData.WeeklyRequestCount
+		monthlyCount := subData.MonthlyRequestCount
+
+		if subscription != nil {
+			if subscription.NeedsDailyReset() {
+				dailyCount = 0
+			}
+			if subscription.NeedsWeeklyReset() {
+				weeklyCount = 0
+			}
+			if subscription.NeedsMonthlyReset() {
+				monthlyCount = 0
+			}
+		} else {
+			if subData.DailyWindowStart != nil && time.Since(*subData.DailyWindowStart) >= 24*time.Hour {
+				dailyCount = 0
+			}
+			if subData.WeeklyWindowStart != nil && time.Since(*subData.WeeklyWindowStart) >= 7*24*time.Hour {
+				weeklyCount = 0
+			}
+			if subData.MonthlyWindowStart != nil && time.Since(*subData.MonthlyWindowStart) >= 30*24*time.Hour {
+				monthlyCount = 0
+			}
+		}
+
+		if group.HasDailyRequestLimit() && dailyCount >= *group.DailyRequestLimit {
+			return ErrDailyLimitExceeded
+		}
+		if group.HasWeeklyRequestLimit() && weeklyCount >= *group.WeeklyRequestLimit {
+			return ErrWeeklyLimitExceeded
+		}
+		if group.HasMonthlyRequestLimit() && monthlyCount >= *group.MonthlyRequestLimit {
+			return ErrMonthlyLimitExceeded
+		}
+		return nil
 	}
 
 	// 检查限额（使用传入的Group限额配置）

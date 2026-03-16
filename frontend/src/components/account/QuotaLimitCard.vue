@@ -4,7 +4,9 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
+  meter: 'cost' | 'requests' | null
+  meterEditable?: boolean
   totalLimit: number | null
   dailyLimit: number | null
   weeklyLimit: number | null
@@ -14,9 +16,12 @@ const props = defineProps<{
   weeklyResetDay: number | null
   weeklyResetHour: number | null
   resetTimezone: string | null
-}>()
+}>(), {
+  meterEditable: true,
+})
 
 const emit = defineEmits<{
+  'update:meter': [value: 'cost' | 'requests' | null]
   'update:totalLimit': [value: number | null]
   'update:dailyLimit': [value: number | null]
   'update:weeklyLimit': [value: number | null]
@@ -36,6 +41,8 @@ const enabled = computed(() =>
 
 const localEnabled = ref(enabled.value)
 
+const meterValue = computed(() => props.meter || 'cost')
+
 // Sync when props change externally
 watch(enabled, (val) => {
   localEnabled.value = val
@@ -53,6 +60,9 @@ watch(localEnabled, (val) => {
     emit('update:weeklyResetDay', null)
     emit('update:weeklyResetHour', null)
     emit('update:resetTimezone', null)
+    if (props.meterEditable) {
+      emit('update:meter', 'cost')
+    }
   }
 })
 
@@ -128,6 +138,8 @@ const onWeeklyModeChange = (e: Event) => {
     if (!props.resetTimezone) emit('update:resetTimezone', 'UTC')
   }
 }
+
+const isRequestMeter = computed(() => meterValue.value === 'requests')
 </script>
 
 <template>
@@ -157,18 +169,31 @@ const onWeeklyModeChange = (e: Event) => {
       </div>
 
       <div v-if="localEnabled" class="space-y-3">
+        <div>
+          <label class="input-label">{{ t('admin.accounts.quotaMeter') }}</label>
+          <select
+            :value="meterValue"
+            @change="emit('update:meter', (($event.target as HTMLSelectElement).value as 'cost' | 'requests'))"
+            :disabled="!props.meterEditable"
+            class="input text-sm"
+          >
+            <option value="cost">{{ t('admin.accounts.quotaMeterCost') }}</option>
+            <option value="requests">{{ t('admin.accounts.quotaMeterRequests') }}</option>
+          </select>
+        </div>
+
         <!-- 日配额 -->
         <div>
           <label class="input-label">{{ t('admin.accounts.quotaDailyLimit') }}</label>
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+            <span v-if="!isRequestMeter" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
             <input
               :value="dailyLimit"
               @input="onDailyInput"
               type="number"
               min="0"
-              step="0.01"
-              class="input pl-7"
+              :step="isRequestMeter ? '1' : '0.01'"
+              :class="['input', isRequestMeter ? '' : 'pl-7']"
               :placeholder="t('admin.accounts.quotaLimitPlaceholder')"
             />
           </div>
@@ -200,7 +225,7 @@ const onWeeklyModeChange = (e: Event) => {
               {{ t('admin.accounts.quotaDailyLimitHintFixed', { hour: String(dailyResetHour ?? 0).padStart(2, '0'), timezone: resetTimezone || 'UTC' }) }}
             </template>
             <template v-else>
-              {{ t('admin.accounts.quotaDailyLimitHint') }}
+              {{ isRequestMeter ? t('admin.accounts.quotaDailyLimitHintRequests') : t('admin.accounts.quotaDailyLimitHint') }}
             </template>
           </p>
         </div>
@@ -209,14 +234,14 @@ const onWeeklyModeChange = (e: Event) => {
         <div>
           <label class="input-label">{{ t('admin.accounts.quotaWeeklyLimit') }}</label>
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+            <span v-if="!isRequestMeter" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
             <input
               :value="weeklyLimit"
               @input="onWeeklyInput"
               type="number"
               min="0"
-              step="0.01"
-              class="input pl-7"
+              :step="isRequestMeter ? '1' : '0.01'"
+              :class="['input', isRequestMeter ? '' : 'pl-7']"
               :placeholder="t('admin.accounts.quotaLimitPlaceholder')"
             />
           </div>
@@ -256,7 +281,7 @@ const onWeeklyModeChange = (e: Event) => {
               {{ t('admin.accounts.quotaWeeklyLimitHintFixed', { day: t('admin.accounts.dayOfWeek.' + (dayOptions.find(d => d.value === (weeklyResetDay ?? 1))?.key || 'monday')), hour: String(weeklyResetHour ?? 0).padStart(2, '0'), timezone: resetTimezone || 'UTC' }) }}
             </template>
             <template v-else>
-              {{ t('admin.accounts.quotaWeeklyLimitHint') }}
+              {{ isRequestMeter ? t('admin.accounts.quotaWeeklyLimitHintRequests') : t('admin.accounts.quotaWeeklyLimitHint') }}
             </template>
           </p>
         </div>
@@ -277,18 +302,20 @@ const onWeeklyModeChange = (e: Event) => {
         <div>
           <label class="input-label">{{ t('admin.accounts.quotaTotalLimit') }}</label>
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+            <span v-if="!isRequestMeter" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
             <input
               :value="totalLimit"
               @input="onTotalInput"
               type="number"
               min="0"
-              step="0.01"
-              class="input pl-7"
+              :step="isRequestMeter ? '1' : '0.01'"
+              :class="['input', isRequestMeter ? '' : 'pl-7']"
               :placeholder="t('admin.accounts.quotaLimitPlaceholder')"
             />
           </div>
-          <p class="input-hint">{{ t('admin.accounts.quotaTotalLimitHint') }}</p>
+          <p class="input-hint">
+            {{ isRequestMeter ? t('admin.accounts.quotaTotalLimitHintRequests') : t('admin.accounts.quotaTotalLimitHint') }}
+          </p>
         </div>
       </div>
   </div>

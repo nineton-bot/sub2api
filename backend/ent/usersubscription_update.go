@@ -250,6 +250,69 @@ func (_u *UserSubscriptionUpdate) AddMonthlyUsageUsd(v float64) *UserSubscriptio
 	return _u
 }
 
+// SetDailyRequestCount sets the "daily_request_count" field.
+func (_u *UserSubscriptionUpdate) SetDailyRequestCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetDailyRequestCount()
+	_u.mutation.SetDailyRequestCount(v)
+	return _u
+}
+
+// SetNillableDailyRequestCount sets the "daily_request_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableDailyRequestCount(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetDailyRequestCount(*v)
+	}
+	return _u
+}
+
+// AddDailyRequestCount adds value to the "daily_request_count" field.
+func (_u *UserSubscriptionUpdate) AddDailyRequestCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddDailyRequestCount(v)
+	return _u
+}
+
+// SetWeeklyRequestCount sets the "weekly_request_count" field.
+func (_u *UserSubscriptionUpdate) SetWeeklyRequestCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetWeeklyRequestCount()
+	_u.mutation.SetWeeklyRequestCount(v)
+	return _u
+}
+
+// SetNillableWeeklyRequestCount sets the "weekly_request_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableWeeklyRequestCount(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetWeeklyRequestCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyRequestCount adds value to the "weekly_request_count" field.
+func (_u *UserSubscriptionUpdate) AddWeeklyRequestCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddWeeklyRequestCount(v)
+	return _u
+}
+
+// SetMonthlyRequestCount sets the "monthly_request_count" field.
+func (_u *UserSubscriptionUpdate) SetMonthlyRequestCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.ResetMonthlyRequestCount()
+	_u.mutation.SetMonthlyRequestCount(v)
+	return _u
+}
+
+// SetNillableMonthlyRequestCount sets the "monthly_request_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdate) SetNillableMonthlyRequestCount(v *int) *UserSubscriptionUpdate {
+	if v != nil {
+		_u.SetMonthlyRequestCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyRequestCount adds value to the "monthly_request_count" field.
+func (_u *UserSubscriptionUpdate) AddMonthlyRequestCount(v int) *UserSubscriptionUpdate {
+	_u.mutation.AddMonthlyRequestCount(v)
+	return _u
+}
+
 // SetAssignedBy sets the "assigned_by" field.
 func (_u *UserSubscriptionUpdate) SetAssignedBy(v int64) *UserSubscriptionUpdate {
 	_u.mutation.SetAssignedBy(v)
@@ -515,6 +578,24 @@ func (_u *UserSubscriptionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AddedMonthlyUsageUsd(); ok {
 		_spec.AddField(usersubscription.FieldMonthlyUsageUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DailyRequestCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyRequestCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyRequestCount(); ok {
+		_spec.AddField(usersubscription.FieldDailyRequestCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyRequestCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyRequestCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyRequestCount(); ok {
+		_spec.AddField(usersubscription.FieldWeeklyRequestCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyRequestCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyRequestCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyRequestCount(); ok {
+		_spec.AddField(usersubscription.FieldMonthlyRequestCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.AssignedAt(); ok {
 		_spec.SetField(usersubscription.FieldAssignedAt, field.TypeTime, value)
@@ -896,6 +977,69 @@ func (_u *UserSubscriptionUpdateOne) AddMonthlyUsageUsd(v float64) *UserSubscrip
 	return _u
 }
 
+// SetDailyRequestCount sets the "daily_request_count" field.
+func (_u *UserSubscriptionUpdateOne) SetDailyRequestCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetDailyRequestCount()
+	_u.mutation.SetDailyRequestCount(v)
+	return _u
+}
+
+// SetNillableDailyRequestCount sets the "daily_request_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableDailyRequestCount(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetDailyRequestCount(*v)
+	}
+	return _u
+}
+
+// AddDailyRequestCount adds value to the "daily_request_count" field.
+func (_u *UserSubscriptionUpdateOne) AddDailyRequestCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddDailyRequestCount(v)
+	return _u
+}
+
+// SetWeeklyRequestCount sets the "weekly_request_count" field.
+func (_u *UserSubscriptionUpdateOne) SetWeeklyRequestCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetWeeklyRequestCount()
+	_u.mutation.SetWeeklyRequestCount(v)
+	return _u
+}
+
+// SetNillableWeeklyRequestCount sets the "weekly_request_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableWeeklyRequestCount(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetWeeklyRequestCount(*v)
+	}
+	return _u
+}
+
+// AddWeeklyRequestCount adds value to the "weekly_request_count" field.
+func (_u *UserSubscriptionUpdateOne) AddWeeklyRequestCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddWeeklyRequestCount(v)
+	return _u
+}
+
+// SetMonthlyRequestCount sets the "monthly_request_count" field.
+func (_u *UserSubscriptionUpdateOne) SetMonthlyRequestCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.ResetMonthlyRequestCount()
+	_u.mutation.SetMonthlyRequestCount(v)
+	return _u
+}
+
+// SetNillableMonthlyRequestCount sets the "monthly_request_count" field if the given value is not nil.
+func (_u *UserSubscriptionUpdateOne) SetNillableMonthlyRequestCount(v *int) *UserSubscriptionUpdateOne {
+	if v != nil {
+		_u.SetMonthlyRequestCount(*v)
+	}
+	return _u
+}
+
+// AddMonthlyRequestCount adds value to the "monthly_request_count" field.
+func (_u *UserSubscriptionUpdateOne) AddMonthlyRequestCount(v int) *UserSubscriptionUpdateOne {
+	_u.mutation.AddMonthlyRequestCount(v)
+	return _u
+}
+
 // SetAssignedBy sets the "assigned_by" field.
 func (_u *UserSubscriptionUpdateOne) SetAssignedBy(v int64) *UserSubscriptionUpdateOne {
 	_u.mutation.SetAssignedBy(v)
@@ -1191,6 +1335,24 @@ func (_u *UserSubscriptionUpdateOne) sqlSave(ctx context.Context) (_node *UserSu
 	}
 	if value, ok := _u.mutation.AddedMonthlyUsageUsd(); ok {
 		_spec.AddField(usersubscription.FieldMonthlyUsageUsd, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.DailyRequestCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyRequestCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedDailyRequestCount(); ok {
+		_spec.AddField(usersubscription.FieldDailyRequestCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.WeeklyRequestCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyRequestCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedWeeklyRequestCount(); ok {
+		_spec.AddField(usersubscription.FieldWeeklyRequestCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MonthlyRequestCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyRequestCount, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMonthlyRequestCount(); ok {
+		_spec.AddField(usersubscription.FieldMonthlyRequestCount, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.AssignedAt(); ok {
 		_spec.SetField(usersubscription.FieldAssignedAt, field.TypeTime, value)

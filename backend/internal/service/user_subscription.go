@@ -15,9 +15,12 @@ type UserSubscription struct {
 	WeeklyWindowStart  *time.Time
 	MonthlyWindowStart *time.Time
 
-	DailyUsageUSD   float64
-	WeeklyUsageUSD  float64
-	MonthlyUsageUSD float64
+	DailyUsageUSD       float64
+	WeeklyUsageUSD      float64
+	MonthlyUsageUSD     float64
+	DailyRequestCount   int
+	WeeklyRequestCount  int
+	MonthlyRequestCount int
 
 	AssignedBy *int64
 	AssignedAt time.Time
@@ -121,4 +124,25 @@ func (s *UserSubscription) CheckAllLimits(group *Group, additionalCost float64) 
 	weekly = s.CheckWeeklyLimit(group, additionalCost)
 	monthly = s.CheckMonthlyLimit(group, additionalCost)
 	return
+}
+
+func (s *UserSubscription) CheckDailyRequestLimit(group *Group, additionalCount int) bool {
+	if !group.HasDailyRequestLimit() {
+		return true
+	}
+	return s.DailyRequestCount+additionalCount <= *group.DailyRequestLimit
+}
+
+func (s *UserSubscription) CheckWeeklyRequestLimit(group *Group, additionalCount int) bool {
+	if !group.HasWeeklyRequestLimit() {
+		return true
+	}
+	return s.WeeklyRequestCount+additionalCount <= *group.WeeklyRequestLimit
+}
+
+func (s *UserSubscription) CheckMonthlyRequestLimit(group *Group, additionalCount int) bool {
+	if !group.HasMonthlyRequestLimit() {
+		return true
+	}
+	return s.MonthlyRequestCount+additionalCount <= *group.MonthlyRequestLimit
 }

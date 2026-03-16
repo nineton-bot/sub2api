@@ -1237,34 +1237,52 @@ func (a *Account) GetCacheTTLOverrideTarget() string {
 }
 
 // GetQuotaLimit 获取 API Key 账号的配额限制（美元）
-// 返回 0 表示未启用
+// 当配额计量方式为 requests 时，该值表示总请求次数限制。
 func (a *Account) GetQuotaLimit() float64 {
 	return a.getExtraFloat64("quota_limit")
 }
 
-// GetQuotaUsed 获取 API Key 账号的已用配额（美元）
+// GetQuotaUsed 获取 API Key 账号的已用配额。
+// 当配额计量方式为 requests 时，该值表示已用请求次数。
 func (a *Account) GetQuotaUsed() float64 {
 	return a.getExtraFloat64("quota_used")
 }
 
-// GetQuotaDailyLimit 获取日额度限制（美元），0 表示未启用
+// GetQuotaDailyLimit 获取日额度限制。
+// 当配额计量方式为 requests 时，该值表示日请求次数限制。
 func (a *Account) GetQuotaDailyLimit() float64 {
 	return a.getExtraFloat64("quota_daily_limit")
 }
 
-// GetQuotaDailyUsed 获取当日已用额度（美元）
+// GetQuotaDailyUsed 获取当日已用配额。
+// 当配额计量方式为 requests 时，该值表示当日已用请求次数。
 func (a *Account) GetQuotaDailyUsed() float64 {
 	return a.getExtraFloat64("quota_daily_used")
 }
 
-// GetQuotaWeeklyLimit 获取周额度限制（美元），0 表示未启用
+// GetQuotaWeeklyLimit 获取周额度限制。
+// 当配额计量方式为 requests 时，该值表示周请求次数限制。
 func (a *Account) GetQuotaWeeklyLimit() float64 {
 	return a.getExtraFloat64("quota_weekly_limit")
 }
 
-// GetQuotaWeeklyUsed 获取本周已用额度（美元）
+// GetQuotaWeeklyUsed 获取本周已用配额。
+// 当配额计量方式为 requests 时，该值表示本周已用请求次数。
 func (a *Account) GetQuotaWeeklyUsed() float64 {
 	return a.getExtraFloat64("quota_weekly_used")
+}
+
+// GetQuotaMeter 获取账号配额的计量方式。
+// 默认值为 cost（向后兼容已有账号）。
+func (a *Account) GetQuotaMeter() string {
+	if meter := a.getExtraString("quota_meter"); meter == AccountQuotaMeterRequests {
+		return AccountQuotaMeterRequests
+	}
+	return AccountQuotaMeterCost
+}
+
+func (a *Account) IsRequestQuotaMeter() bool {
+	return a.GetQuotaMeter() == AccountQuotaMeterRequests
 }
 
 // getExtraFloat64 从 Extra 中读取指定 key 的 float64 值
@@ -1487,6 +1505,24 @@ func ComputeQuotaResetAt(extra map[string]any) {
 func ValidateQuotaResetConfig(extra map[string]any) error {
 	if extra == nil {
 		return nil
+	}
+	if meter, ok := extra["quota_meter"].(string); ok && meter != "" {
+		if meter != AccountQuotaMeterCost && meter != AccountQuotaMeterRequests {
+			return errors.New("quota_meter must be 'cost' or 'requests'")
+		}
+		if meter == AccountQuotaMeterRequests {
+			for _, key := range []string{"quota_limit", "quota_daily_limit", "quota_weekly_limit"} {
+				if v, ok := extra[key]; ok {
+					f := parseExtraFloat64(v)
+					if f < 0 {
+						return errors.New(key + " must be >= 0")
+					}
+					if f != float64(int64(f)) {
+						return errors.New(key + " must be an integer when quota_meter=requests")
+					}
+				}
+			}
+		}
 	}
 	// 校验时区
 	if tz, ok := extra["quota_reset_timezone"].(string); ok && tz != "" {

@@ -147,10 +147,14 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 				group.FieldPlatform,
 				group.FieldStatus,
 				group.FieldSubscriptionType,
+				group.FieldSubscriptionMeter,
 				group.FieldRateMultiplier,
 				group.FieldDailyLimitUsd,
 				group.FieldWeeklyLimitUsd,
 				group.FieldMonthlyLimitUsd,
+				group.FieldDailyRequestLimit,
+				group.FieldWeeklyRequestLimit,
+				group.FieldMonthlyRequestLimit,
 				group.FieldImagePrice1k,
 				group.FieldImagePrice2k,
 				group.FieldImagePrice4k,
@@ -617,6 +621,10 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 	if g == nil {
 		return nil
 	}
+	subscriptionMeter := g.SubscriptionMeter
+	if subscriptionMeter == "" {
+		subscriptionMeter = service.SubscriptionMeterCostQuota
+	}
 	return &service.Group{
 		ID:                              g.ID,
 		Name:                            g.Name,
@@ -627,9 +635,13 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		Status:                          g.Status,
 		Hydrated:                        true,
 		SubscriptionType:                g.SubscriptionType,
+		SubscriptionMeter:               subscriptionMeter,
 		DailyLimitUSD:                   g.DailyLimitUsd,
 		WeeklyLimitUSD:                  g.WeeklyLimitUsd,
 		MonthlyLimitUSD:                 g.MonthlyLimitUsd,
+		DailyRequestLimit:               g.DailyRequestLimit,
+		WeeklyRequestLimit:              g.WeeklyRequestLimit,
+		MonthlyRequestLimit:             g.MonthlyRequestLimit,
 		ImagePrice1K:                    g.ImagePrice1k,
 		ImagePrice2K:                    g.ImagePrice2k,
 		ImagePrice4K:                    g.ImagePrice4k,

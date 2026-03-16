@@ -749,6 +749,7 @@ func (s *SubscriptionService) CheckAndResetWindows(ctx context.Context, sub *Use
 		}
 		sub.DailyWindowStart = &windowStart
 		sub.DailyUsageUSD = 0
+		sub.DailyRequestCount = 0
 		needsInvalidateCache = true
 	}
 
@@ -759,6 +760,7 @@ func (s *SubscriptionService) CheckAndResetWindows(ctx context.Context, sub *Use
 		}
 		sub.WeeklyWindowStart = &windowStart
 		sub.WeeklyUsageUSD = 0
+		sub.WeeklyRequestCount = 0
 		needsInvalidateCache = true
 	}
 
@@ -769,6 +771,7 @@ func (s *SubscriptionService) CheckAndResetWindows(ctx context.Context, sub *Use
 		}
 		sub.MonthlyWindowStart = &windowStart
 		sub.MonthlyUsageUSD = 0
+		sub.MonthlyRequestCount = 0
 		needsInvalidateCache = true
 	}
 
@@ -786,6 +789,18 @@ func (s *SubscriptionService) CheckAndResetWindows(ctx context.Context, sub *Use
 // CheckUsageLimits 检查使用限额（返回错误如果超限）
 // 用于中间件的快速预检查，additionalCost 通常为 0
 func (s *SubscriptionService) CheckUsageLimits(ctx context.Context, sub *UserSubscription, group *Group, additionalCost float64) error {
+	if group.IsRequestQuotaSubscription() {
+		if !sub.CheckDailyRequestLimit(group, 0) {
+			return ErrDailyLimitExceeded
+		}
+		if !sub.CheckWeeklyRequestLimit(group, 0) {
+			return ErrWeeklyLimitExceeded
+		}
+		if !sub.CheckMonthlyRequestLimit(group, 0) {
+			return ErrMonthlyLimitExceeded
+		}
+		return nil
+	}
 	if !sub.CheckDailyLimit(group, additionalCost) {
 		return ErrDailyLimitExceeded
 	}
@@ -817,14 +832,17 @@ func (s *SubscriptionService) ValidateAndCheckLimits(sub *UserSubscription, grou
 	//    实际的 DB 窗口重置由 DoWindowMaintenance 异步完成
 	if sub.NeedsDailyReset() {
 		sub.DailyUsageUSD = 0
+		sub.DailyRequestCount = 0
 		needsMaintenance = true
 	}
 	if sub.NeedsWeeklyReset() {
 		sub.WeeklyUsageUSD = 0
+		sub.WeeklyRequestCount = 0
 		needsMaintenance = true
 	}
 	if sub.NeedsMonthlyReset() {
 		sub.MonthlyUsageUSD = 0
+		sub.MonthlyRequestCount = 0
 		needsMaintenance = true
 	}
 	if !sub.IsWindowActivated() {
@@ -832,6 +850,18 @@ func (s *SubscriptionService) ValidateAndCheckLimits(sub *UserSubscription, grou
 	}
 
 	// 3. 检查用量限额
+	if group.IsRequestQuotaSubscription() {
+		if !sub.CheckDailyRequestLimit(group, 0) {
+			return needsMaintenance, ErrDailyLimitExceeded
+		}
+		if !sub.CheckWeeklyRequestLimit(group, 0) {
+			return needsMaintenance, ErrWeeklyLimitExceeded
+		}
+		if !sub.CheckMonthlyRequestLimit(group, 0) {
+			return needsMaintenance, ErrMonthlyLimitExceeded
+		}
+		return needsMaintenance, nil
+	}
 	if !sub.CheckDailyLimit(group, 0) {
 		return needsMaintenance, ErrDailyLimitExceeded
 	}
@@ -896,6 +926,7 @@ func (s *SubscriptionService) RecordUsage(ctx context.Context, subscriptionID in
 type SubscriptionProgress struct {
 	ID            int64                `json:"id"`
 	GroupName     string               `json:"group_name"`
+	Meter         string               `json:"meter"`
 	ExpiresAt     time.Time            `json:"expires_at"`
 	ExpiresInDays int                  `json:"expires_in_days"`
 	Daily         *UsageWindowProgress `json:"daily,omitempty"`
@@ -905,13 +936,17 @@ type SubscriptionProgress struct {
 
 // UsageWindowProgress 使用窗口进度
 type UsageWindowProgress struct {
-	LimitUSD        float64   `json:"limit_usd"`
-	UsedUSD         float64   `json:"used_usd"`
-	RemainingUSD    float64   `json:"remaining_usd"`
-	Percentage      float64   `json:"percentage"`
-	WindowStart     time.Time `json:"window_start"`
-	ResetsAt        time.Time `json:"resets_at"`
-	ResetsInSeconds int64     `json:"resets_in_seconds"`
+	LimitUSD          float64   `json:"limit_usd"`
+	UsedUSD           float64   `json:"used_usd"`
+	RemainingUSD      float64   `json:"remaining_usd"`
+	LimitRequests     int       `json:"limit_requests,omitempty"`
+	UsedRequests      int       `json:"used_requests,omitempty"`
+	RemainingRequests int       `json:"remaining_requests,omitempty"`
+	Unit              string    `json:"unit,omitempty"`
+	Percentage        float64   `json:"percentage"`
+	WindowStart       time.Time `json:"window_start"`
+	ResetsAt          time.Time `json:"resets_at"`
+	ResetsInSeconds   int64     `json:"resets_in_seconds"`
 }
 
 // GetSubscriptionProgress 获取订阅使用进度
@@ -937,8 +972,64 @@ func (s *SubscriptionService) calculateProgress(sub *UserSubscription, group *Gr
 	progress := &SubscriptionProgress{
 		ID:            sub.ID,
 		GroupName:     group.Name,
+		Meter:         group.SubscriptionMeter,
 		ExpiresAt:     sub.ExpiresAt,
 		ExpiresInDays: sub.DaysRemaining(),
+	}
+
+	if group.IsRequestQuotaSubscription() {
+		if group.HasDailyRequestLimit() && sub.DailyWindowStart != nil {
+			limit := *group.DailyRequestLimit
+			resetsAt := sub.DailyWindowStart.Add(24 * time.Hour)
+			progress.Daily = &UsageWindowProgress{
+				LimitRequests:     limit,
+				UsedRequests:      sub.DailyRequestCount,
+				RemainingRequests: max(0, limit-sub.DailyRequestCount),
+				Unit:              "requests",
+				Percentage:        percentageForIntProgress(sub.DailyRequestCount, limit),
+				WindowStart:       *sub.DailyWindowStart,
+				ResetsAt:          resetsAt,
+				ResetsInSeconds:   int64(time.Until(resetsAt).Seconds()),
+			}
+			if progress.Daily.ResetsInSeconds < 0 {
+				progress.Daily.ResetsInSeconds = 0
+			}
+		}
+		if group.HasWeeklyRequestLimit() && sub.WeeklyWindowStart != nil {
+			limit := *group.WeeklyRequestLimit
+			resetsAt := sub.WeeklyWindowStart.Add(7 * 24 * time.Hour)
+			progress.Weekly = &UsageWindowProgress{
+				LimitRequests:     limit,
+				UsedRequests:      sub.WeeklyRequestCount,
+				RemainingRequests: max(0, limit-sub.WeeklyRequestCount),
+				Unit:              "requests",
+				Percentage:        percentageForIntProgress(sub.WeeklyRequestCount, limit),
+				WindowStart:       *sub.WeeklyWindowStart,
+				ResetsAt:          resetsAt,
+				ResetsInSeconds:   int64(time.Until(resetsAt).Seconds()),
+			}
+			if progress.Weekly.ResetsInSeconds < 0 {
+				progress.Weekly.ResetsInSeconds = 0
+			}
+		}
+		if group.HasMonthlyRequestLimit() && sub.MonthlyWindowStart != nil {
+			limit := *group.MonthlyRequestLimit
+			resetsAt := sub.MonthlyWindowStart.Add(30 * 24 * time.Hour)
+			progress.Monthly = &UsageWindowProgress{
+				LimitRequests:     limit,
+				UsedRequests:      sub.MonthlyRequestCount,
+				RemainingRequests: max(0, limit-sub.MonthlyRequestCount),
+				Unit:              "requests",
+				Percentage:        percentageForIntProgress(sub.MonthlyRequestCount, limit),
+				WindowStart:       *sub.MonthlyWindowStart,
+				ResetsAt:          resetsAt,
+				ResetsInSeconds:   int64(time.Until(resetsAt).Seconds()),
+			}
+			if progress.Monthly.ResetsInSeconds < 0 {
+				progress.Monthly.ResetsInSeconds = 0
+			}
+		}
+		return progress
 	}
 
 	// 日进度
@@ -1014,6 +1105,20 @@ func (s *SubscriptionService) calculateProgress(sub *UserSubscription, group *Gr
 	}
 
 	return progress
+}
+
+func percentageForIntProgress(used, limit int) float64 {
+	if limit <= 0 {
+		return 0
+	}
+	percentage := (float64(used) / float64(limit)) * 100
+	if percentage > 100 {
+		return 100
+	}
+	if percentage < 0 {
+		return 0
+	}
+	return percentage
 }
 
 // GetUserSubscriptionsWithProgress 获取用户所有订阅及进度

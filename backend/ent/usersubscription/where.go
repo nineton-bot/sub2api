@@ -125,6 +125,21 @@ func MonthlyUsageUsd(v float64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldMonthlyUsageUsd, v))
 }
 
+// DailyRequestCount applies equality check predicate on the "daily_request_count" field. It's identical to DailyRequestCountEQ.
+func DailyRequestCount(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldDailyRequestCount, v))
+}
+
+// WeeklyRequestCount applies equality check predicate on the "weekly_request_count" field. It's identical to WeeklyRequestCountEQ.
+func WeeklyRequestCount(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldWeeklyRequestCount, v))
+}
+
+// MonthlyRequestCount applies equality check predicate on the "monthly_request_count" field. It's identical to MonthlyRequestCountEQ.
+func MonthlyRequestCount(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldMonthlyRequestCount, v))
+}
+
 // AssignedBy applies equality check predicate on the "assigned_by" field. It's identical to AssignedByEQ.
 func AssignedBy(v int64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldEQ(FieldAssignedBy, v))
@@ -723,6 +738,126 @@ func MonthlyUsageUsdLT(v float64) predicate.UserSubscription {
 // MonthlyUsageUsdLTE applies the LTE predicate on the "monthly_usage_usd" field.
 func MonthlyUsageUsdLTE(v float64) predicate.UserSubscription {
 	return predicate.UserSubscription(sql.FieldLTE(FieldMonthlyUsageUsd, v))
+}
+
+// DailyRequestCountEQ applies the EQ predicate on the "daily_request_count" field.
+func DailyRequestCountEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldDailyRequestCount, v))
+}
+
+// DailyRequestCountNEQ applies the NEQ predicate on the "daily_request_count" field.
+func DailyRequestCountNEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldDailyRequestCount, v))
+}
+
+// DailyRequestCountIn applies the In predicate on the "daily_request_count" field.
+func DailyRequestCountIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldDailyRequestCount, vs...))
+}
+
+// DailyRequestCountNotIn applies the NotIn predicate on the "daily_request_count" field.
+func DailyRequestCountNotIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldDailyRequestCount, vs...))
+}
+
+// DailyRequestCountGT applies the GT predicate on the "daily_request_count" field.
+func DailyRequestCountGT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldDailyRequestCount, v))
+}
+
+// DailyRequestCountGTE applies the GTE predicate on the "daily_request_count" field.
+func DailyRequestCountGTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldDailyRequestCount, v))
+}
+
+// DailyRequestCountLT applies the LT predicate on the "daily_request_count" field.
+func DailyRequestCountLT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldDailyRequestCount, v))
+}
+
+// DailyRequestCountLTE applies the LTE predicate on the "daily_request_count" field.
+func DailyRequestCountLTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldDailyRequestCount, v))
+}
+
+// WeeklyRequestCountEQ applies the EQ predicate on the "weekly_request_count" field.
+func WeeklyRequestCountEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldWeeklyRequestCount, v))
+}
+
+// WeeklyRequestCountNEQ applies the NEQ predicate on the "weekly_request_count" field.
+func WeeklyRequestCountNEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldWeeklyRequestCount, v))
+}
+
+// WeeklyRequestCountIn applies the In predicate on the "weekly_request_count" field.
+func WeeklyRequestCountIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldWeeklyRequestCount, vs...))
+}
+
+// WeeklyRequestCountNotIn applies the NotIn predicate on the "weekly_request_count" field.
+func WeeklyRequestCountNotIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldWeeklyRequestCount, vs...))
+}
+
+// WeeklyRequestCountGT applies the GT predicate on the "weekly_request_count" field.
+func WeeklyRequestCountGT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldWeeklyRequestCount, v))
+}
+
+// WeeklyRequestCountGTE applies the GTE predicate on the "weekly_request_count" field.
+func WeeklyRequestCountGTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldWeeklyRequestCount, v))
+}
+
+// WeeklyRequestCountLT applies the LT predicate on the "weekly_request_count" field.
+func WeeklyRequestCountLT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldWeeklyRequestCount, v))
+}
+
+// WeeklyRequestCountLTE applies the LTE predicate on the "weekly_request_count" field.
+func WeeklyRequestCountLTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldWeeklyRequestCount, v))
+}
+
+// MonthlyRequestCountEQ applies the EQ predicate on the "monthly_request_count" field.
+func MonthlyRequestCountEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldEQ(FieldMonthlyRequestCount, v))
+}
+
+// MonthlyRequestCountNEQ applies the NEQ predicate on the "monthly_request_count" field.
+func MonthlyRequestCountNEQ(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNEQ(FieldMonthlyRequestCount, v))
+}
+
+// MonthlyRequestCountIn applies the In predicate on the "monthly_request_count" field.
+func MonthlyRequestCountIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldIn(FieldMonthlyRequestCount, vs...))
+}
+
+// MonthlyRequestCountNotIn applies the NotIn predicate on the "monthly_request_count" field.
+func MonthlyRequestCountNotIn(vs ...int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldNotIn(FieldMonthlyRequestCount, vs...))
+}
+
+// MonthlyRequestCountGT applies the GT predicate on the "monthly_request_count" field.
+func MonthlyRequestCountGT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGT(FieldMonthlyRequestCount, v))
+}
+
+// MonthlyRequestCountGTE applies the GTE predicate on the "monthly_request_count" field.
+func MonthlyRequestCountGTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldGTE(FieldMonthlyRequestCount, v))
+}
+
+// MonthlyRequestCountLT applies the LT predicate on the "monthly_request_count" field.
+func MonthlyRequestCountLT(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLT(FieldMonthlyRequestCount, v))
+}
+
+// MonthlyRequestCountLTE applies the LTE predicate on the "monthly_request_count" field.
+func MonthlyRequestCountLTE(v int) predicate.UserSubscription {
+	return predicate.UserSubscription(sql.FieldLTE(FieldMonthlyRequestCount, v))
 }
 
 // AssignedByEQ applies the EQ predicate on the "assigned_by" field.

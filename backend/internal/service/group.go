@@ -16,9 +16,13 @@ type Group struct {
 	Hydrated       bool // indicates the group was loaded from a trusted repository source
 
 	SubscriptionType    string
+	SubscriptionMeter   string
 	DailyLimitUSD       *float64
 	WeeklyLimitUSD      *float64
 	MonthlyLimitUSD     *float64
+	DailyRequestLimit   *int
+	WeeklyRequestLimit  *int
+	MonthlyRequestLimit *int
 	DefaultValidityDays int
 
 	// 图片生成计费配置（antigravity 和 gemini 平台使用）
@@ -76,6 +80,14 @@ func (g *Group) IsSubscriptionType() bool {
 	return g.SubscriptionType == SubscriptionTypeSubscription
 }
 
+func (g *Group) IsCostQuotaSubscription() bool {
+	return g.IsSubscriptionType() && g.SubscriptionMeter != SubscriptionMeterRequestQuota
+}
+
+func (g *Group) IsRequestQuotaSubscription() bool {
+	return g.IsSubscriptionType() && g.SubscriptionMeter == SubscriptionMeterRequestQuota
+}
+
 func (g *Group) IsFreeSubscription() bool {
 	return g.IsSubscriptionType() && g.RateMultiplier == 0
 }
@@ -90,6 +102,18 @@ func (g *Group) HasWeeklyLimit() bool {
 
 func (g *Group) HasMonthlyLimit() bool {
 	return g.MonthlyLimitUSD != nil && *g.MonthlyLimitUSD > 0
+}
+
+func (g *Group) HasDailyRequestLimit() bool {
+	return g.DailyRequestLimit != nil && *g.DailyRequestLimit > 0
+}
+
+func (g *Group) HasWeeklyRequestLimit() bool {
+	return g.WeeklyRequestLimit != nil && *g.WeeklyRequestLimit > 0
+}
+
+func (g *Group) HasMonthlyRequestLimit() bool {
+	return g.MonthlyRequestLimit != nil && *g.MonthlyRequestLimit > 0
 }
 
 // GetImagePrice 根据 image_size 返回对应的图片生成价格

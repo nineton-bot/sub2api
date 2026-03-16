@@ -106,8 +106,8 @@ func (r *usageBillingRepository) claimUsageBillingKey(ctx context.Context, tx *s
 }
 
 func (r *usageBillingRepository) applyUsageBillingEffects(ctx context.Context, tx *sql.Tx, cmd *service.UsageBillingCommand, result *service.UsageBillingApplyResult) error {
-	if cmd.SubscriptionCost > 0 && cmd.SubscriptionID != nil {
-		if err := incrementUsageBillingSubscription(ctx, tx, *cmd.SubscriptionID, cmd.SubscriptionCost); err != nil {
+	if (cmd.SubscriptionCost > 0 || cmd.SubscriptionRequestCount > 0) && cmd.SubscriptionID != nil {
+		if err := incrementUsageBillingSubscription(ctx, tx, *cmd.SubscriptionID, cmd.SubscriptionCost, cmd.SubscriptionRequestCount); err != nil {
 			return err
 		}
 	}
@@ -141,13 +141,16 @@ func (r *usageBillingRepository) applyUsageBillingEffects(ctx context.Context, t
 	return nil
 }
 
-func incrementUsageBillingSubscription(ctx context.Context, tx *sql.Tx, subscriptionID int64, costUSD float64) error {
+func incrementUsageBillingSubscription(ctx context.Context, tx *sql.Tx, subscriptionID int64, costUSD float64, requestCount int64) error {
 	const updateSQL = `
 		UPDATE user_subscriptions us
 		SET
-			daily_usage_usd = us.daily_usage_usd + $1,
-			weekly_usage_usd = us.weekly_usage_usd + $1,
-			monthly_usage_usd = us.monthly_usage_usd + $1,
+			daily_usage_usd = CASE WHEN g.subscription_meter = $3 THEN us.daily_usage_usd ELSE us.daily_usage_usd + $1 END,
+			weekly_usage_usd = CASE WHEN g.subscription_meter = $3 THEN us.weekly_usage_usd ELSE us.weekly_usage_usd + $1 END,
+			monthly_usage_usd = CASE WHEN g.subscription_meter = $3 THEN us.monthly_usage_usd ELSE us.monthly_usage_usd + $1 END,
+			daily_request_count = CASE WHEN g.subscription_meter = $3 THEN us.daily_request_count + $4 ELSE us.daily_request_count END,
+			weekly_request_count = CASE WHEN g.subscription_meter = $3 THEN us.weekly_request_count + $4 ELSE us.weekly_request_count END,
+			monthly_request_count = CASE WHEN g.subscription_meter = $3 THEN us.monthly_request_count + $4 ELSE us.monthly_request_count END,
 			updated_at = NOW()
 		FROM groups g
 		WHERE us.id = $2
@@ -155,7 +158,7 @@ func incrementUsageBillingSubscription(ctx context.Context, tx *sql.Tx, subscrip
 			AND us.group_id = g.id
 			AND g.deleted_at IS NULL
 	`
-	res, err := tx.ExecContext(ctx, updateSQL, costUSD, subscriptionID)
+	res, err := tx.ExecContext(ctx, updateSQL, costUSD, subscriptionID, service.SubscriptionMeterRequestQuota, requestCount)
 	if err != nil {
 		return err
 	}

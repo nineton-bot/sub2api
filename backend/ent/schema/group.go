@@ -58,6 +58,9 @@ func (Group) Fields() []ent.Field {
 		field.String("subscription_type").
 			MaxLen(20).
 			Default(domain.SubscriptionTypeStandard),
+		field.String("subscription_meter").
+			MaxLen(20).
+			Default(domain.SubscriptionMeterCostQuota),
 		field.Float("daily_limit_usd").
 			Optional().
 			Nillable().
@@ -70,6 +73,15 @@ func (Group) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}),
+		field.Int("daily_request_limit").
+			Optional().
+			Nillable(),
+		field.Int("weekly_request_limit").
+			Optional().
+			Nillable(),
+		field.Int("monthly_request_limit").
+			Optional().
+			Nillable(),
 		field.Int("default_validity_days").
 			Default(30),
 
@@ -183,6 +195,7 @@ func (Group) Indexes() []ent.Index {
 		index.Fields("status"),
 		index.Fields("platform"),
 		index.Fields("subscription_type"),
+		index.Fields("subscription_meter"),
 		index.Fields("is_exclusive"),
 		index.Fields("deleted_at"),
 		index.Fields("sort_order"),

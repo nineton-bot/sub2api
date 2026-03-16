@@ -1079,11 +1079,15 @@ func (h *GatewayHandler) usageQuotaLimited(c *gin.Context, ctx context.Context, 
 func (h *GatewayHandler) usageUnrestricted(c *gin.Context, ctx context.Context, apiKey *service.APIKey, subject middleware2.AuthSubject, usageData gin.H, modelStats any) {
 	// 订阅模式
 	if apiKey.Group != nil && apiKey.Group.IsSubscriptionType() {
+		unit := "USD"
+		if apiKey.Group.IsRequestQuotaSubscription() {
+			unit = "requests"
+		}
 		resp := gin.H{
 			"mode":     "unrestricted",
 			"isValid":  true,
 			"planName": apiKey.Group.Name,
-			"unit":     "USD",
+			"unit":     unit,
 		}
 
 		// 订阅信息可能不在 context 中（/v1/usage 路径跳过了中间件的计费检查）
@@ -1091,14 +1095,28 @@ func (h *GatewayHandler) usageUnrestricted(c *gin.Context, ctx context.Context, 
 		if ok {
 			remaining := h.calculateSubscriptionRemaining(apiKey.Group, subscription)
 			resp["remaining"] = remaining
-			resp["subscription"] = gin.H{
-				"daily_usage_usd":   subscription.DailyUsageUSD,
-				"weekly_usage_usd":  subscription.WeeklyUsageUSD,
-				"monthly_usage_usd": subscription.MonthlyUsageUSD,
-				"daily_limit_usd":   apiKey.Group.DailyLimitUSD,
-				"weekly_limit_usd":  apiKey.Group.WeeklyLimitUSD,
-				"monthly_limit_usd": apiKey.Group.MonthlyLimitUSD,
-				"expires_at":        subscription.ExpiresAt,
+			if apiKey.Group.IsRequestQuotaSubscription() {
+				resp["subscription"] = gin.H{
+					"subscription_meter":    apiKey.Group.SubscriptionMeter,
+					"daily_request_count":   subscription.DailyRequestCount,
+					"weekly_request_count":  subscription.WeeklyRequestCount,
+					"monthly_request_count": subscription.MonthlyRequestCount,
+					"daily_request_limit":   apiKey.Group.DailyRequestLimit,
+					"weekly_request_limit":  apiKey.Group.WeeklyRequestLimit,
+					"monthly_request_limit": apiKey.Group.MonthlyRequestLimit,
+					"expires_at":            subscription.ExpiresAt,
+				}
+			} else {
+				resp["subscription"] = gin.H{
+					"subscription_meter": apiKey.Group.SubscriptionMeter,
+					"daily_usage_usd":    subscription.DailyUsageUSD,
+					"weekly_usage_usd":   subscription.WeeklyUsageUSD,
+					"monthly_usage_usd":  subscription.MonthlyUsageUSD,
+					"daily_limit_usd":    apiKey.Group.DailyLimitUSD,
+					"weekly_limit_usd":   apiKey.Group.WeeklyLimitUSD,
+					"monthly_limit_usd":  apiKey.Group.MonthlyLimitUSD,
+					"expires_at":         subscription.ExpiresAt,
+				}
 			}
 		}
 
@@ -1143,31 +1161,56 @@ func (h *GatewayHandler) usageUnrestricted(c *gin.Context, ctx context.Context, 
 func (h *GatewayHandler) calculateSubscriptionRemaining(group *service.Group, sub *service.UserSubscription) float64 {
 	var remainingValues []float64
 
-	// 检查日限额
-	if group.HasDailyLimit() {
-		remaining := *group.DailyLimitUSD - sub.DailyUsageUSD
-		if remaining <= 0 {
-			return 0
+	if group.IsRequestQuotaSubscription() {
+		if group.HasDailyRequestLimit() {
+			remaining := *group.DailyRequestLimit - sub.DailyRequestCount
+			if remaining <= 0 {
+				return 0
+			}
+			remainingValues = append(remainingValues, float64(remaining))
 		}
-		remainingValues = append(remainingValues, remaining)
-	}
+		if group.HasWeeklyRequestLimit() {
+			remaining := *group.WeeklyRequestLimit - sub.WeeklyRequestCount
+			if remaining <= 0 {
+				return 0
+			}
+			remainingValues = append(remainingValues, float64(remaining))
+		}
+		if group.HasMonthlyRequestLimit() {
+			remaining := *group.MonthlyRequestLimit - sub.MonthlyRequestCount
+			if remaining <= 0 {
+				return 0
+			}
+			remainingValues = append(remainingValues, float64(remaining))
+		}
+	} else {
 
-	// 检查周限额
-	if group.HasWeeklyLimit() {
-		remaining := *group.WeeklyLimitUSD - sub.WeeklyUsageUSD
-		if remaining <= 0 {
-			return 0
+		// 检查日限额
+		if group.HasDailyLimit() {
+			remaining := *group.DailyLimitUSD - sub.DailyUsageUSD
+			if remaining <= 0 {
+				return 0
+			}
+			remainingValues = append(remainingValues, remaining)
 		}
-		remainingValues = append(remainingValues, remaining)
-	}
 
-	// 检查月限额
-	if group.HasMonthlyLimit() {
-		remaining := *group.MonthlyLimitUSD - sub.MonthlyUsageUSD
-		if remaining <= 0 {
-			return 0
+		// 检查周限额
+		if group.HasWeeklyLimit() {
+			remaining := *group.WeeklyLimitUSD - sub.WeeklyUsageUSD
+			if remaining <= 0 {
+				return 0
+			}
+			remainingValues = append(remainingValues, remaining)
 		}
-		remainingValues = append(remainingValues, remaining)
+
+		// 检查月限额
+		if group.HasMonthlyLimit() {
+			remaining := *group.MonthlyLimitUSD - sub.MonthlyUsageUSD
+			if remaining <= 0 {
+				return 0
+			}
+			remainingValues = append(remainingValues, remaining)
+		}
 	}
 
 	// 如果没有配置任何限额，返回-1表示无限制

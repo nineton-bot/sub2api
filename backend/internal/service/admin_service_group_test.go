@@ -785,3 +785,37 @@ func TestAdminService_UpdateGroup_InvalidRequestFallbackAllowsAntigravity(t *tes
 	require.NotNil(t, repo.updated)
 	require.Equal(t, fallbackID, *repo.updated.FallbackGroupIDOnInvalidRequest)
 }
+
+func TestAdminService_UpdateGroup_RequestQuotaPreservesExistingLimitsOnPartialUpdate(t *testing.T) {
+	dailyLimit := 100
+	weeklyLimit := 200
+	monthlyLimit := 300
+	existing := &Group{
+		ID:                  1,
+		Name:                "g1",
+		Platform:            PlatformAnthropic,
+		SubscriptionType:    SubscriptionTypeSubscription,
+		SubscriptionMeter:   SubscriptionMeterRequestQuota,
+		Status:              StatusActive,
+		DailyRequestLimit:   &dailyLimit,
+		WeeklyRequestLimit:  &weeklyLimit,
+		MonthlyRequestLimit: &monthlyLimit,
+	}
+	repo := &groupRepoStubForAdmin{getByID: existing}
+	svc := &adminServiceImpl{groupRepo: repo}
+
+	group, err := svc.UpdateGroup(context.Background(), existing.ID, &UpdateGroupInput{
+		Status: "inactive",
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.NotNil(t, repo.updated)
+	require.Equal(t, "inactive", repo.updated.Status)
+	require.NotNil(t, repo.updated.DailyRequestLimit)
+	require.NotNil(t, repo.updated.WeeklyRequestLimit)
+	require.NotNil(t, repo.updated.MonthlyRequestLimit)
+	require.Equal(t, dailyLimit, *repo.updated.DailyRequestLimit)
+	require.Equal(t, weeklyLimit, *repo.updated.WeeklyRequestLimit)
+	require.Equal(t, monthlyLimit, *repo.updated.MonthlyRequestLimit)
+}

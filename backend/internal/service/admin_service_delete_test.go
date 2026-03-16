@@ -343,6 +343,10 @@ func (s *billingCacheStub) UpdateSubscriptionUsage(ctx context.Context, userID, 
 	panic("unexpected UpdateSubscriptionUsage call")
 }
 
+func (s *billingCacheStub) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID int64, count int) error {
+	panic("unexpected UpdateSubscriptionRequestCount call")
+}
+
 func (s *billingCacheStub) InvalidateSubscriptionCache(ctx context.Context, userID, groupID int64) error {
 	s.invalidations <- subscriptionInvalidateCall{userID: userID, groupID: groupID}
 	return nil

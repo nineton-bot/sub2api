@@ -7155,15 +7155,29 @@ type usageLogBestEffortWriter interface {
 
 // postUsageBillingParams 统一扣费所需的参数
 type postUsageBillingParams struct {
-	Cost                  *CostBreakdown
-	User                  *User
-	APIKey                *APIKey
-	Account               *Account
-	Subscription          *UserSubscription
-	RequestPayloadHash    string
-	IsSubscriptionBill    bool
-	AccountRateMultiplier float64
-	APIKeyService         APIKeyQuotaUpdater
+	Cost                       *CostBreakdown
+	User                       *User
+	APIKey                     *APIKey
+	Account                    *Account
+	Subscription               *UserSubscription
+	RequestPayloadHash         string
+	IsSubscriptionBill         bool
+	IsRequestQuotaSubscription bool
+	AccountRateMultiplier      float64
+	APIKeyService              APIKeyQuotaUpdater
+}
+
+func accountQuotaDelta(account *Account, cost *CostBreakdown, accountRateMultiplier float64) float64 {
+	if account == nil || !account.IsAPIKeyOrBedrock() || !account.HasAnyQuotaLimit() {
+		return 0
+	}
+	if account.IsRequestQuotaMeter() {
+		return 1
+	}
+	if cost == nil || cost.TotalCost <= 0 {
+		return 0
+	}
+	return cost.TotalCost * accountRateMultiplier
 }
 
 // postUsageBilling 统一处理使用量记录后的扣费逻辑：
@@ -7179,7 +7193,12 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 
 	// 1. 订阅 / 余额扣费
 	if p.IsSubscriptionBill {
-		if cost.TotalCost > 0 {
+		if p.IsRequestQuotaSubscription {
+			if err := deps.userSubRepo.IncrementUsage(billingCtx, p.Subscription.ID, 0); err != nil {
+				slog.Error("increment subscription request count failed", "subscription_id", p.Subscription.ID, "error", err)
+			}
+			deps.billingCacheService.QueueUpdateSubscriptionRequestCount(p.User.ID, *p.APIKey.GroupID, 1)
+		} else if cost.TotalCost > 0 {
 			if err := deps.userSubRepo.IncrementUsage(billingCtx, p.Subscription.ID, cost.TotalCost); err != nil {
 				slog.Error("increment subscription usage failed", "subscription_id", p.Subscription.ID, "error", err)
 			}
@@ -7208,11 +7227,10 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 		}
 	}
 
-	// 4. 账号配额用量（账号口径：TotalCost × 账号计费倍率）
-	if cost.TotalCost > 0 && p.Account.IsAPIKeyOrBedrock() && p.Account.HasAnyQuotaLimit() {
-		accountCost := cost.TotalCost * p.AccountRateMultiplier
-		if err := deps.accountRepo.IncrementQuotaUsed(billingCtx, p.Account.ID, accountCost); err != nil {
-			slog.Error("increment account quota used failed", "account_id", p.Account.ID, "cost", accountCost, "error", err)
+	// 4. 账号配额用量（金额模式按成本、请求模式按次数）
+	if delta := accountQuotaDelta(p.Account, cost, p.AccountRateMultiplier); delta > 0 {
+		if err := deps.accountRepo.IncrementQuotaUsed(billingCtx, p.Account.ID, delta); err != nil {
+			slog.Error("increment account quota used failed", "account_id", p.Account.ID, "delta", delta, "error", err)
 		}
 	}
 
@@ -7284,9 +7302,13 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 		}
 	}
 
-	if p.IsSubscriptionBill && p.Subscription != nil && p.Cost.TotalCost > 0 {
+	if p.IsSubscriptionBill && p.Subscription != nil {
 		cmd.SubscriptionID = &p.Subscription.ID
-		cmd.SubscriptionCost = p.Cost.TotalCost
+		if p.IsRequestQuotaSubscription {
+			cmd.SubscriptionRequestCount = 1
+		} else if p.Cost.TotalCost > 0 {
+			cmd.SubscriptionCost = p.Cost.TotalCost
+		}
 	} else if p.Cost.ActualCost > 0 {
 		cmd.BalanceCost = p.Cost.ActualCost
 	}
@@ -7297,8 +7319,8 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 	if p.Cost.ActualCost > 0 && p.APIKey.HasRateLimits() && p.APIKeyService != nil {
 		cmd.APIKeyRateLimitCost = p.Cost.ActualCost
 	}
-	if p.Cost.TotalCost > 0 && p.Account.IsAPIKeyOrBedrock() && p.Account.HasAnyQuotaLimit() {
-		cmd.AccountQuotaCost = p.Cost.TotalCost * p.AccountRateMultiplier
+	if delta := accountQuotaDelta(p.Account, p.Cost, p.AccountRateMultiplier); delta > 0 {
+		cmd.AccountQuotaCost = delta
 	}
 
 	cmd.Normalize()
@@ -7345,7 +7367,9 @@ func finalizePostUsageBilling(p *postUsageBillingParams, deps *billingDeps) {
 	}
 
 	if p.IsSubscriptionBill {
-		if p.Cost.TotalCost > 0 && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
+		if p.IsRequestQuotaSubscription && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
+			deps.billingCacheService.QueueUpdateSubscriptionRequestCount(p.User.ID, *p.APIKey.GroupID, 1)
+		} else if p.Cost.TotalCost > 0 && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
 			deps.billingCacheService.QueueUpdateSubscriptionUsage(p.User.ID, *p.APIKey.GroupID, p.Cost.TotalCost)
 		}
 	} else if p.Cost.ActualCost > 0 && p.User != nil {
@@ -7506,6 +7530,7 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 
 	// 判断计费方式：订阅模式 vs 余额模式
 	isSubscriptionBilling := subscription != nil && apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
+	isRequestQuotaSubscription := isSubscriptionBilling && apiKey.Group != nil && apiKey.Group.IsRequestQuotaSubscription()
 	billingType := BillingTypeBalance
 	if isSubscriptionBilling {
 		billingType = BillingTypeSubscription
@@ -7584,15 +7609,16 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 
 	billingErr := func() error {
 		_, err := applyUsageBilling(ctx, requestID, usageLog, &postUsageBillingParams{
-			Cost:                  cost,
-			User:                  user,
-			APIKey:                apiKey,
-			Account:               account,
-			Subscription:          subscription,
-			RequestPayloadHash:    resolveUsageBillingPayloadFingerprint(ctx, input.RequestPayloadHash),
-			IsSubscriptionBill:    isSubscriptionBilling,
-			AccountRateMultiplier: accountRateMultiplier,
-			APIKeyService:         input.APIKeyService,
+			Cost:                       cost,
+			User:                       user,
+			APIKey:                     apiKey,
+			Account:                    account,
+			Subscription:               subscription,
+			RequestPayloadHash:         resolveUsageBillingPayloadFingerprint(ctx, input.RequestPayloadHash),
+			IsSubscriptionBill:         isSubscriptionBilling,
+			IsRequestQuotaSubscription: isRequestQuotaSubscription,
+			AccountRateMultiplier:      accountRateMultiplier,
+			APIKeyService:              input.APIKeyService,
 		}, s.billingDeps(), s.usageBillingRepo)
 		return err
 	}()
@@ -7691,6 +7717,7 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 
 	// 判断计费方式：订阅模式 vs 余额模式
 	isSubscriptionBilling := subscription != nil && apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
+	isRequestQuotaSubscription := isSubscriptionBilling && apiKey.Group != nil && apiKey.Group.IsRequestQuotaSubscription()
 	billingType := BillingTypeBalance
 	if isSubscriptionBilling {
 		billingType = BillingTypeSubscription
@@ -7764,15 +7791,16 @@ func (s *GatewayService) RecordUsageWithLongContext(ctx context.Context, input *
 
 	billingErr := func() error {
 		_, err := applyUsageBilling(ctx, requestID, usageLog, &postUsageBillingParams{
-			Cost:                  cost,
-			User:                  user,
-			APIKey:                apiKey,
-			Account:               account,
-			Subscription:          subscription,
-			RequestPayloadHash:    resolveUsageBillingPayloadFingerprint(ctx, input.RequestPayloadHash),
-			IsSubscriptionBill:    isSubscriptionBilling,
-			AccountRateMultiplier: accountRateMultiplier,
-			APIKeyService:         input.APIKeyService,
+			Cost:                       cost,
+			User:                       user,
+			APIKey:                     apiKey,
+			Account:                    account,
+			Subscription:               subscription,
+			RequestPayloadHash:         resolveUsageBillingPayloadFingerprint(ctx, input.RequestPayloadHash),
+			IsSubscriptionBill:         isSubscriptionBilling,
+			IsRequestQuotaSubscription: isRequestQuotaSubscription,
+			AccountRateMultiplier:      accountRateMultiplier,
+			APIKeyService:              input.APIKeyService,
 		}, s.billingDeps(), s.usageBillingRepo)
 		return err
 	}()

@@ -1565,6 +1565,7 @@
           </p>
         </div>
         <QuotaLimitCard
+          :meter="editQuotaMeter"
           :totalLimit="editQuotaLimit"
           :dailyLimit="editQuotaDailyLimit"
           :weeklyLimit="editQuotaWeeklyLimit"
@@ -1574,6 +1575,7 @@
           :weeklyResetDay="editWeeklyResetDay"
           :weeklyResetHour="editWeeklyResetHour"
           :resetTimezone="editResetTimezone"
+          @update:meter="editQuotaMeter = $event"
           @update:totalLimit="editQuotaLimit = $event"
           @update:dailyLimit="editQuotaDailyLimit = $event"
           @update:weeklyLimit="editQuotaWeeklyLimit = $event"
@@ -2994,6 +2996,7 @@ const apiKeyValue = ref('')
 const editQuotaLimit = ref<number | null>(null)
 const editQuotaDailyLimit = ref<number | null>(null)
 const editQuotaWeeklyLimit = ref<number | null>(null)
+const editQuotaMeter = ref<'cost' | 'requests' | null>('cost')
 const editDailyResetMode = ref<'rolling' | 'fixed' | null>(null)
 const editDailyResetHour = ref<number | null>(null)
 const editWeeklyResetMode = ref<'rolling' | 'fixed' | null>(null)
@@ -3705,6 +3708,7 @@ const resetForm = () => {
   editQuotaLimit.value = null
   editQuotaDailyLimit.value = null
   editQuotaWeeklyLimit.value = null
+  editQuotaMeter.value = 'cost'
   editDailyResetMode.value = null
   editDailyResetHour.value = null
   editWeeklyResetMode.value = null
@@ -4210,6 +4214,7 @@ const createAccountAndFinish = async (
   let finalExtra = extra
   if (type === 'apikey' || type === 'bedrock') {
     const quotaExtra: Record<string, unknown> = { ...(extra || {}) }
+    quotaExtra.quota_meter = editQuotaMeter.value || 'cost'
     if (editQuotaLimit.value != null && editQuotaLimit.value > 0) {
       quotaExtra.quota_limit = editQuotaLimit.value
     }

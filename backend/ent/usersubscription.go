@@ -47,6 +47,12 @@ type UserSubscription struct {
 	WeeklyUsageUsd float64 `json:"weekly_usage_usd,omitempty"`
 	// MonthlyUsageUsd holds the value of the "monthly_usage_usd" field.
 	MonthlyUsageUsd float64 `json:"monthly_usage_usd,omitempty"`
+	// DailyRequestCount holds the value of the "daily_request_count" field.
+	DailyRequestCount int `json:"daily_request_count,omitempty"`
+	// WeeklyRequestCount holds the value of the "weekly_request_count" field.
+	WeeklyRequestCount int `json:"weekly_request_count,omitempty"`
+	// MonthlyRequestCount holds the value of the "monthly_request_count" field.
+	MonthlyRequestCount int `json:"monthly_request_count,omitempty"`
 	// AssignedBy holds the value of the "assigned_by" field.
 	AssignedBy *int64 `json:"assigned_by,omitempty"`
 	// AssignedAt holds the value of the "assigned_at" field.
@@ -123,7 +129,7 @@ func (*UserSubscription) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case usersubscription.FieldDailyUsageUsd, usersubscription.FieldWeeklyUsageUsd, usersubscription.FieldMonthlyUsageUsd:
 			values[i] = new(sql.NullFloat64)
-		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldAssignedBy:
+		case usersubscription.FieldID, usersubscription.FieldUserID, usersubscription.FieldGroupID, usersubscription.FieldDailyRequestCount, usersubscription.FieldWeeklyRequestCount, usersubscription.FieldMonthlyRequestCount, usersubscription.FieldAssignedBy:
 			values[i] = new(sql.NullInt64)
 		case usersubscription.FieldStatus, usersubscription.FieldNotes:
 			values[i] = new(sql.NullString)
@@ -237,6 +243,24 @@ func (_m *UserSubscription) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field monthly_usage_usd", values[i])
 			} else if value.Valid {
 				_m.MonthlyUsageUsd = value.Float64
+			}
+		case usersubscription.FieldDailyRequestCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field daily_request_count", values[i])
+			} else if value.Valid {
+				_m.DailyRequestCount = int(value.Int64)
+			}
+		case usersubscription.FieldWeeklyRequestCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field weekly_request_count", values[i])
+			} else if value.Valid {
+				_m.WeeklyRequestCount = int(value.Int64)
+			}
+		case usersubscription.FieldMonthlyRequestCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field monthly_request_count", values[i])
+			} else if value.Valid {
+				_m.MonthlyRequestCount = int(value.Int64)
 			}
 		case usersubscription.FieldAssignedBy:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -363,6 +387,15 @@ func (_m *UserSubscription) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("monthly_usage_usd=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyUsageUsd))
+	builder.WriteString(", ")
+	builder.WriteString("daily_request_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DailyRequestCount))
+	builder.WriteString(", ")
+	builder.WriteString("weekly_request_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.WeeklyRequestCount))
+	builder.WriteString(", ")
+	builder.WriteString("monthly_request_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MonthlyRequestCount))
 	builder.WriteString(", ")
 	if v := _m.AssignedBy; v != nil {
 		builder.WriteString("assigned_by=")

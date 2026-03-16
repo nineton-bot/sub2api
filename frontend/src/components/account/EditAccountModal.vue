@@ -1158,6 +1158,8 @@
           </p>
         </div>
         <QuotaLimitCard
+          :meter="editQuotaMeter"
+          :meterEditable="false"
           :totalLimit="editQuotaLimit"
           :dailyLimit="editQuotaDailyLimit"
           :weeklyLimit="editQuotaWeeklyLimit"
@@ -1167,6 +1169,7 @@
           :weeklyResetDay="editWeeklyResetDay"
           :weeklyResetHour="editWeeklyResetHour"
           :resetTimezone="editResetTimezone"
+          @update:meter="editQuotaMeter = $event"
           @update:totalLimit="editQuotaLimit = $event"
           @update:dailyLimit="editQuotaDailyLimit = $event"
           @update:weeklyLimit="editQuotaWeeklyLimit = $event"
@@ -1854,6 +1857,7 @@ const anthropicPassthroughEnabled = ref(false)
 const editQuotaLimit = ref<number | null>(null)
 const editQuotaDailyLimit = ref<number | null>(null)
 const editQuotaWeeklyLimit = ref<number | null>(null)
+const editQuotaMeter = ref<'cost' | 'requests' | null>('cost')
 const editDailyResetMode = ref<'rolling' | 'fixed' | null>(null)
 const editDailyResetHour = ref<number | null>(null)
 const editWeeklyResetMode = ref<'rolling' | 'fixed' | null>(null)
@@ -2044,6 +2048,7 @@ watch(
 
       // Load quota limit for apikey/bedrock accounts (bedrock quota is also loaded in its own branch above)
       if (newAccount.type === 'apikey' || newAccount.type === 'bedrock') {
+        editQuotaMeter.value = ((extra?.quota_meter as 'cost' | 'requests') || 'cost')
         const quotaVal = extra?.quota_limit as number | undefined
         editQuotaLimit.value = (quotaVal && quotaVal > 0) ? quotaVal : null
         const dailyVal = extra?.quota_daily_limit as number | undefined
@@ -2058,6 +2063,7 @@ watch(
         editWeeklyResetHour.value = (extra?.quota_weekly_reset_hour as number) ?? null
         editResetTimezone.value = (extra?.quota_reset_timezone as string) || null
       } else {
+        editQuotaMeter.value = 'cost'
         editQuotaLimit.value = null
         editQuotaDailyLimit.value = null
         editQuotaWeeklyLimit.value = null
@@ -2997,6 +3003,7 @@ const handleSubmit = async () => {
       const currentExtra = (updatePayload.extra as Record<string, unknown>) ||
         (props.account.extra as Record<string, unknown>) || {}
       const newExtra: Record<string, unknown> = { ...currentExtra }
+      newExtra.quota_meter = editQuotaMeter.value || 'cost'
       if (editQuotaLimit.value != null && editQuotaLimit.value > 0) {
         newExtra.quota_limit = editQuotaLimit.value
       } else {

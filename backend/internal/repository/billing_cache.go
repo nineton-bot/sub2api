@@ -48,12 +48,19 @@ func billingSubKey(userID, groupID int64) string {
 }
 
 const (
-	subFieldStatus       = "status"
-	subFieldExpiresAt    = "expires_at"
-	subFieldDailyUsage   = "daily_usage"
-	subFieldWeeklyUsage  = "weekly_usage"
-	subFieldMonthlyUsage = "monthly_usage"
-	subFieldVersion      = "version"
+	subFieldStatus              = "status"
+	subFieldExpiresAt           = "expires_at"
+	subFieldSubscriptionMeter   = "subscription_meter"
+	subFieldDailyWindowStart    = "daily_window_start"
+	subFieldWeeklyWindowStart   = "weekly_window_start"
+	subFieldMonthlyWindowStart  = "monthly_window_start"
+	subFieldDailyUsage          = "daily_usage"
+	subFieldWeeklyUsage         = "weekly_usage"
+	subFieldMonthlyUsage        = "monthly_usage"
+	subFieldDailyRequestCount   = "daily_request_count"
+	subFieldWeeklyRequestCount  = "weekly_request_count"
+	subFieldMonthlyRequestCount = "monthly_request_count"
+	subFieldVersion             = "version"
 )
 
 // billingRateLimitKey generates the Redis key for API key rate limit cache.
@@ -91,6 +98,19 @@ var (
 		redis.call('HINCRBYFLOAT', KEYS[1], 'daily_usage', cost)
 		redis.call('HINCRBYFLOAT', KEYS[1], 'weekly_usage', cost)
 		redis.call('HINCRBYFLOAT', KEYS[1], 'monthly_usage', cost)
+		redis.call('EXPIRE', KEYS[1], ARGV[2])
+		return 1
+	`)
+
+	updateSubRequestCountScript = redis.NewScript(`
+		local exists = redis.call('EXISTS', KEYS[1])
+		if exists == 0 then
+			return 0
+		end
+		local count = tonumber(ARGV[1])
+		redis.call('HINCRBY', KEYS[1], 'daily_request_count', count)
+		redis.call('HINCRBY', KEYS[1], 'weekly_request_count', count)
+		redis.call('HINCRBY', KEYS[1], 'monthly_request_count', count)
 		redis.call('EXPIRE', KEYS[1], ARGV[2])
 		return 1
 	`)
@@ -197,6 +217,29 @@ func (c *billingCache) parseSubscriptionCache(data map[string]string) (*service.
 			result.ExpiresAt = time.Unix(expiresAt, 0)
 		}
 	}
+	result.SubscriptionMeter = data[subFieldSubscriptionMeter]
+
+	if windowStr, ok := data[subFieldDailyWindowStart]; ok {
+		unix, err := strconv.ParseInt(windowStr, 10, 64)
+		if err == nil && unix > 0 {
+			t := time.Unix(unix, 0)
+			result.DailyWindowStart = &t
+		}
+	}
+	if windowStr, ok := data[subFieldWeeklyWindowStart]; ok {
+		unix, err := strconv.ParseInt(windowStr, 10, 64)
+		if err == nil && unix > 0 {
+			t := time.Unix(unix, 0)
+			result.WeeklyWindowStart = &t
+		}
+	}
+	if windowStr, ok := data[subFieldMonthlyWindowStart]; ok {
+		unix, err := strconv.ParseInt(windowStr, 10, 64)
+		if err == nil && unix > 0 {
+			t := time.Unix(unix, 0)
+			result.MonthlyWindowStart = &t
+		}
+	}
 
 	if dailyStr, ok := data[subFieldDailyUsage]; ok {
 		result.DailyUsage, _ = strconv.ParseFloat(dailyStr, 64)
@@ -208,6 +251,15 @@ func (c *billingCache) parseSubscriptionCache(data map[string]string) (*service.
 
 	if monthlyStr, ok := data[subFieldMonthlyUsage]; ok {
 		result.MonthlyUsage, _ = strconv.ParseFloat(monthlyStr, 64)
+	}
+	if requestCountStr, ok := data[subFieldDailyRequestCount]; ok {
+		result.DailyRequestCount, _ = strconv.Atoi(requestCountStr)
+	}
+	if requestCountStr, ok := data[subFieldWeeklyRequestCount]; ok {
+		result.WeeklyRequestCount, _ = strconv.Atoi(requestCountStr)
+	}
+	if requestCountStr, ok := data[subFieldMonthlyRequestCount]; ok {
+		result.MonthlyRequestCount, _ = strconv.Atoi(requestCountStr)
 	}
 
 	if versionStr, ok := data[subFieldVersion]; ok {
@@ -225,12 +277,25 @@ func (c *billingCache) SetSubscriptionCache(ctx context.Context, userID, groupID
 	key := billingSubKey(userID, groupID)
 
 	fields := map[string]any{
-		subFieldStatus:       data.Status,
-		subFieldExpiresAt:    data.ExpiresAt.Unix(),
-		subFieldDailyUsage:   data.DailyUsage,
-		subFieldWeeklyUsage:  data.WeeklyUsage,
-		subFieldMonthlyUsage: data.MonthlyUsage,
-		subFieldVersion:      data.Version,
+		subFieldStatus:              data.Status,
+		subFieldExpiresAt:           data.ExpiresAt.Unix(),
+		subFieldSubscriptionMeter:   data.SubscriptionMeter,
+		subFieldDailyUsage:          data.DailyUsage,
+		subFieldWeeklyUsage:         data.WeeklyUsage,
+		subFieldMonthlyUsage:        data.MonthlyUsage,
+		subFieldDailyRequestCount:   data.DailyRequestCount,
+		subFieldWeeklyRequestCount:  data.WeeklyRequestCount,
+		subFieldMonthlyRequestCount: data.MonthlyRequestCount,
+		subFieldVersion:             data.Version,
+	}
+	if data.DailyWindowStart != nil {
+		fields[subFieldDailyWindowStart] = data.DailyWindowStart.Unix()
+	}
+	if data.WeeklyWindowStart != nil {
+		fields[subFieldWeeklyWindowStart] = data.WeeklyWindowStart.Unix()
+	}
+	if data.MonthlyWindowStart != nil {
+		fields[subFieldMonthlyWindowStart] = data.MonthlyWindowStart.Unix()
 	}
 
 	pipe := c.rdb.Pipeline()
@@ -245,6 +310,16 @@ func (c *billingCache) UpdateSubscriptionUsage(ctx context.Context, userID, grou
 	_, err := updateSubUsageScript.Run(ctx, c.rdb, []string{key}, cost, int(jitteredTTL().Seconds())).Result()
 	if err != nil && !errors.Is(err, redis.Nil) {
 		log.Printf("Warning: update subscription usage cache failed for user %d group %d: %v", userID, groupID, err)
+		return err
+	}
+	return nil
+}
+
+func (c *billingCache) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID int64, count int) error {
+	key := billingSubKey(userID, groupID)
+	_, err := updateSubRequestCountScript.Run(ctx, c.rdb, []string{key}, count, int(jitteredTTL().Seconds())).Result()
+	if err != nil && !errors.Is(err, redis.Nil) {
+		log.Printf("Warning: update subscription request count cache failed for user %d group %d: %v", userID, groupID, err)
 		return err
 	}
 	return nil

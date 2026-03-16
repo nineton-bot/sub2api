@@ -48,6 +48,11 @@ func (b *billingCacheWorkerStub) UpdateSubscriptionUsage(ctx context.Context, us
 	return nil
 }
 
+func (b *billingCacheWorkerStub) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID int64, count int) error {
+	atomic.AddInt64(&b.subscriptionUpdates, 1)
+	return nil
+}
+
 func (b *billingCacheWorkerStub) InvalidateSubscriptionCache(ctx context.Context, userID, groupID int64) error {
 	return nil
 }

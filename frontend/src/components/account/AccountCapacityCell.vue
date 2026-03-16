@@ -73,9 +73,9 @@
     </div>
 
     <!-- API Key 账号配额限制 -->
-    <QuotaBadge v-if="showDailyQuota" :used="account.quota_daily_used ?? 0" :limit="account.quota_daily_limit!" label="D" />
-    <QuotaBadge v-if="showWeeklyQuota" :used="account.quota_weekly_used ?? 0" :limit="account.quota_weekly_limit!" label="W" />
-    <QuotaBadge v-if="showTotalQuota" :used="account.quota_used ?? 0" :limit="account.quota_limit!" />
+    <QuotaBadge v-if="showDailyQuota" :used="account.quota_daily_used ?? 0" :limit="account.quota_daily_limit!" label="D" :unit="quotaBadgeUnit" />
+    <QuotaBadge v-if="showWeeklyQuota" :used="account.quota_weekly_used ?? 0" :limit="account.quota_weekly_limit!" label="W" :unit="quotaBadgeUnit" />
+    <QuotaBadge v-if="showTotalQuota" :used="account.quota_used ?? 0" :limit="account.quota_limit!" :unit="quotaBadgeUnit" />
   </div>
 </template>
 
@@ -305,6 +305,10 @@ const showWeeklyQuota = computed(() => {
 
 const showTotalQuota = computed(() => {
   return isQuotaEligible.value && (props.account.quota_limit ?? 0) > 0
+})
+
+const quotaBadgeUnit = computed(() => {
+  return props.account.quota_meter === 'requests' ? 'requests' : 'usd'
 })
 
 // 格式化费用显示

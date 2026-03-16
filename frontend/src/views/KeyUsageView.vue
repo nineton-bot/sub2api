@@ -557,15 +557,22 @@ const ringItems = computed<RingItem[]>(() => {
   } else {
     if (data.subscription) {
       const sub = data.subscription
-      const limits = [
-        { label: t('keyUsage.limitDaily'), usage: sub.daily_usage_usd, limit: sub.daily_limit_usd },
-        { label: t('keyUsage.limitWeekly'), usage: sub.weekly_usage_usd, limit: sub.weekly_limit_usd },
-        { label: t('keyUsage.limitMonthly'), usage: sub.monthly_usage_usd, limit: sub.monthly_limit_usd },
-      ]
+      const isRequestQuota = sub.subscription_meter === 'request_quota'
+      const limits = isRequestQuota
+        ? [
+            { label: t('keyUsage.limitDaily'), usage: sub.daily_request_count, limit: sub.daily_request_limit, formatter: (used: number, limit: number) => `${used} / ${limit}` },
+            { label: t('keyUsage.limitWeekly'), usage: sub.weekly_request_count, limit: sub.weekly_request_limit, formatter: (used: number, limit: number) => `${used} / ${limit}` },
+            { label: t('keyUsage.limitMonthly'), usage: sub.monthly_request_count, limit: sub.monthly_request_limit, formatter: (used: number, limit: number) => `${used} / ${limit}` },
+          ]
+        : [
+            { label: t('keyUsage.limitDaily'), usage: sub.daily_usage_usd, limit: sub.daily_limit_usd, formatter: (used: number, limit: number) => `${usd(used)} / ${usd(limit)}` },
+            { label: t('keyUsage.limitWeekly'), usage: sub.weekly_usage_usd, limit: sub.weekly_limit_usd, formatter: (used: number, limit: number) => `${usd(used)} / ${usd(limit)}` },
+            { label: t('keyUsage.limitMonthly'), usage: sub.monthly_usage_usd, limit: sub.monthly_limit_usd, formatter: (used: number, limit: number) => `${usd(used)} / ${usd(limit)}` },
+          ]
       for (const l of limits) {
         if (l.limit != null && l.limit > 0) {
           const pct = Math.min(Math.round((l.usage / l.limit) * 100), 100)
-          items.push({ title: l.label, pct, amount: `${usd(l.usage)} / ${usd(l.limit)}`, iconType: 'calendar' })
+          items.push({ title: l.label, pct, amount: l.formatter(l.usage, l.limit), iconType: 'calendar' })
         }
       }
     }
@@ -655,25 +662,38 @@ const detailRows = computed<DetailRow[]>(() => {
 
     if (data.subscription) {
       const sub = data.subscription
-      if (sub.daily_limit_usd > 0) {
-        const pct = (sub.daily_usage_usd / sub.daily_limit_usd) * 100
+      const isRequestQuota = sub.subscription_meter === 'request_quota'
+      if ((isRequestQuota ? sub.daily_request_limit : sub.daily_limit_usd) > 0) {
+        const used = isRequestQuota ? sub.daily_request_count : sub.daily_usage_usd
+        const limit = isRequestQuota ? sub.daily_request_limit : sub.daily_limit_usd
+        const pct = (used / limit) * 100
         rows.push({
           iconBg: 'bg-primary-500/10', iconColor: 'text-primary-500', iconSvg: ICON_DOLLAR,
-          label: `${t('keyUsage.usedQuota')} (${locale.value === 'zh' ? '日' : 'D'})`, value: `${usd(sub.daily_usage_usd)} / ${usd(sub.daily_limit_usd)}`, valueClass: getUsageColor(pct),
+          label: `${t('keyUsage.usedQuota')} (${locale.value === 'zh' ? '日' : 'D'})`,
+          value: isRequestQuota ? `${used} / ${limit}` : `${usd(used)} / ${usd(limit)}`,
+          valueClass: getUsageColor(pct),
         })
       }
-      if (sub.weekly_limit_usd > 0) {
-        const pct = (sub.weekly_usage_usd / sub.weekly_limit_usd) * 100
+      if ((isRequestQuota ? sub.weekly_request_limit : sub.weekly_limit_usd) > 0) {
+        const used = isRequestQuota ? sub.weekly_request_count : sub.weekly_usage_usd
+        const limit = isRequestQuota ? sub.weekly_request_limit : sub.weekly_limit_usd
+        const pct = (used / limit) * 100
         rows.push({
           iconBg: 'bg-indigo-500/10', iconColor: 'text-indigo-500', iconSvg: ICON_DOLLAR,
-          label: `${t('keyUsage.usedQuota')} (${locale.value === 'zh' ? '周' : 'W'})`, value: `${usd(sub.weekly_usage_usd)} / ${usd(sub.weekly_limit_usd)}`, valueClass: getUsageColor(pct),
+          label: `${t('keyUsage.usedQuota')} (${locale.value === 'zh' ? '周' : 'W'})`,
+          value: isRequestQuota ? `${used} / ${limit}` : `${usd(used)} / ${usd(limit)}`,
+          valueClass: getUsageColor(pct),
         })
       }
-      if (sub.monthly_limit_usd > 0) {
-        const pct = (sub.monthly_usage_usd / sub.monthly_limit_usd) * 100
+      if ((isRequestQuota ? sub.monthly_request_limit : sub.monthly_limit_usd) > 0) {
+        const used = isRequestQuota ? sub.monthly_request_count : sub.monthly_usage_usd
+        const limit = isRequestQuota ? sub.monthly_request_limit : sub.monthly_limit_usd
+        const pct = (used / limit) * 100
         rows.push({
           iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500', iconSvg: ICON_DOLLAR,
-          label: `${t('keyUsage.usedQuota')} (${locale.value === 'zh' ? '月' : 'M'})`, value: `${usd(sub.monthly_usage_usd)} / ${usd(sub.monthly_limit_usd)}`, valueClass: getUsageColor(pct),
+          label: `${t('keyUsage.usedQuota')} (${locale.value === 'zh' ? '月' : 'M'})`,
+          value: isRequestQuota ? `${used} / ${limit}` : `${usd(used)} / ${usd(limit)}`,
+          valueClass: getUsageColor(pct),
         })
       }
       if (sub.expires_at) {
@@ -689,7 +709,9 @@ const detailRows = computed<DetailRow[]>(() => {
       : ''
     rows.push({
       iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-500', iconSvg: ICON_SHIELD,
-      label: t('keyUsage.remainingQuota'), value: data.remaining != null ? usd(data.remaining) : '-', valueClass: remainColor,
+      label: t('keyUsage.remainingQuota'),
+      value: data.remaining != null ? (data.subscription?.subscription_meter === 'request_quota' ? String(data.remaining) : usd(data.remaining)) : '-',
+      valueClass: remainColor,
     })
   }
 

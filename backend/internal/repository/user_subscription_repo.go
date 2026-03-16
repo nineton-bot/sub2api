@@ -34,6 +34,9 @@ func (r *userSubscriptionRepository) Create(ctx context.Context, sub *service.Us
 		SetDailyUsageUsd(sub.DailyUsageUSD).
 		SetWeeklyUsageUsd(sub.WeeklyUsageUSD).
 		SetMonthlyUsageUsd(sub.MonthlyUsageUSD).
+		SetDailyRequestCount(sub.DailyRequestCount).
+		SetWeeklyRequestCount(sub.WeeklyRequestCount).
+		SetMonthlyRequestCount(sub.MonthlyRequestCount).
 		SetNillableAssignedBy(sub.AssignedBy)
 
 	if sub.StartsAt.IsZero() {
@@ -118,6 +121,9 @@ func (r *userSubscriptionRepository) Update(ctx context.Context, sub *service.Us
 		SetDailyUsageUsd(sub.DailyUsageUSD).
 		SetWeeklyUsageUsd(sub.WeeklyUsageUSD).
 		SetMonthlyUsageUsd(sub.MonthlyUsageUSD).
+		SetDailyRequestCount(sub.DailyRequestCount).
+		SetWeeklyRequestCount(sub.WeeklyRequestCount).
+		SetMonthlyRequestCount(sub.MonthlyRequestCount).
 		SetNillableAssignedBy(sub.AssignedBy).
 		SetAssignedAt(sub.AssignedAt).
 		SetNotes(sub.Notes)
@@ -309,6 +315,7 @@ func (r *userSubscriptionRepository) ResetDailyUsage(ctx context.Context, id int
 	client := clientFromContext(ctx, r.client)
 	_, err := client.UserSubscription.UpdateOneID(id).
 		SetDailyUsageUsd(0).
+		SetDailyRequestCount(0).
 		SetDailyWindowStart(newWindowStart).
 		Save(ctx)
 	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
@@ -318,6 +325,7 @@ func (r *userSubscriptionRepository) ResetWeeklyUsage(ctx context.Context, id in
 	client := clientFromContext(ctx, r.client)
 	_, err := client.UserSubscription.UpdateOneID(id).
 		SetWeeklyUsageUsd(0).
+		SetWeeklyRequestCount(0).
 		SetWeeklyWindowStart(newWindowStart).
 		Save(ctx)
 	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
@@ -327,6 +335,7 @@ func (r *userSubscriptionRepository) ResetMonthlyUsage(ctx context.Context, id i
 	client := clientFromContext(ctx, r.client)
 	_, err := client.UserSubscription.UpdateOneID(id).
 		SetMonthlyUsageUsd(0).
+		SetMonthlyRequestCount(0).
 		SetMonthlyWindowStart(newWindowStart).
 		Save(ctx)
 	return translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
@@ -339,9 +348,12 @@ func (r *userSubscriptionRepository) IncrementUsage(ctx context.Context, id int6
 	const updateSQL = `
 		UPDATE user_subscriptions us
 		SET
-			daily_usage_usd = us.daily_usage_usd + $1,
-			weekly_usage_usd = us.weekly_usage_usd + $1,
-			monthly_usage_usd = us.monthly_usage_usd + $1,
+			daily_usage_usd = CASE WHEN g.subscription_meter = $3 THEN us.daily_usage_usd ELSE us.daily_usage_usd + $1 END,
+			weekly_usage_usd = CASE WHEN g.subscription_meter = $3 THEN us.weekly_usage_usd ELSE us.weekly_usage_usd + $1 END,
+			monthly_usage_usd = CASE WHEN g.subscription_meter = $3 THEN us.monthly_usage_usd ELSE us.monthly_usage_usd + $1 END,
+			daily_request_count = CASE WHEN g.subscription_meter = $3 THEN us.daily_request_count + 1 ELSE us.daily_request_count END,
+			weekly_request_count = CASE WHEN g.subscription_meter = $3 THEN us.weekly_request_count + 1 ELSE us.weekly_request_count END,
+			monthly_request_count = CASE WHEN g.subscription_meter = $3 THEN us.monthly_request_count + 1 ELSE us.monthly_request_count END,
 			updated_at = NOW()
 		FROM groups g
 		WHERE us.id = $2
@@ -351,7 +363,7 @@ func (r *userSubscriptionRepository) IncrementUsage(ctx context.Context, id int6
 	`
 
 	client := clientFromContext(ctx, r.client)
-	result, err := client.ExecContext(ctx, updateSQL, costUSD, id)
+	result, err := client.ExecContext(ctx, updateSQL, costUSD, id, service.SubscriptionMeterRequestQuota)
 	if err != nil {
 		return err
 	}
@@ -426,23 +438,26 @@ func userSubscriptionEntityToService(m *dbent.UserSubscription) *service.UserSub
 		return nil
 	}
 	out := &service.UserSubscription{
-		ID:                 m.ID,
-		UserID:             m.UserID,
-		GroupID:            m.GroupID,
-		StartsAt:           m.StartsAt,
-		ExpiresAt:          m.ExpiresAt,
-		Status:             m.Status,
-		DailyWindowStart:   m.DailyWindowStart,
-		WeeklyWindowStart:  m.WeeklyWindowStart,
-		MonthlyWindowStart: m.MonthlyWindowStart,
-		DailyUsageUSD:      m.DailyUsageUsd,
-		WeeklyUsageUSD:     m.WeeklyUsageUsd,
-		MonthlyUsageUSD:    m.MonthlyUsageUsd,
-		AssignedBy:         m.AssignedBy,
-		AssignedAt:         m.AssignedAt,
-		Notes:              derefString(m.Notes),
-		CreatedAt:          m.CreatedAt,
-		UpdatedAt:          m.UpdatedAt,
+		ID:                  m.ID,
+		UserID:              m.UserID,
+		GroupID:             m.GroupID,
+		StartsAt:            m.StartsAt,
+		ExpiresAt:           m.ExpiresAt,
+		Status:              m.Status,
+		DailyWindowStart:    m.DailyWindowStart,
+		WeeklyWindowStart:   m.WeeklyWindowStart,
+		MonthlyWindowStart:  m.MonthlyWindowStart,
+		DailyUsageUSD:       m.DailyUsageUsd,
+		WeeklyUsageUSD:      m.WeeklyUsageUsd,
+		MonthlyUsageUSD:     m.MonthlyUsageUsd,
+		DailyRequestCount:   m.DailyRequestCount,
+		WeeklyRequestCount:  m.WeeklyRequestCount,
+		MonthlyRequestCount: m.MonthlyRequestCount,
+		AssignedBy:          m.AssignedBy,
+		AssignedAt:          m.AssignedAt,
+		Notes:               derefString(m.Notes),
+		CreatedAt:           m.CreatedAt,
+		UpdatedAt:           m.UpdatedAt,
 	}
 	if m.Edges.User != nil {
 		out.User = userEntityToService(m.Edges.User)

@@ -42,10 +42,14 @@ type APIKeyAuthGroupSnapshot struct {
 	Platform                        string   `json:"platform"`
 	Status                          string   `json:"status"`
 	SubscriptionType                string   `json:"subscription_type"`
+	SubscriptionMeter               string   `json:"subscription_meter"`
 	RateMultiplier                  float64  `json:"rate_multiplier"`
 	DailyLimitUSD                   *float64 `json:"daily_limit_usd,omitempty"`
 	WeeklyLimitUSD                  *float64 `json:"weekly_limit_usd,omitempty"`
 	MonthlyLimitUSD                 *float64 `json:"monthly_limit_usd,omitempty"`
+	DailyRequestLimit               *int     `json:"daily_request_limit,omitempty"`
+	WeeklyRequestLimit              *int     `json:"weekly_request_limit,omitempty"`
+	MonthlyRequestLimit             *int     `json:"monthly_request_limit,omitempty"`
 	ImagePrice1K                    *float64 `json:"image_price_1k,omitempty"`
 	ImagePrice2K                    *float64 `json:"image_price_2k,omitempty"`
 	ImagePrice4K                    *float64 `json:"image_price_4k,omitempty"`

@@ -189,6 +189,48 @@ func (_c *UserSubscriptionCreate) SetNillableMonthlyUsageUsd(v *float64) *UserSu
 	return _c
 }
 
+// SetDailyRequestCount sets the "daily_request_count" field.
+func (_c *UserSubscriptionCreate) SetDailyRequestCount(v int) *UserSubscriptionCreate {
+	_c.mutation.SetDailyRequestCount(v)
+	return _c
+}
+
+// SetNillableDailyRequestCount sets the "daily_request_count" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableDailyRequestCount(v *int) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetDailyRequestCount(*v)
+	}
+	return _c
+}
+
+// SetWeeklyRequestCount sets the "weekly_request_count" field.
+func (_c *UserSubscriptionCreate) SetWeeklyRequestCount(v int) *UserSubscriptionCreate {
+	_c.mutation.SetWeeklyRequestCount(v)
+	return _c
+}
+
+// SetNillableWeeklyRequestCount sets the "weekly_request_count" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableWeeklyRequestCount(v *int) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetWeeklyRequestCount(*v)
+	}
+	return _c
+}
+
+// SetMonthlyRequestCount sets the "monthly_request_count" field.
+func (_c *UserSubscriptionCreate) SetMonthlyRequestCount(v int) *UserSubscriptionCreate {
+	_c.mutation.SetMonthlyRequestCount(v)
+	return _c
+}
+
+// SetNillableMonthlyRequestCount sets the "monthly_request_count" field if the given value is not nil.
+func (_c *UserSubscriptionCreate) SetNillableMonthlyRequestCount(v *int) *UserSubscriptionCreate {
+	if v != nil {
+		_c.SetMonthlyRequestCount(*v)
+	}
+	return _c
+}
+
 // SetAssignedBy sets the "assigned_by" field.
 func (_c *UserSubscriptionCreate) SetAssignedBy(v int64) *UserSubscriptionCreate {
 	_c.mutation.SetAssignedBy(v)
@@ -342,6 +384,18 @@ func (_c *UserSubscriptionCreate) defaults() error {
 		v := usersubscription.DefaultMonthlyUsageUsd
 		_c.mutation.SetMonthlyUsageUsd(v)
 	}
+	if _, ok := _c.mutation.DailyRequestCount(); !ok {
+		v := usersubscription.DefaultDailyRequestCount
+		_c.mutation.SetDailyRequestCount(v)
+	}
+	if _, ok := _c.mutation.WeeklyRequestCount(); !ok {
+		v := usersubscription.DefaultWeeklyRequestCount
+		_c.mutation.SetWeeklyRequestCount(v)
+	}
+	if _, ok := _c.mutation.MonthlyRequestCount(); !ok {
+		v := usersubscription.DefaultMonthlyRequestCount
+		_c.mutation.SetMonthlyRequestCount(v)
+	}
 	if _, ok := _c.mutation.AssignedAt(); !ok {
 		if usersubscription.DefaultAssignedAt == nil {
 			return fmt.Errorf("ent: uninitialized usersubscription.DefaultAssignedAt (forgotten import ent/runtime?)")
@@ -388,6 +442,15 @@ func (_c *UserSubscriptionCreate) check() error {
 	}
 	if _, ok := _c.mutation.MonthlyUsageUsd(); !ok {
 		return &ValidationError{Name: "monthly_usage_usd", err: errors.New(`ent: missing required field "UserSubscription.monthly_usage_usd"`)}
+	}
+	if _, ok := _c.mutation.DailyRequestCount(); !ok {
+		return &ValidationError{Name: "daily_request_count", err: errors.New(`ent: missing required field "UserSubscription.daily_request_count"`)}
+	}
+	if _, ok := _c.mutation.WeeklyRequestCount(); !ok {
+		return &ValidationError{Name: "weekly_request_count", err: errors.New(`ent: missing required field "UserSubscription.weekly_request_count"`)}
+	}
+	if _, ok := _c.mutation.MonthlyRequestCount(); !ok {
+		return &ValidationError{Name: "monthly_request_count", err: errors.New(`ent: missing required field "UserSubscription.monthly_request_count"`)}
 	}
 	if _, ok := _c.mutation.AssignedAt(); !ok {
 		return &ValidationError{Name: "assigned_at", err: errors.New(`ent: missing required field "UserSubscription.assigned_at"`)}
@@ -472,6 +535,18 @@ func (_c *UserSubscriptionCreate) createSpec() (*UserSubscription, *sqlgraph.Cre
 	if value, ok := _c.mutation.MonthlyUsageUsd(); ok {
 		_spec.SetField(usersubscription.FieldMonthlyUsageUsd, field.TypeFloat64, value)
 		_node.MonthlyUsageUsd = value
+	}
+	if value, ok := _c.mutation.DailyRequestCount(); ok {
+		_spec.SetField(usersubscription.FieldDailyRequestCount, field.TypeInt, value)
+		_node.DailyRequestCount = value
+	}
+	if value, ok := _c.mutation.WeeklyRequestCount(); ok {
+		_spec.SetField(usersubscription.FieldWeeklyRequestCount, field.TypeInt, value)
+		_node.WeeklyRequestCount = value
+	}
+	if value, ok := _c.mutation.MonthlyRequestCount(); ok {
+		_spec.SetField(usersubscription.FieldMonthlyRequestCount, field.TypeInt, value)
+		_node.MonthlyRequestCount = value
 	}
 	if value, ok := _c.mutation.AssignedAt(); ok {
 		_spec.SetField(usersubscription.FieldAssignedAt, field.TypeTime, value)
@@ -798,6 +873,60 @@ func (u *UserSubscriptionUpsert) AddMonthlyUsageUsd(v float64) *UserSubscription
 	return u
 }
 
+// SetDailyRequestCount sets the "daily_request_count" field.
+func (u *UserSubscriptionUpsert) SetDailyRequestCount(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldDailyRequestCount, v)
+	return u
+}
+
+// UpdateDailyRequestCount sets the "daily_request_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateDailyRequestCount() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldDailyRequestCount)
+	return u
+}
+
+// AddDailyRequestCount adds v to the "daily_request_count" field.
+func (u *UserSubscriptionUpsert) AddDailyRequestCount(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldDailyRequestCount, v)
+	return u
+}
+
+// SetWeeklyRequestCount sets the "weekly_request_count" field.
+func (u *UserSubscriptionUpsert) SetWeeklyRequestCount(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldWeeklyRequestCount, v)
+	return u
+}
+
+// UpdateWeeklyRequestCount sets the "weekly_request_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateWeeklyRequestCount() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldWeeklyRequestCount)
+	return u
+}
+
+// AddWeeklyRequestCount adds v to the "weekly_request_count" field.
+func (u *UserSubscriptionUpsert) AddWeeklyRequestCount(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldWeeklyRequestCount, v)
+	return u
+}
+
+// SetMonthlyRequestCount sets the "monthly_request_count" field.
+func (u *UserSubscriptionUpsert) SetMonthlyRequestCount(v int) *UserSubscriptionUpsert {
+	u.Set(usersubscription.FieldMonthlyRequestCount, v)
+	return u
+}
+
+// UpdateMonthlyRequestCount sets the "monthly_request_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsert) UpdateMonthlyRequestCount() *UserSubscriptionUpsert {
+	u.SetExcluded(usersubscription.FieldMonthlyRequestCount)
+	return u
+}
+
+// AddMonthlyRequestCount adds v to the "monthly_request_count" field.
+func (u *UserSubscriptionUpsert) AddMonthlyRequestCount(v int) *UserSubscriptionUpsert {
+	u.Add(usersubscription.FieldMonthlyRequestCount, v)
+	return u
+}
+
 // SetAssignedBy sets the "assigned_by" field.
 func (u *UserSubscriptionUpsert) SetAssignedBy(v int64) *UserSubscriptionUpsert {
 	u.Set(usersubscription.FieldAssignedBy, v)
@@ -1119,6 +1248,69 @@ func (u *UserSubscriptionUpsertOne) AddMonthlyUsageUsd(v float64) *UserSubscript
 func (u *UserSubscriptionUpsertOne) UpdateMonthlyUsageUsd() *UserSubscriptionUpsertOne {
 	return u.Update(func(s *UserSubscriptionUpsert) {
 		s.UpdateMonthlyUsageUsd()
+	})
+}
+
+// SetDailyRequestCount sets the "daily_request_count" field.
+func (u *UserSubscriptionUpsertOne) SetDailyRequestCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetDailyRequestCount(v)
+	})
+}
+
+// AddDailyRequestCount adds v to the "daily_request_count" field.
+func (u *UserSubscriptionUpsertOne) AddDailyRequestCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddDailyRequestCount(v)
+	})
+}
+
+// UpdateDailyRequestCount sets the "daily_request_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateDailyRequestCount() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateDailyRequestCount()
+	})
+}
+
+// SetWeeklyRequestCount sets the "weekly_request_count" field.
+func (u *UserSubscriptionUpsertOne) SetWeeklyRequestCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetWeeklyRequestCount(v)
+	})
+}
+
+// AddWeeklyRequestCount adds v to the "weekly_request_count" field.
+func (u *UserSubscriptionUpsertOne) AddWeeklyRequestCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddWeeklyRequestCount(v)
+	})
+}
+
+// UpdateWeeklyRequestCount sets the "weekly_request_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateWeeklyRequestCount() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateWeeklyRequestCount()
+	})
+}
+
+// SetMonthlyRequestCount sets the "monthly_request_count" field.
+func (u *UserSubscriptionUpsertOne) SetMonthlyRequestCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetMonthlyRequestCount(v)
+	})
+}
+
+// AddMonthlyRequestCount adds v to the "monthly_request_count" field.
+func (u *UserSubscriptionUpsertOne) AddMonthlyRequestCount(v int) *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddMonthlyRequestCount(v)
+	})
+}
+
+// UpdateMonthlyRequestCount sets the "monthly_request_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertOne) UpdateMonthlyRequestCount() *UserSubscriptionUpsertOne {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateMonthlyRequestCount()
 	})
 }
 
@@ -1617,6 +1809,69 @@ func (u *UserSubscriptionUpsertBulk) AddMonthlyUsageUsd(v float64) *UserSubscrip
 func (u *UserSubscriptionUpsertBulk) UpdateMonthlyUsageUsd() *UserSubscriptionUpsertBulk {
 	return u.Update(func(s *UserSubscriptionUpsert) {
 		s.UpdateMonthlyUsageUsd()
+	})
+}
+
+// SetDailyRequestCount sets the "daily_request_count" field.
+func (u *UserSubscriptionUpsertBulk) SetDailyRequestCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetDailyRequestCount(v)
+	})
+}
+
+// AddDailyRequestCount adds v to the "daily_request_count" field.
+func (u *UserSubscriptionUpsertBulk) AddDailyRequestCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddDailyRequestCount(v)
+	})
+}
+
+// UpdateDailyRequestCount sets the "daily_request_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateDailyRequestCount() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateDailyRequestCount()
+	})
+}
+
+// SetWeeklyRequestCount sets the "weekly_request_count" field.
+func (u *UserSubscriptionUpsertBulk) SetWeeklyRequestCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetWeeklyRequestCount(v)
+	})
+}
+
+// AddWeeklyRequestCount adds v to the "weekly_request_count" field.
+func (u *UserSubscriptionUpsertBulk) AddWeeklyRequestCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddWeeklyRequestCount(v)
+	})
+}
+
+// UpdateWeeklyRequestCount sets the "weekly_request_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateWeeklyRequestCount() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateWeeklyRequestCount()
+	})
+}
+
+// SetMonthlyRequestCount sets the "monthly_request_count" field.
+func (u *UserSubscriptionUpsertBulk) SetMonthlyRequestCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.SetMonthlyRequestCount(v)
+	})
+}
+
+// AddMonthlyRequestCount adds v to the "monthly_request_count" field.
+func (u *UserSubscriptionUpsertBulk) AddMonthlyRequestCount(v int) *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.AddMonthlyRequestCount(v)
+	})
+}
+
+// UpdateMonthlyRequestCount sets the "monthly_request_count" field to the value that was provided on create.
+func (u *UserSubscriptionUpsertBulk) UpdateMonthlyRequestCount() *UserSubscriptionUpsertBulk {
+	return u.Update(func(s *UserSubscriptionUpsert) {
+		s.UpdateMonthlyRequestCount()
 	})
 }
 

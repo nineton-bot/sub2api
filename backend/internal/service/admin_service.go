@@ -120,15 +120,19 @@ type UpdateUserInput struct {
 }
 
 type CreateGroupInput struct {
-	Name             string
-	Description      string
-	Platform         string
-	RateMultiplier   float64
-	IsExclusive      bool
-	SubscriptionType string   // standard/subscription
-	DailyLimitUSD    *float64 // 日限额 (USD)
-	WeeklyLimitUSD   *float64 // 周限额 (USD)
-	MonthlyLimitUSD  *float64 // 月限额 (USD)
+	Name                string
+	Description         string
+	Platform            string
+	RateMultiplier      float64
+	IsExclusive         bool
+	SubscriptionType    string   // standard/subscription
+	SubscriptionMeter   string   // cost_quota/request_quota
+	DailyLimitUSD       *float64 // 日限额 (USD)
+	WeeklyLimitUSD      *float64 // 周限额 (USD)
+	MonthlyLimitUSD     *float64 // 月限额 (USD)
+	DailyRequestLimit   *int
+	WeeklyRequestLimit  *int
+	MonthlyRequestLimit *int
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	ImagePrice1K *float64
 	ImagePrice2K *float64
@@ -158,16 +162,23 @@ type CreateGroupInput struct {
 }
 
 type UpdateGroupInput struct {
-	Name             string
-	Description      string
-	Platform         string
-	RateMultiplier   *float64 // 使用指针以支持设置为0
-	IsExclusive      *bool
-	Status           string
-	SubscriptionType string   // standard/subscription
-	DailyLimitUSD    *float64 // 日限额 (USD)
-	WeeklyLimitUSD   *float64 // 周限额 (USD)
-	MonthlyLimitUSD  *float64 // 月限额 (USD)
+	Name                        string
+	Description                 string
+	Platform                    string
+	RateMultiplier              *float64 // 使用指针以支持设置为0
+	IsExclusive                 *bool
+	Status                      string
+	SubscriptionType            string   // standard/subscription
+	SubscriptionMeter           string   // cost_quota/request_quota
+	DailyLimitUSD               *float64 // 日限额 (USD)
+	WeeklyLimitUSD              *float64 // 周限额 (USD)
+	MonthlyLimitUSD             *float64 // 月限额 (USD)
+	DailyRequestLimit           *int
+	WeeklyRequestLimit          *int
+	MonthlyRequestLimit         *int
+	DailyRequestLimitProvided   bool
+	WeeklyRequestLimitProvided  bool
+	MonthlyRequestLimitProvided bool
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	ImagePrice1K *float64
 	ImagePrice2K *float64
@@ -831,11 +842,38 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	if subscriptionType == "" {
 		subscriptionType = SubscriptionTypeStandard
 	}
+	subscriptionMeter := input.SubscriptionMeter
+	if subscriptionMeter == "" {
+		subscriptionMeter = SubscriptionMeterCostQuota
+	}
 
 	// 限额字段：nil/负数 表示"无限制"，0 表示"不允许用量"，正数表示具体限额
 	dailyLimit := normalizeLimit(input.DailyLimitUSD)
 	weeklyLimit := normalizeLimit(input.WeeklyLimitUSD)
 	monthlyLimit := normalizeLimit(input.MonthlyLimitUSD)
+	dailyRequestLimit := normalizeRequestLimit(input.DailyRequestLimit)
+	weeklyRequestLimit := normalizeRequestLimit(input.WeeklyRequestLimit)
+	monthlyRequestLimit := normalizeRequestLimit(input.MonthlyRequestLimit)
+
+	if subscriptionType != SubscriptionTypeSubscription {
+		subscriptionMeter = SubscriptionMeterCostQuota
+		dailyRequestLimit = nil
+		weeklyRequestLimit = nil
+		monthlyRequestLimit = nil
+	} else {
+		if err := validateSubscriptionMeterConfig(subscriptionType, subscriptionMeter, dailyLimit, weeklyLimit, monthlyLimit, dailyRequestLimit, weeklyRequestLimit, monthlyRequestLimit); err != nil {
+			return nil, err
+		}
+		if subscriptionMeter == SubscriptionMeterRequestQuota {
+			dailyLimit = nil
+			weeklyLimit = nil
+			monthlyLimit = nil
+		} else {
+			dailyRequestLimit = nil
+			weeklyRequestLimit = nil
+			monthlyRequestLimit = nil
+		}
+	}
 
 	// 图片价格：负数表示清除（使用默认价格），0 保留（表示免费）
 	imagePrice1K := normalizePrice(input.ImagePrice1K)
@@ -909,9 +947,13 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		IsExclusive:                     input.IsExclusive,
 		Status:                          StatusActive,
 		SubscriptionType:                subscriptionType,
+		SubscriptionMeter:               subscriptionMeter,
 		DailyLimitUSD:                   dailyLimit,
 		WeeklyLimitUSD:                  weeklyLimit,
 		MonthlyLimitUSD:                 monthlyLimit,
+		DailyRequestLimit:               dailyRequestLimit,
+		WeeklyRequestLimit:              weeklyRequestLimit,
+		MonthlyRequestLimit:             monthlyRequestLimit,
 		ImagePrice1K:                    imagePrice1K,
 		ImagePrice2K:                    imagePrice2K,
 		ImagePrice4K:                    imagePrice4K,
@@ -950,6 +992,40 @@ func normalizeLimit(limit *float64) *float64 {
 		return nil
 	}
 	return limit
+}
+
+func normalizeRequestLimit(limit *int) *int {
+	if limit == nil || *limit < 0 {
+		return nil
+	}
+	return limit
+}
+
+func validateSubscriptionMeterConfig(subscriptionType, subscriptionMeter string, dailyLimit, weeklyLimit, monthlyLimit *float64, dailyRequestLimit, weeklyRequestLimit, monthlyRequestLimit *int) error {
+	if subscriptionType != SubscriptionTypeSubscription {
+		return nil
+	}
+
+	switch subscriptionMeter {
+	case "", SubscriptionMeterCostQuota:
+		if dailyRequestLimit != nil || weeklyRequestLimit != nil || monthlyRequestLimit != nil {
+			return infraerrors.BadRequest("REQUEST_LIMITS_NOT_ALLOWED", "request limits are only supported for request_quota subscription meter")
+		}
+		return nil
+	case SubscriptionMeterRequestQuota:
+		if dailyLimit != nil || weeklyLimit != nil || monthlyLimit != nil {
+			return infraerrors.BadRequest("USD_LIMITS_NOT_ALLOWED", "usd limits are not supported for request_quota subscription meter")
+		}
+		if dailyRequestLimit == nil || weeklyRequestLimit == nil || monthlyRequestLimit == nil {
+			return infraerrors.BadRequest("REQUEST_LIMITS_REQUIRED", "daily_request_limit, weekly_request_limit, and monthly_request_limit are required for request_quota subscription meter")
+		}
+		if *dailyRequestLimit <= 0 || *weeklyRequestLimit <= 0 || *monthlyRequestLimit <= 0 {
+			return infraerrors.BadRequest("REQUEST_LIMITS_INVALID", "request limits must be greater than 0 for request_quota subscription meter")
+		}
+		return nil
+	default:
+		return infraerrors.BadRequest("INVALID_SUBSCRIPTION_METER", fmt.Sprintf("invalid subscription meter: %s", subscriptionMeter))
+	}
 }
 
 // normalizePrice 将负数转换为 nil（表示使用默认价格），0 保留（表示免费）
@@ -1056,13 +1132,71 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 
 	// 订阅相关字段
 	if input.SubscriptionType != "" {
+		if group.SubscriptionMeter == SubscriptionMeterRequestQuota && input.SubscriptionType != SubscriptionTypeSubscription {
+			return nil, fmt.Errorf("request_quota groups must keep subscription type")
+		}
 		group.SubscriptionType = input.SubscriptionType
 	}
-	// 限额字段：nil/负数 表示"无限制"，0 表示"不允许用量"，正数表示具体限额
-	// 前端始终发送这三个字段，无需 nil 守卫
-	group.DailyLimitUSD = normalizeLimit(input.DailyLimitUSD)
-	group.WeeklyLimitUSD = normalizeLimit(input.WeeklyLimitUSD)
-	group.MonthlyLimitUSD = normalizeLimit(input.MonthlyLimitUSD)
+	if input.SubscriptionMeter != "" && input.SubscriptionMeter != group.SubscriptionMeter {
+		return nil, fmt.Errorf("subscription meter cannot be changed after group creation")
+	}
+	if group.SubscriptionMeter == "" {
+		group.SubscriptionMeter = SubscriptionMeterCostQuota
+	}
+	// 限额字段：未提供时沿用现有值；nil/负数 表示"无限制"，0 由各模式自行决定是否合法。
+	dailyLimit := group.DailyLimitUSD
+	if input.DailyLimitUSD != nil {
+		dailyLimit = normalizeLimit(input.DailyLimitUSD)
+	}
+	weeklyLimit := group.WeeklyLimitUSD
+	if input.WeeklyLimitUSD != nil {
+		weeklyLimit = normalizeLimit(input.WeeklyLimitUSD)
+	}
+	monthlyLimit := group.MonthlyLimitUSD
+	if input.MonthlyLimitUSD != nil {
+		monthlyLimit = normalizeLimit(input.MonthlyLimitUSD)
+	}
+	dailyRequestLimit := group.DailyRequestLimit
+	if input.DailyRequestLimit != nil || input.DailyRequestLimitProvided {
+		dailyRequestLimit = normalizeRequestLimit(input.DailyRequestLimit)
+	}
+	weeklyRequestLimit := group.WeeklyRequestLimit
+	if input.WeeklyRequestLimit != nil || input.WeeklyRequestLimitProvided {
+		weeklyRequestLimit = normalizeRequestLimit(input.WeeklyRequestLimit)
+	}
+	monthlyRequestLimit := group.MonthlyRequestLimit
+	if input.MonthlyRequestLimit != nil || input.MonthlyRequestLimitProvided {
+		monthlyRequestLimit = normalizeRequestLimit(input.MonthlyRequestLimit)
+	}
+
+	if group.SubscriptionType != SubscriptionTypeSubscription {
+		group.SubscriptionMeter = SubscriptionMeterCostQuota
+		group.DailyRequestLimit = nil
+		group.WeeklyRequestLimit = nil
+		group.MonthlyRequestLimit = nil
+		group.DailyLimitUSD = dailyLimit
+		group.WeeklyLimitUSD = weeklyLimit
+		group.MonthlyLimitUSD = monthlyLimit
+	} else {
+		if err := validateSubscriptionMeterConfig(group.SubscriptionType, group.SubscriptionMeter, dailyLimit, weeklyLimit, monthlyLimit, dailyRequestLimit, weeklyRequestLimit, monthlyRequestLimit); err != nil {
+			return nil, err
+		}
+		if group.SubscriptionMeter == SubscriptionMeterRequestQuota {
+			group.DailyLimitUSD = nil
+			group.WeeklyLimitUSD = nil
+			group.MonthlyLimitUSD = nil
+			group.DailyRequestLimit = dailyRequestLimit
+			group.WeeklyRequestLimit = weeklyRequestLimit
+			group.MonthlyRequestLimit = monthlyRequestLimit
+		} else {
+			group.DailyLimitUSD = dailyLimit
+			group.WeeklyLimitUSD = weeklyLimit
+			group.MonthlyLimitUSD = monthlyLimit
+			group.DailyRequestLimit = nil
+			group.WeeklyRequestLimit = nil
+			group.MonthlyRequestLimit = nil
+		}
+	}
 	// 图片生成计费配置：负数表示清除（使用默认价格）
 	if input.ImagePrice1K != nil {
 		group.ImagePrice1K = normalizePrice(input.ImagePrice1K)
@@ -1531,6 +1665,13 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 		account.Credentials = input.Credentials
 	}
 	if len(input.Extra) > 0 {
+		if account.Type == AccountTypeAPIKey || account.Type == AccountTypeBedrock {
+			if rawMeter, ok := input.Extra["quota_meter"]; ok {
+				if meter, ok := rawMeter.(string); ok && meter != "" && meter != account.GetQuotaMeter() {
+					return nil, errors.New("quota_meter cannot be changed after account creation")
+				}
+			}
+		}
 		// 保留配额用量字段，防止编辑账号时意外重置
 		for _, key := range []string{"quota_used", "quota_daily_used", "quota_daily_start", "quota_weekly_used", "quota_weekly_start"} {
 			if v, ok := account.Extra[key]; ok {

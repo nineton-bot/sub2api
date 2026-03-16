@@ -121,3 +121,33 @@ func TestUpdateAccount_EnableOveragesClearsModelRateLimitsBeforePersist(t *testi
 	_, exists := repo.account.Extra[modelRateLimitsKey]
 	require.False(t, exists, "开启 overages 时应在持久化前清掉旧模型限流")
 }
+
+func TestUpdateAccount_RejectQuotaMeterChange(t *testing.T) {
+	accountID := int64(103)
+	repo := &updateAccountOveragesRepoStub{
+		account: &Account{
+			ID:       accountID,
+			Platform: PlatformOpenAI,
+			Type:     AccountTypeAPIKey,
+			Status:   StatusActive,
+			Extra: map[string]any{
+				"quota_meter": AccountQuotaMeterCost,
+				"quota_used":  12.5,
+			},
+		},
+	}
+
+	svc := &adminServiceImpl{accountRepo: repo}
+	updated, err := svc.UpdateAccount(context.Background(), accountID, &UpdateAccountInput{
+		Extra: map[string]any{
+			"quota_meter": AccountQuotaMeterRequests,
+			"quota_limit": 100,
+		},
+	})
+
+	require.Error(t, err)
+	require.Nil(t, updated)
+	require.Contains(t, err.Error(), "quota_meter cannot be changed")
+	require.Equal(t, 0, repo.updateCalls)
+	require.Equal(t, AccountQuotaMeterCost, repo.account.GetQuotaMeter())
+}

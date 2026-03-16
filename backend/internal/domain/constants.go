@@ -60,6 +60,18 @@ const (
 	SubscriptionTypeSubscription = "subscription" // 订阅模式（按限额控制）
 )
 
+// Subscription meter constants
+const (
+	SubscriptionMeterCostQuota    = "cost_quota"    // 按金额额度限制
+	SubscriptionMeterRequestQuota = "request_quota" // 按请求次数限制
+)
+
+// Account quota meter constants
+const (
+	AccountQuotaMeterCost     = "cost"
+	AccountQuotaMeterRequests = "requests"
+)
+
 // Subscription status constants
 const (
 	SubscriptionStatusActive    = "active"

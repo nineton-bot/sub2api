@@ -109,7 +109,9 @@
               >
                 {{
                   row.subscription_type === 'subscription'
-                    ? t('admin.groups.subscription.subscription')
+                    ? (row.subscription_meter === 'request_quota'
+                        ? t('admin.groups.subscription.requestQuota')
+                        : t('admin.groups.subscription.costQuota'))
                     : t('admin.groups.subscription.standard')
                 }}
               </span>
@@ -118,32 +120,7 @@
                 v-if="row.subscription_type === 'subscription'"
                 class="text-xs text-gray-500 dark:text-gray-400"
               >
-                <template
-                  v-if="row.daily_limit_usd || row.weekly_limit_usd || row.monthly_limit_usd"
-                >
-                  <span v-if="row.daily_limit_usd"
-                    >${{ row.daily_limit_usd }}/{{ t('admin.groups.limitDay') }}</span
-                  >
-                  <span
-                    v-if="row.daily_limit_usd && (row.weekly_limit_usd || row.monthly_limit_usd)"
-                    class="mx-1 text-gray-300 dark:text-gray-600"
-                    >·</span
-                  >
-                  <span v-if="row.weekly_limit_usd"
-                    >${{ row.weekly_limit_usd }}/{{ t('admin.groups.limitWeek') }}</span
-                  >
-                  <span
-                    v-if="row.weekly_limit_usd && row.monthly_limit_usd"
-                    class="mx-1 text-gray-300 dark:text-gray-600"
-                    >·</span
-                  >
-                  <span v-if="row.monthly_limit_usd"
-                    >${{ row.monthly_limit_usd }}/{{ t('admin.groups.limitMonth') }}</span
-                  >
-                </template>
-                <span v-else class="text-gray-400 dark:text-gray-500">{{
-                  t('admin.groups.subscription.noLimit')
-                }}</span>
+                {{ getSubscriptionLimitSummary(row) }}
               </div>
             </div>
           </template>
@@ -403,8 +380,24 @@
             class="space-y-4 border-l-2 border-primary-200 pl-4 dark:border-primary-800"
           >
             <div>
-              <label class="input-label">{{ t('admin.groups.subscription.dailyLimit') }}</label>
+              <label class="input-label">{{ t('admin.groups.subscription.meter') }}</label>
+              <Select v-model="createForm.subscription_meter" :options="subscriptionMeterOptions" />
+            </div>
+            <div>
+              <label class="input-label">
+                {{ isCreateRequestQuota ? t('admin.groups.subscription.dailyRequestLimit') : t('admin.groups.subscription.dailyLimit') }}
+              </label>
               <input
+                v-if="isCreateRequestQuota"
+                v-model.number="createForm.daily_request_limit"
+                type="number"
+                step="1"
+                min="0"
+                class="input"
+                :placeholder="t('admin.groups.subscription.noLimit')"
+              />
+              <input
+                v-else
                 v-model.number="createForm.daily_limit_usd"
                 type="number"
                 step="0.01"
@@ -414,8 +407,20 @@
               />
             </div>
             <div>
-              <label class="input-label">{{ t('admin.groups.subscription.weeklyLimit') }}</label>
+              <label class="input-label">
+                {{ isCreateRequestQuota ? t('admin.groups.subscription.weeklyRequestLimit') : t('admin.groups.subscription.weeklyLimit') }}
+              </label>
               <input
+                v-if="isCreateRequestQuota"
+                v-model.number="createForm.weekly_request_limit"
+                type="number"
+                step="1"
+                min="0"
+                class="input"
+                :placeholder="t('admin.groups.subscription.noLimit')"
+              />
+              <input
+                v-else
                 v-model.number="createForm.weekly_limit_usd"
                 type="number"
                 step="0.01"
@@ -425,8 +430,20 @@
               />
             </div>
             <div>
-              <label class="input-label">{{ t('admin.groups.subscription.monthlyLimit') }}</label>
+              <label class="input-label">
+                {{ isCreateRequestQuota ? t('admin.groups.subscription.monthlyRequestLimit') : t('admin.groups.subscription.monthlyLimit') }}
+              </label>
               <input
+                v-if="isCreateRequestQuota"
+                v-model.number="createForm.monthly_request_limit"
+                type="number"
+                step="1"
+                min="0"
+                class="input"
+                :placeholder="t('admin.groups.subscription.noLimit')"
+              />
+              <input
+                v-else
                 v-model.number="createForm.monthly_limit_usd"
                 type="number"
                 step="0.01"
@@ -1138,8 +1155,29 @@
             class="space-y-4 border-l-2 border-primary-200 pl-4 dark:border-primary-800"
           >
             <div>
-              <label class="input-label">{{ t('admin.groups.subscription.dailyLimit') }}</label>
+              <label class="input-label">{{ t('admin.groups.subscription.meter') }}</label>
+              <Select
+                v-model="editForm.subscription_meter"
+                :options="subscriptionMeterOptions"
+                :disabled="true"
+              />
+              <p class="input-hint">{{ t('admin.groups.subscription.meterNotEditable') }}</p>
+            </div>
+            <div>
+              <label class="input-label">
+                {{ isEditRequestQuota ? t('admin.groups.subscription.dailyRequestLimit') : t('admin.groups.subscription.dailyLimit') }}
+              </label>
               <input
+                v-if="isEditRequestQuota"
+                v-model.number="editForm.daily_request_limit"
+                type="number"
+                step="1"
+                min="0"
+                class="input"
+                :placeholder="t('admin.groups.subscription.noLimit')"
+              />
+              <input
+                v-else
                 v-model.number="editForm.daily_limit_usd"
                 type="number"
                 step="0.01"
@@ -1149,8 +1187,20 @@
               />
             </div>
             <div>
-              <label class="input-label">{{ t('admin.groups.subscription.weeklyLimit') }}</label>
+              <label class="input-label">
+                {{ isEditRequestQuota ? t('admin.groups.subscription.weeklyRequestLimit') : t('admin.groups.subscription.weeklyLimit') }}
+              </label>
               <input
+                v-if="isEditRequestQuota"
+                v-model.number="editForm.weekly_request_limit"
+                type="number"
+                step="1"
+                min="0"
+                class="input"
+                :placeholder="t('admin.groups.subscription.noLimit')"
+              />
+              <input
+                v-else
                 v-model.number="editForm.weekly_limit_usd"
                 type="number"
                 step="0.01"
@@ -1160,8 +1210,20 @@
               />
             </div>
             <div>
-              <label class="input-label">{{ t('admin.groups.subscription.monthlyLimit') }}</label>
+              <label class="input-label">
+                {{ isEditRequestQuota ? t('admin.groups.subscription.monthlyRequestLimit') : t('admin.groups.subscription.monthlyLimit') }}
+              </label>
               <input
+                v-if="isEditRequestQuota"
+                v-model.number="editForm.monthly_request_limit"
+                type="number"
+                step="1"
+                min="0"
+                class="input"
+                :placeholder="t('admin.groups.subscription.noLimit')"
+              />
+              <input
+                v-else
                 v-model.number="editForm.monthly_limit_usd"
                 type="number"
                 step="0.01"
@@ -1799,7 +1861,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
 import { useOnboardingStore } from '@/stores/onboarding'
 import { adminAPI } from '@/api/admin'
-import type { AdminGroup, GroupPlatform, SubscriptionType } from '@/types'
+import type { AdminGroup, GroupPlatform, SubscriptionMeter, SubscriptionType } from '@/types'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
@@ -1869,6 +1931,11 @@ const editStatusOptions = computed(() => [
 const subscriptionTypeOptions = computed(() => [
   { value: 'standard', label: t('admin.groups.subscription.standard') },
   { value: 'subscription', label: t('admin.groups.subscription.subscription') }
+])
+
+const subscriptionMeterOptions = computed(() => [
+  { value: 'cost_quota', label: t('admin.groups.subscription.costQuota') },
+  { value: 'request_quota', label: t('admin.groups.subscription.requestQuota') }
 ])
 
 // 降级分组选项（创建时）- 仅包含 anthropic 平台且未启用 claude_code_only 的分组
@@ -1997,9 +2064,13 @@ const createForm = reactive({
   rate_multiplier: 1.0,
   is_exclusive: false,
   subscription_type: 'standard' as SubscriptionType,
+  subscription_meter: 'cost_quota' as SubscriptionMeter,
   daily_limit_usd: null as number | null,
   weekly_limit_usd: null as number | null,
   monthly_limit_usd: null as number | null,
+  daily_request_limit: null as number | null,
+  weekly_request_limit: null as number | null,
+  monthly_request_limit: null as number | null,
   // 图片生成计费配置（仅 antigravity 平台使用）
   image_price_1k: null as number | null,
   image_price_2k: null as number | null,
@@ -2241,9 +2312,13 @@ const editForm = reactive({
   is_exclusive: false,
   status: 'active' as 'active' | 'inactive',
   subscription_type: 'standard' as SubscriptionType,
+  subscription_meter: 'cost_quota' as SubscriptionMeter,
   daily_limit_usd: null as number | null,
   weekly_limit_usd: null as number | null,
   monthly_limit_usd: null as number | null,
+  daily_request_limit: null as number | null,
+  weekly_request_limit: null as number | null,
+  monthly_request_limit: null as number | null,
   // 图片生成计费配置（仅 antigravity 平台使用）
   image_price_1k: null as number | null,
   image_price_2k: null as number | null,
@@ -2281,6 +2356,36 @@ const deleteConfirmMessage = computed(() => {
   }
   return t('admin.groups.deleteConfirm', { name: deletingGroup.value.name })
 })
+
+const isCreateRequestQuota = computed(
+  () => createForm.subscription_type === 'subscription' && createForm.subscription_meter === 'request_quota'
+)
+
+const isEditRequestQuota = computed(
+  () => editForm.subscription_type === 'subscription' && editForm.subscription_meter === 'request_quota'
+)
+
+const getSubscriptionLimitSummary = (group: AdminGroup): string => {
+  if (group.subscription_type !== 'subscription') {
+    return t('admin.groups.subscription.notSubscription')
+  }
+
+  if (group.subscription_meter === 'request_quota') {
+    const parts = [
+      group.daily_request_limit ? `${group.daily_request_limit}/${t('admin.groups.limitDay')}` : '',
+      group.weekly_request_limit ? `${group.weekly_request_limit}/${t('admin.groups.limitWeek')}` : '',
+      group.monthly_request_limit ? `${group.monthly_request_limit}/${t('admin.groups.limitMonth')}` : ''
+    ].filter(Boolean)
+    return parts.length > 0 ? parts.join(' · ') : t('admin.groups.subscription.noLimit')
+  }
+
+  const parts = [
+    group.daily_limit_usd ? `$${group.daily_limit_usd}/${t('admin.groups.limitDay')}` : '',
+    group.weekly_limit_usd ? `$${group.weekly_limit_usd}/${t('admin.groups.limitWeek')}` : '',
+    group.monthly_limit_usd ? `$${group.monthly_limit_usd}/${t('admin.groups.limitMonth')}` : ''
+  ].filter(Boolean)
+  return parts.length > 0 ? parts.join(' · ') : t('admin.groups.subscription.noLimit')
+}
 
 const loadGroups = async () => {
   if (abortController) {
@@ -2346,9 +2451,13 @@ const closeCreateModal = () => {
   createForm.rate_multiplier = 1.0
   createForm.is_exclusive = false
   createForm.subscription_type = 'standard'
+  createForm.subscription_meter = 'cost_quota'
   createForm.daily_limit_usd = null
   createForm.weekly_limit_usd = null
   createForm.monthly_limit_usd = null
+  createForm.daily_request_limit = null
+  createForm.weekly_request_limit = null
+  createForm.monthly_request_limit = null
   createForm.image_price_1k = null
   createForm.image_price_2k = null
   createForm.image_price_4k = null
@@ -2399,6 +2508,9 @@ const handleCreateGroup = async () => {
       daily_limit_usd: normalizeOptionalLimit(createForm.daily_limit_usd as number | string | null),
       weekly_limit_usd: normalizeOptionalLimit(createForm.weekly_limit_usd as number | string | null),
       monthly_limit_usd: normalizeOptionalLimit(createForm.monthly_limit_usd as number | string | null),
+      daily_request_limit: normalizeOptionalLimit(createForm.daily_request_limit as number | string | null),
+      weekly_request_limit: normalizeOptionalLimit(createForm.weekly_request_limit as number | string | null),
+      monthly_request_limit: normalizeOptionalLimit(createForm.monthly_request_limit as number | string | null),
       sora_storage_quota_bytes: createQuotaGb ? Math.round(createQuotaGb * 1024 * 1024 * 1024) : 0,
       model_routing: convertRoutingRulesToApiFormat(createModelRoutingRules.value)
     }
@@ -2407,6 +2519,18 @@ const handleCreateGroup = async () => {
     requestData.daily_limit_usd = emptyToNull(requestData.daily_limit_usd)
     requestData.weekly_limit_usd = emptyToNull(requestData.weekly_limit_usd)
     requestData.monthly_limit_usd = emptyToNull(requestData.monthly_limit_usd)
+    requestData.daily_request_limit = emptyToNull(requestData.daily_request_limit)
+    requestData.weekly_request_limit = emptyToNull(requestData.weekly_request_limit)
+    requestData.monthly_request_limit = emptyToNull(requestData.monthly_request_limit)
+    if (requestData.subscription_meter === 'request_quota') {
+      delete (requestData as Partial<typeof requestData>).daily_limit_usd
+      delete (requestData as Partial<typeof requestData>).weekly_limit_usd
+      delete (requestData as Partial<typeof requestData>).monthly_limit_usd
+    } else {
+      delete (requestData as Partial<typeof requestData>).daily_request_limit
+      delete (requestData as Partial<typeof requestData>).weekly_request_limit
+      delete (requestData as Partial<typeof requestData>).monthly_request_limit
+    }
     await adminAPI.groups.create(requestData)
     appStore.showSuccess(t('admin.groups.groupCreated'))
     closeCreateModal()
@@ -2433,9 +2557,13 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.is_exclusive = group.is_exclusive
   editForm.status = group.status
   editForm.subscription_type = group.subscription_type || 'standard'
+  editForm.subscription_meter = group.subscription_meter || 'cost_quota'
   editForm.daily_limit_usd = group.daily_limit_usd
   editForm.weekly_limit_usd = group.weekly_limit_usd
   editForm.monthly_limit_usd = group.monthly_limit_usd
+  editForm.daily_request_limit = group.daily_request_limit
+  editForm.weekly_request_limit = group.weekly_request_limit
+  editForm.monthly_request_limit = group.monthly_request_limit
   editForm.image_price_1k = group.image_price_1k
   editForm.image_price_2k = group.image_price_2k
   editForm.image_price_4k = group.image_price_4k
@@ -2485,6 +2613,9 @@ const handleUpdateGroup = async () => {
       daily_limit_usd: normalizeOptionalLimit(editForm.daily_limit_usd as number | string | null),
       weekly_limit_usd: normalizeOptionalLimit(editForm.weekly_limit_usd as number | string | null),
       monthly_limit_usd: normalizeOptionalLimit(editForm.monthly_limit_usd as number | string | null),
+      daily_request_limit: normalizeOptionalLimit(editForm.daily_request_limit as number | string | null),
+      weekly_request_limit: normalizeOptionalLimit(editForm.weekly_request_limit as number | string | null),
+      monthly_request_limit: normalizeOptionalLimit(editForm.monthly_request_limit as number | string | null),
       sora_storage_quota_bytes: editQuotaGb ? Math.round(editQuotaGb * 1024 * 1024 * 1024) : 0,
       fallback_group_id: editForm.fallback_group_id === null ? 0 : editForm.fallback_group_id,
       fallback_group_id_on_invalid_request:
@@ -2498,6 +2629,18 @@ const handleUpdateGroup = async () => {
     payload.daily_limit_usd = emptyToNull(payload.daily_limit_usd)
     payload.weekly_limit_usd = emptyToNull(payload.weekly_limit_usd)
     payload.monthly_limit_usd = emptyToNull(payload.monthly_limit_usd)
+    payload.daily_request_limit = emptyToNull(payload.daily_request_limit)
+    payload.weekly_request_limit = emptyToNull(payload.weekly_request_limit)
+    payload.monthly_request_limit = emptyToNull(payload.monthly_request_limit)
+    if (payload.subscription_meter === 'request_quota') {
+      delete (payload as Partial<typeof payload>).daily_limit_usd
+      delete (payload as Partial<typeof payload>).weekly_limit_usd
+      delete (payload as Partial<typeof payload>).monthly_limit_usd
+    } else {
+      delete (payload as Partial<typeof payload>).daily_request_limit
+      delete (payload as Partial<typeof payload>).weekly_request_limit
+      delete (payload as Partial<typeof payload>).monthly_request_limit
+    }
     await adminAPI.groups.update(editingGroup.value.id, payload)
     appStore.showSuccess(t('admin.groups.groupUpdated'))
     closeEditModal()
@@ -2542,6 +2685,27 @@ watch(
     if (newVal === 'subscription') {
       createForm.is_exclusive = true
       createForm.fallback_group_id_on_invalid_request = null
+      createForm.subscription_meter = createForm.subscription_meter || 'cost_quota'
+    } else {
+      createForm.subscription_meter = 'cost_quota'
+      createForm.daily_request_limit = null
+      createForm.weekly_request_limit = null
+      createForm.monthly_request_limit = null
+    }
+  }
+)
+
+watch(
+  () => createForm.subscription_meter,
+  (newVal) => {
+    if (newVal === 'request_quota') {
+      createForm.daily_limit_usd = null
+      createForm.weekly_limit_usd = null
+      createForm.monthly_limit_usd = null
+    } else {
+      createForm.daily_request_limit = null
+      createForm.weekly_request_limit = null
+      createForm.monthly_request_limit = null
     }
   }
 )

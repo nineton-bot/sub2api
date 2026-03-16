@@ -35,12 +35,20 @@ const (
 	FieldPlatform = "platform"
 	// FieldSubscriptionType holds the string denoting the subscription_type field in the database.
 	FieldSubscriptionType = "subscription_type"
+	// FieldSubscriptionMeter holds the string denoting the subscription_meter field in the database.
+	FieldSubscriptionMeter = "subscription_meter"
 	// FieldDailyLimitUsd holds the string denoting the daily_limit_usd field in the database.
 	FieldDailyLimitUsd = "daily_limit_usd"
 	// FieldWeeklyLimitUsd holds the string denoting the weekly_limit_usd field in the database.
 	FieldWeeklyLimitUsd = "weekly_limit_usd"
 	// FieldMonthlyLimitUsd holds the string denoting the monthly_limit_usd field in the database.
 	FieldMonthlyLimitUsd = "monthly_limit_usd"
+	// FieldDailyRequestLimit holds the string denoting the daily_request_limit field in the database.
+	FieldDailyRequestLimit = "daily_request_limit"
+	// FieldWeeklyRequestLimit holds the string denoting the weekly_request_limit field in the database.
+	FieldWeeklyRequestLimit = "weekly_request_limit"
+	// FieldMonthlyRequestLimit holds the string denoting the monthly_request_limit field in the database.
+	FieldMonthlyRequestLimit = "monthly_request_limit"
 	// FieldDefaultValidityDays holds the string denoting the default_validity_days field in the database.
 	FieldDefaultValidityDays = "default_validity_days"
 	// FieldImagePrice1k holds the string denoting the image_price_1k field in the database.
@@ -164,9 +172,13 @@ var Columns = []string{
 	FieldStatus,
 	FieldPlatform,
 	FieldSubscriptionType,
+	FieldSubscriptionMeter,
 	FieldDailyLimitUsd,
 	FieldWeeklyLimitUsd,
 	FieldMonthlyLimitUsd,
+	FieldDailyRequestLimit,
+	FieldWeeklyRequestLimit,
+	FieldMonthlyRequestLimit,
 	FieldDefaultValidityDays,
 	FieldImagePrice1k,
 	FieldImagePrice2k,
@@ -239,6 +251,10 @@ var (
 	DefaultSubscriptionType string
 	// SubscriptionTypeValidator is a validator for the "subscription_type" field. It is called by the builders before save.
 	SubscriptionTypeValidator func(string) error
+	// DefaultSubscriptionMeter holds the default value on creation for the "subscription_meter" field.
+	DefaultSubscriptionMeter string
+	// SubscriptionMeterValidator is a validator for the "subscription_meter" field. It is called by the builders before save.
+	SubscriptionMeterValidator func(string) error
 	// DefaultDefaultValidityDays holds the default value on creation for the "default_validity_days" field.
 	DefaultDefaultValidityDays int
 	// DefaultSoraStorageQuotaBytes holds the default value on creation for the "sora_storage_quota_bytes" field.
@@ -319,6 +335,11 @@ func BySubscriptionType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSubscriptionType, opts...).ToFunc()
 }
 
+// BySubscriptionMeter orders the results by the subscription_meter field.
+func BySubscriptionMeter(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSubscriptionMeter, opts...).ToFunc()
+}
+
 // ByDailyLimitUsd orders the results by the daily_limit_usd field.
 func ByDailyLimitUsd(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDailyLimitUsd, opts...).ToFunc()
@@ -332,6 +353,21 @@ func ByWeeklyLimitUsd(opts ...sql.OrderTermOption) OrderOption {
 // ByMonthlyLimitUsd orders the results by the monthly_limit_usd field.
 func ByMonthlyLimitUsd(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMonthlyLimitUsd, opts...).ToFunc()
+}
+
+// ByDailyRequestLimit orders the results by the daily_request_limit field.
+func ByDailyRequestLimit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDailyRequestLimit, opts...).ToFunc()
+}
+
+// ByWeeklyRequestLimit orders the results by the weekly_request_limit field.
+func ByWeeklyRequestLimit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWeeklyRequestLimit, opts...).ToFunc()
+}
+
+// ByMonthlyRequestLimit orders the results by the monthly_request_limit field.
+func ByMonthlyRequestLimit(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMonthlyRequestLimit, opts...).ToFunc()
 }
 
 // ByDefaultValidityDays orders the results by the default_validity_days field.

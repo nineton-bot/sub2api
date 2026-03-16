@@ -362,6 +362,7 @@ export interface PaginationConfig {
 export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'sora'
 
 export type SubscriptionType = 'standard' | 'subscription'
+export type SubscriptionMeter = 'cost_quota' | 'request_quota'
 
 export interface Group {
   id: number
@@ -372,9 +373,13 @@ export interface Group {
   is_exclusive: boolean
   status: 'active' | 'inactive'
   subscription_type: SubscriptionType
+  subscription_meter: SubscriptionMeter
   daily_limit_usd: number | null
   weekly_limit_usd: number | null
   monthly_limit_usd: number | null
+  daily_request_limit: number | null
+  weekly_request_limit: number | null
+  monthly_request_limit: number | null
   // 图片生成计费配置（仅 antigravity 平台使用）
   image_price_1k: number | null
   image_price_2k: number | null
@@ -484,9 +489,13 @@ export interface CreateGroupRequest {
   rate_multiplier?: number
   is_exclusive?: boolean
   subscription_type?: SubscriptionType
+  subscription_meter?: SubscriptionMeter
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
+  daily_request_limit?: number | null
+  weekly_request_limit?: number | null
+  monthly_request_limit?: number | null
   image_price_1k?: number | null
   image_price_2k?: number | null
   image_price_4k?: number | null
@@ -513,9 +522,13 @@ export interface UpdateGroupRequest {
   is_exclusive?: boolean
   status?: 'active' | 'inactive'
   subscription_type?: SubscriptionType
+  subscription_meter?: SubscriptionMeter
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
+  daily_request_limit?: number | null
+  weekly_request_limit?: number | null
+  monthly_request_limit?: number | null
   image_price_1k?: number | null
   image_price_2k?: number | null
   image_price_4k?: number | null
@@ -537,6 +550,7 @@ export interface UpdateGroupRequest {
 
 export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'sora'
 export type AccountType = 'oauth' | 'setup-token' | 'apikey' | 'upstream' | 'bedrock'
+export type AccountQuotaMeter = 'cost' | 'requests'
 export type OAuthAddMethod = 'oauth' | 'setup-token'
 export type ProxyProtocol = 'http' | 'https' | 'socks5' | 'socks5h'
 
@@ -731,6 +745,7 @@ export interface Account {
   affinity_clients?: string[] | null
 
   // API Key 账号配额限制
+  quota_meter?: AccountQuotaMeter | null
   quota_limit?: number | null
   quota_used?: number | null
   quota_daily_limit?: number | null
@@ -1267,9 +1282,13 @@ export interface UserSubscription {
   user_id: number
   group_id: number
   status: 'active' | 'expired' | 'revoked'
+  subscription_meter?: SubscriptionMeter
   daily_usage_usd: number
   weekly_usage_usd: number
   monthly_usage_usd: number
+  daily_request_count: number
+  weekly_request_count: number
+  monthly_request_count: number
   daily_window_start: string | null
   weekly_window_start: string | null
   monthly_window_start: string | null
@@ -1281,27 +1300,50 @@ export interface UserSubscription {
 }
 
 export interface SubscriptionProgress {
-  subscription_id: number
+  id: number
+  group_name: string
+  meter: SubscriptionMeter
   daily: {
-    used: number
-    limit: number | null
+    limit_usd?: number
+    used_usd?: number
+    remaining_usd?: number
+    limit_requests?: number
+    used_requests?: number
+    remaining_requests?: number
+    unit?: 'USD' | 'requests'
     percentage: number
-    reset_in_seconds: number | null
+    resets_in_seconds: number
+    window_start: string
+    resets_at: string
   } | null
   weekly: {
-    used: number
-    limit: number | null
+    limit_usd?: number
+    used_usd?: number
+    remaining_usd?: number
+    limit_requests?: number
+    used_requests?: number
+    remaining_requests?: number
+    unit?: 'USD' | 'requests'
     percentage: number
-    reset_in_seconds: number | null
+    resets_in_seconds: number
+    window_start: string
+    resets_at: string
   } | null
   monthly: {
-    used: number
-    limit: number | null
+    limit_usd?: number
+    used_usd?: number
+    remaining_usd?: number
+    limit_requests?: number
+    used_requests?: number
+    remaining_requests?: number
+    unit?: 'USD' | 'requests'
     percentage: number
-    reset_in_seconds: number | null
+    resets_in_seconds: number
+    window_start: string
+    resets_at: string
   } | null
-  expires_at: string | null
-  days_remaining: number | null
+  expires_at: string
+  expires_in_days: number
 }
 
 export interface AssignSubscriptionRequest {

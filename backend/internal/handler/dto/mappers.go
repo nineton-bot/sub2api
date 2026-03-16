@@ -164,9 +164,13 @@ func groupFromServiceBase(g *service.Group) Group {
 		IsExclusive:                     g.IsExclusive,
 		Status:                          g.Status,
 		SubscriptionType:                g.SubscriptionType,
+		SubscriptionMeter:               g.SubscriptionMeter,
 		DailyLimitUSD:                   g.DailyLimitUSD,
 		WeeklyLimitUSD:                  g.WeeklyLimitUSD,
 		MonthlyLimitUSD:                 g.MonthlyLimitUSD,
+		DailyRequestLimit:               g.DailyRequestLimit,
+		WeeklyRequestLimit:              g.WeeklyRequestLimit,
+		MonthlyRequestLimit:             g.MonthlyRequestLimit,
 		ImagePrice1K:                    g.ImagePrice1K,
 		ImagePrice2K:                    g.ImagePrice2K,
 		ImagePrice4K:                    g.ImagePrice4K,
@@ -266,6 +270,8 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 
 	// 提取账号配额限制（apikey / bedrock 类型有效）
 	if a.IsAPIKeyOrBedrock() {
+		meter := a.GetQuotaMeter()
+		out.QuotaMeter = &meter
 		if limit := a.GetQuotaLimit(); limit > 0 {
 			out.QuotaLimit = &limit
 			used := a.GetQuotaUsed()
@@ -659,22 +665,25 @@ func UserSubscriptionFromServiceAdmin(sub *service.UserSubscription) *AdminUserS
 
 func userSubscriptionFromServiceBase(sub *service.UserSubscription) UserSubscription {
 	return UserSubscription{
-		ID:                 sub.ID,
-		UserID:             sub.UserID,
-		GroupID:            sub.GroupID,
-		StartsAt:           sub.StartsAt,
-		ExpiresAt:          sub.ExpiresAt,
-		Status:             sub.Status,
-		DailyWindowStart:   sub.DailyWindowStart,
-		WeeklyWindowStart:  sub.WeeklyWindowStart,
-		MonthlyWindowStart: sub.MonthlyWindowStart,
-		DailyUsageUSD:      sub.DailyUsageUSD,
-		WeeklyUsageUSD:     sub.WeeklyUsageUSD,
-		MonthlyUsageUSD:    sub.MonthlyUsageUSD,
-		CreatedAt:          sub.CreatedAt,
-		UpdatedAt:          sub.UpdatedAt,
-		User:               UserFromServiceShallow(sub.User),
-		Group:              GroupFromServiceShallow(sub.Group),
+		ID:                  sub.ID,
+		UserID:              sub.UserID,
+		GroupID:             sub.GroupID,
+		StartsAt:            sub.StartsAt,
+		ExpiresAt:           sub.ExpiresAt,
+		Status:              sub.Status,
+		DailyWindowStart:    sub.DailyWindowStart,
+		WeeklyWindowStart:   sub.WeeklyWindowStart,
+		MonthlyWindowStart:  sub.MonthlyWindowStart,
+		DailyUsageUSD:       sub.DailyUsageUSD,
+		WeeklyUsageUSD:      sub.WeeklyUsageUSD,
+		MonthlyUsageUSD:     sub.MonthlyUsageUSD,
+		DailyRequestCount:   sub.DailyRequestCount,
+		WeeklyRequestCount:  sub.WeeklyRequestCount,
+		MonthlyRequestCount: sub.MonthlyRequestCount,
+		CreatedAt:           sub.CreatedAt,
+		UpdatedAt:           sub.UpdatedAt,
+		User:                UserFromServiceShallow(sub.User),
+		Group:               GroupFromServiceShallow(sub.Group),
 	}
 }
 

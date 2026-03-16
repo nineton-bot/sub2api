@@ -35,6 +35,10 @@ func newGroupRepositoryWithSQL(client *dbent.Client, sqlq sqlExecutor) *groupRep
 }
 
 func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) error {
+	subscriptionMeter := groupIn.SubscriptionMeter
+	if subscriptionMeter == "" {
+		subscriptionMeter = service.SubscriptionMeterCostQuota
+	}
 	builder := r.client.Group.Create().
 		SetName(groupIn.Name).
 		SetDescription(groupIn.Description).
@@ -43,9 +47,13 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetIsExclusive(groupIn.IsExclusive).
 		SetStatus(groupIn.Status).
 		SetSubscriptionType(groupIn.SubscriptionType).
+		SetSubscriptionMeter(subscriptionMeter).
 		SetNillableDailyLimitUsd(groupIn.DailyLimitUSD).
 		SetNillableWeeklyLimitUsd(groupIn.WeeklyLimitUSD).
 		SetNillableMonthlyLimitUsd(groupIn.MonthlyLimitUSD).
+		SetNillableDailyRequestLimit(groupIn.DailyRequestLimit).
+		SetNillableWeeklyRequestLimit(groupIn.WeeklyRequestLimit).
+		SetNillableMonthlyRequestLimit(groupIn.MonthlyRequestLimit).
 		SetNillableImagePrice1k(groupIn.ImagePrice1K).
 		SetNillableImagePrice2k(groupIn.ImagePrice2K).
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
@@ -105,6 +113,10 @@ func (r *groupRepository) GetByIDLite(ctx context.Context, id int64) (*service.G
 }
 
 func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) error {
+	subscriptionMeter := groupIn.SubscriptionMeter
+	if subscriptionMeter == "" {
+		subscriptionMeter = service.SubscriptionMeterCostQuota
+	}
 	builder := r.client.Group.UpdateOneID(groupIn.ID).
 		SetName(groupIn.Name).
 		SetDescription(groupIn.Description).
@@ -113,9 +125,13 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetIsExclusive(groupIn.IsExclusive).
 		SetStatus(groupIn.Status).
 		SetSubscriptionType(groupIn.SubscriptionType).
+		SetSubscriptionMeter(subscriptionMeter).
 		SetNillableDailyLimitUsd(groupIn.DailyLimitUSD).
 		SetNillableWeeklyLimitUsd(groupIn.WeeklyLimitUSD).
 		SetNillableMonthlyLimitUsd(groupIn.MonthlyLimitUSD).
+		SetNillableDailyRequestLimit(groupIn.DailyRequestLimit).
+		SetNillableWeeklyRequestLimit(groupIn.WeeklyRequestLimit).
+		SetNillableMonthlyRequestLimit(groupIn.MonthlyRequestLimit).
 		SetNillableImagePrice1k(groupIn.ImagePrice1K).
 		SetNillableImagePrice2k(groupIn.ImagePrice2K).
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
@@ -146,6 +162,21 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		builder = builder.SetMonthlyLimitUsd(*groupIn.MonthlyLimitUSD)
 	} else {
 		builder = builder.ClearMonthlyLimitUsd()
+	}
+	if groupIn.DailyRequestLimit != nil {
+		builder = builder.SetDailyRequestLimit(*groupIn.DailyRequestLimit)
+	} else {
+		builder = builder.ClearDailyRequestLimit()
+	}
+	if groupIn.WeeklyRequestLimit != nil {
+		builder = builder.SetWeeklyRequestLimit(*groupIn.WeeklyRequestLimit)
+	} else {
+		builder = builder.ClearWeeklyRequestLimit()
+	}
+	if groupIn.MonthlyRequestLimit != nil {
+		builder = builder.SetMonthlyRequestLimit(*groupIn.MonthlyRequestLimit)
+	} else {
+		builder = builder.ClearMonthlyRequestLimit()
 	}
 	if groupIn.ImagePrice1K != nil {
 		builder = builder.SetImagePrice1k(*groupIn.ImagePrice1K)

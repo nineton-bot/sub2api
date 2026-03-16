@@ -74,10 +74,14 @@ type Group struct {
 	IsExclusive    bool    `json:"is_exclusive"`
 	Status         string  `json:"status"`
 
-	SubscriptionType string   `json:"subscription_type"`
-	DailyLimitUSD    *float64 `json:"daily_limit_usd"`
-	WeeklyLimitUSD   *float64 `json:"weekly_limit_usd"`
-	MonthlyLimitUSD  *float64 `json:"monthly_limit_usd"`
+	SubscriptionType    string   `json:"subscription_type"`
+	SubscriptionMeter   string   `json:"subscription_meter"`
+	DailyLimitUSD       *float64 `json:"daily_limit_usd"`
+	WeeklyLimitUSD      *float64 `json:"weekly_limit_usd"`
+	MonthlyLimitUSD     *float64 `json:"monthly_limit_usd"`
+	DailyRequestLimit   *int     `json:"daily_request_limit"`
+	WeeklyRequestLimit  *int     `json:"weekly_request_limit"`
+	MonthlyRequestLimit *int     `json:"monthly_request_limit"`
 
 	// 图片生成计费配置（仅 antigravity 平台使用）
 	ImagePrice1K *float64 `json:"image_price_1k"`
@@ -196,6 +200,7 @@ type Account struct {
 	CacheTTLOverrideTarget  *string `json:"cache_ttl_override_target,omitempty"`
 
 	// API Key 账号配额限制
+	QuotaMeter       *string  `json:"quota_meter,omitempty"`
 	QuotaLimit       *float64 `json:"quota_limit,omitempty"`
 	QuotaUsed        *float64 `json:"quota_used,omitempty"`
 	QuotaDailyLimit  *float64 `json:"quota_daily_limit,omitempty"`
@@ -456,9 +461,12 @@ type UserSubscription struct {
 	WeeklyWindowStart  *time.Time `json:"weekly_window_start"`
 	MonthlyWindowStart *time.Time `json:"monthly_window_start"`
 
-	DailyUsageUSD   float64 `json:"daily_usage_usd"`
-	WeeklyUsageUSD  float64 `json:"weekly_usage_usd"`
-	MonthlyUsageUSD float64 `json:"monthly_usage_usd"`
+	DailyUsageUSD       float64 `json:"daily_usage_usd"`
+	WeeklyUsageUSD      float64 `json:"weekly_usage_usd"`
+	MonthlyUsageUSD     float64 `json:"monthly_usage_usd"`
+	DailyRequestCount   int     `json:"daily_request_count"`
+	WeeklyRequestCount  int     `json:"weekly_request_count"`
+	MonthlyRequestCount int     `json:"monthly_request_count"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
