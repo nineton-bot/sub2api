@@ -1255,7 +1255,7 @@ func (r *usageLogRepository) GetUserStats(ctx context.Context, userID int64, sta
 			COALESCE(SUM(output_tokens), 0) as output_tokens,
 			COALESCE(SUM(cache_read_tokens), 0) as cache_read_tokens
 		FROM usage_logs
-		WHERE user_id = $1 AND created_at >= $2 AND created_at < $3
+		WHERE user_id = $1 AND usage_logs.created_at >= $2 AND usage_logs.created_at < $3
 	`
 
 	stats := &UserStats{}
@@ -1578,6 +1578,7 @@ func (r *usageLogRepository) GetUserStatsAggregated(ctx context.Context, userID 
 	query := `
 		SELECT
 			COUNT(*) as total_requests,
+			COALESCE(SUM(CASE WHEN usage_logs.billing_type = $4 AND groups.subscription_meter = $5 THEN 1 ELSE 0 END), 0) as total_request_quota_requests,
 			COALESCE(SUM(input_tokens), 0) as total_input_tokens,
 			COALESCE(SUM(output_tokens), 0) as total_output_tokens,
 			COALESCE(SUM(cache_creation_tokens + cache_read_tokens), 0) as total_cache_tokens,
@@ -1585,7 +1586,8 @@ func (r *usageLogRepository) GetUserStatsAggregated(ctx context.Context, userID 
 			COALESCE(SUM(actual_cost), 0) as total_actual_cost,
 			COALESCE(AVG(COALESCE(duration_ms, 0)), 0) as avg_duration_ms
 		FROM usage_logs
-		WHERE user_id = $1 AND created_at >= $2 AND created_at < $3
+		LEFT JOIN groups ON groups.id = usage_logs.group_id
+		WHERE user_id = $1 AND usage_logs.created_at >= $2 AND usage_logs.created_at < $3
 	`
 
 	var stats usagestats.UsageStats
@@ -1593,8 +1595,9 @@ func (r *usageLogRepository) GetUserStatsAggregated(ctx context.Context, userID 
 		ctx,
 		r.sql,
 		query,
-		[]any{userID, startTime, endTime},
+		[]any{userID, startTime, endTime, service.BillingTypeSubscription, service.SubscriptionMeterRequestQuota},
 		&stats.TotalRequests,
+		&stats.TotalRequestQuotaRequests,
 		&stats.TotalInputTokens,
 		&stats.TotalOutputTokens,
 		&stats.TotalCacheTokens,
@@ -1613,6 +1616,7 @@ func (r *usageLogRepository) GetAPIKeyStatsAggregated(ctx context.Context, apiKe
 	query := `
 		SELECT
 			COUNT(*) as total_requests,
+			COALESCE(SUM(CASE WHEN usage_logs.billing_type = $4 AND groups.subscription_meter = $5 THEN 1 ELSE 0 END), 0) as total_request_quota_requests,
 			COALESCE(SUM(input_tokens), 0) as total_input_tokens,
 			COALESCE(SUM(output_tokens), 0) as total_output_tokens,
 			COALESCE(SUM(cache_creation_tokens + cache_read_tokens), 0) as total_cache_tokens,
@@ -1620,7 +1624,8 @@ func (r *usageLogRepository) GetAPIKeyStatsAggregated(ctx context.Context, apiKe
 			COALESCE(SUM(actual_cost), 0) as total_actual_cost,
 			COALESCE(AVG(COALESCE(duration_ms, 0)), 0) as avg_duration_ms
 		FROM usage_logs
-		WHERE api_key_id = $1 AND created_at >= $2 AND created_at < $3
+		LEFT JOIN groups ON groups.id = usage_logs.group_id
+		WHERE api_key_id = $1 AND usage_logs.created_at >= $2 AND usage_logs.created_at < $3
 	`
 
 	var stats usagestats.UsageStats
@@ -1628,8 +1633,9 @@ func (r *usageLogRepository) GetAPIKeyStatsAggregated(ctx context.Context, apiKe
 		ctx,
 		r.sql,
 		query,
-		[]any{apiKeyID, startTime, endTime},
+		[]any{apiKeyID, startTime, endTime, service.BillingTypeSubscription, service.SubscriptionMeterRequestQuota},
 		&stats.TotalRequests,
+		&stats.TotalRequestQuotaRequests,
 		&stats.TotalInputTokens,
 		&stats.TotalOutputTokens,
 		&stats.TotalCacheTokens,

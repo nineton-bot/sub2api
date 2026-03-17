@@ -695,6 +695,7 @@ export default {
     cacheTtlOverridden5m: 'Billed as 5m',
     cacheTtlOverridden1h: 'Billed as 1h',
     totalRequests: 'Total Requests',
+    requestQuotaRequests: 'Request-quota requests',
     totalTokens: 'Total Tokens',
     totalCost: 'Total Cost',
     standardCost: 'Standard',

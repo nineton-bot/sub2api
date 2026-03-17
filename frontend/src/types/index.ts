@@ -1164,6 +1164,7 @@ export interface DashboardStats {
 export interface UsageStatsResponse {
   period?: string
   total_requests: number
+  total_request_quota_requests: number
   total_input_tokens: number
   total_output_tokens: number
   total_cache_tokens: number

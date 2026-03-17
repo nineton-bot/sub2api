@@ -19,6 +19,10 @@
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 {{ t('usage.inSelectedRange') }}
               </p>
+              <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                {{ t('usage.requestQuotaRequests') }}:
+                {{ usageStats?.total_request_quota_requests?.toLocaleString() || '0' }}
+              </p>
             </div>
           </div>
         </div>

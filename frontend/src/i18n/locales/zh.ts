@@ -700,6 +700,7 @@ export default {
     cacheTtlOverridden5m: '按 5m 计费',
     cacheTtlOverridden1h: '按 1h 计费',
     totalRequests: '总请求数',
+    requestQuotaRequests: '次数订阅请求',
     totalTokens: '总 Token',
     totalCost: '总消费',
     standardCost: '标准',

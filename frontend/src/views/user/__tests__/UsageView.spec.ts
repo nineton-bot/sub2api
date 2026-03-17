@@ -30,6 +30,7 @@ const messages: Record<string, string> = {
   'usage.rate': 'Rate',
   'usage.original': 'Original',
   'usage.billed': 'Billed',
+  'usage.requestQuotaRequests': 'Request-quota requests',
   'usage.allApiKeys': 'All API Keys',
   'usage.apiKeyFilter': 'API Key',
   'usage.model': 'Model',
@@ -131,6 +132,7 @@ describe('user UsageView tooltip', () => {
     })
     getStatsByDateRange.mockResolvedValue({
       total_requests: 1,
+      total_request_quota_requests: 0,
       total_tokens: 100,
       total_cost: 0.1,
       avg_duration_ms: 1,
@@ -219,6 +221,7 @@ describe('user UsageView tooltip', () => {
     })
     getStatsByDateRange.mockResolvedValue({
       total_requests: 1,
+      total_request_quota_requests: 0,
       total_tokens: 100,
       total_cost: 0.1,
       avg_duration_ms: 1,
