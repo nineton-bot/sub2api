@@ -1139,6 +1139,34 @@ function generateOpenClawConfig(platform: 'openai' | 'anthropic', baseUrl: strin
       contextWindow: 950000,
       maxTokens: 128000,
     },
+    {
+      id: 'gpt-5.2',
+      name: 'GPT-5.2',
+      reasoning: true,
+      input: ['text', 'image'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      contextWindow: 400000,
+      maxTokens: 128000,
+    },
+    {
+      id: 'gpt-5.3-codex',
+      name: 'GPT-5.3 Codex',
+      reasoning: true,
+      input: ['text', 'image'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      contextWindow: 400000,
+      maxTokens: 128000,
+    },
   ]
 
   const anthropicModels = [
@@ -1244,6 +1272,11 @@ function generateOpenClawConfig(platform: 'openai' | 'anthropic', baseUrl: strin
 
   const models = platform === 'openai' ? openAIModels : anthropicModels
   const primaryModel = platform === 'openai' ? 'gpt-5.4' : 'qwen3.5-plus'
+  const fallbackModels = platform === 'openai'
+    ? ['gpt-5.2', 'gpt-5.3-codex']
+    : anthropicModels
+        .map((model) => model.id)
+        .filter((modelId) => modelId !== primaryModel)
 
   const content = JSON.stringify(
     {
@@ -1264,7 +1297,7 @@ function generateOpenClawConfig(platform: 'openai' | 'anthropic', baseUrl: strin
         defaults: {
           model: {
             primary: `${providerId}/${primaryModel}`,
-            fallbacks: [],
+            fallbacks: fallbackModels.map((modelId) => `${providerId}/${modelId}`),
           },
           models: {
             ...Object.fromEntries(models.map((model) => [`${providerId}/${model.id}`, {}])),
