@@ -595,6 +595,7 @@ export default {
           '按 Win+R，输入 %userprofile%\\.codex 打开配置目录。如目录不存在，请先手动创建。'
       },
       cliTabs: {
+        openclaw: 'OpenClaw',
         claudeCode: 'Claude Code',
         geminiCli: 'Gemini CLI',
         codexCli: 'Codex CLI',
@@ -620,6 +621,20 @@ export default {
         title: 'OpenCode 配置示例',
         subtitle: 'opencode.json',
         hint: '配置文件路径：~/.config/opencode/opencode.json（或 opencode.jsonc），不存在需手动创建。可使用默认 provider（openai/anthropic/google）或自定义 provider_id。API Key 支持直接配置或通过客户端 /connect 命令配置。示例仅供参考，模型与选项可按需调整。'
+      },
+      openclaw: {
+        openaiDescription:
+          '将以下 OpenClaw 配置示例写入 openclaw.json，可用于接入当前 OpenAI 分组密钥。示例已抽象为通用 provider 名称与模型配置，你可以按需调整命名与默认模型。',
+        anthropicDescription:
+          '将以下 OpenClaw 配置示例写入 openclaw.json，可用于接入当前 Anthropic 分组密钥。示例已抽象为通用 provider 名称与模型配置，你可以按需调整命名与默认模型。',
+        note:
+          'OpenClaw 安装后默认从 ~/.openclaw/openclaw.json 读取配置。若文件不存在，请手动创建。修改后重启 OpenClaw 或重新打开终端以加载最新配置。',
+        noteWindows:
+          'Windows 安装版 OpenClaw 默认从 %USERPROFILE%\\.openclaw\\openclaw.json 读取配置。若文件不存在，请手动创建。修改后请重启 OpenClaw 或重新打开终端。',
+        openaiHint:
+          '示例采用 OpenAI Responses 风格配置，适合关联 OpenAI 分组的 API 密钥。你可以将 openai-compatible-model 替换为分组支持的实际模型，例如 gpt-5.4。',
+        anthropicHint:
+          '示例采用 Anthropic Messages 风格配置，适合关联 Anthropic 分组的 API 密钥。你可以将 anthropic-compatible-model 替换为分组支持的实际模型，例如 qwen3-coder-next 或 qwen3.5-plus。'
       }
     },
     customKeyLabel: '自定义密钥',

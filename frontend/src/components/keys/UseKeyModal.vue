@@ -180,7 +180,9 @@ const activeClientTab = ref<string>('claude')
 const defaultClientTab = computed(() => {
   switch (props.platform) {
     case 'openai':
-      return 'codex'
+      return 'openclaw'
+    case 'anthropic':
+      return 'openclaw'
     case 'gemini':
       return 'gemini'
     case 'antigravity':
@@ -268,6 +270,7 @@ const clientTabs = computed((): TabConfig[] => {
   switch (props.platform) {
     case 'openai': {
       const tabs: TabConfig[] = [
+        { id: 'openclaw', label: t('keys.useKeyModal.cliTabs.openclaw'), icon: TerminalIcon },
         { id: 'codex', label: t('keys.useKeyModal.cliTabs.codexCli'), icon: TerminalIcon },
         { id: 'codex-ws', label: t('keys.useKeyModal.cliTabs.codexCliWs'), icon: TerminalIcon },
       ]
@@ -290,6 +293,7 @@ const clientTabs = computed((): TabConfig[] => {
       ]
     default:
       return [
+        { id: 'openclaw', label: t('keys.useKeyModal.cliTabs.openclaw'), icon: TerminalIcon },
         { id: 'claude', label: t('keys.useKeyModal.cliTabs.claudeCode'), icon: TerminalIcon },
         { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
       ]
@@ -313,7 +317,7 @@ const showShellTabs = computed(() => activeClientTab.value !== 'opencode')
 
 const currentTabs = computed(() => {
   if (!showShellTabs.value) return []
-  if (activeClientTab.value === 'codex' || activeClientTab.value === 'codex-ws') {
+  if (activeClientTab.value === 'codex' || activeClientTab.value === 'codex-ws' || activeClientTab.value === 'openclaw') {
     return openaiTabs
   }
   return shellTabs
@@ -322,10 +326,18 @@ const currentTabs = computed(() => {
 const platformDescription = computed(() => {
   switch (props.platform) {
     case 'openai':
+      if (activeClientTab.value === 'openclaw') {
+        return t('keys.useKeyModal.openclaw.openaiDescription')
+      }
       if (activeClientTab.value === 'claude') {
         return t('keys.useKeyModal.description')
       }
       return t('keys.useKeyModal.openai.description')
+    case 'anthropic':
+      if (activeClientTab.value === 'openclaw') {
+        return t('keys.useKeyModal.openclaw.anthropicDescription')
+      }
+      return t('keys.useKeyModal.description')
     case 'gemini':
       return t('keys.useKeyModal.gemini.description')
     case 'antigravity':
@@ -338,12 +350,24 @@ const platformDescription = computed(() => {
 const platformNote = computed(() => {
   switch (props.platform) {
     case 'openai':
+      if (activeClientTab.value === 'openclaw') {
+        return activeTab.value === 'windows'
+          ? t('keys.useKeyModal.openclaw.noteWindows')
+          : t('keys.useKeyModal.openclaw.note')
+      }
       if (activeClientTab.value === 'claude') {
         return t('keys.useKeyModal.note')
       }
       return activeTab.value === 'windows'
         ? t('keys.useKeyModal.openai.noteWindows')
         : t('keys.useKeyModal.openai.note')
+    case 'anthropic':
+      if (activeClientTab.value === 'openclaw') {
+        return activeTab.value === 'windows'
+          ? t('keys.useKeyModal.openclaw.noteWindows')
+          : t('keys.useKeyModal.openclaw.note')
+      }
+      return t('keys.useKeyModal.note')
     case 'gemini':
       return t('keys.useKeyModal.gemini.note')
     case 'antigravity':
@@ -409,6 +433,17 @@ const currentFiles = computed((): FileConfig[] => {
         ]
       default:
         return [generateOpenCodeConfig('openai', apiBase, apiKey)]
+    }
+  }
+
+  if (activeClientTab.value === 'openclaw') {
+    switch (props.platform) {
+      case 'openai':
+        return [generateOpenClawConfig('openai', apiBase, apiKey)]
+      case 'anthropic':
+        return [generateOpenClawConfig('anthropic', baseRoot, apiKey)]
+      default:
+        return []
     }
   }
 
@@ -1078,6 +1113,176 @@ function generateOpenCodeConfig(platform: string, baseUrl: string, apiKey: strin
     path: pathLabel ?? 'opencode.json',
     content,
     hint: t('keys.useKeyModal.opencode.hint')
+  }
+}
+
+function generateOpenClawConfig(platform: 'openai' | 'anthropic', baseUrl: string, apiKey: string): FileConfig {
+  const isWindows = activeTab.value === 'windows'
+  const configPath = isWindows
+    ? '%USERPROFILE%\\.openclaw\\openclaw.json'
+    : '~/.openclaw/openclaw.json'
+
+  const providerId = platform === 'openai' ? 'my-openai-provider' : 'my-anthropic-provider'
+  const providerApi = platform === 'openai' ? 'openai-responses' : 'anthropic-messages'
+  const openAIModels = [
+    {
+      id: 'gpt-5.4',
+      name: 'GPT-5.4',
+      reasoning: true,
+      input: ['text', 'image'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      contextWindow: 950000,
+      maxTokens: 128000,
+    },
+  ]
+
+  const anthropicModels = [
+    {
+      id: 'qwen3.5-plus',
+      name: 'qwen3.5-plus',
+      reasoning: false,
+      input: ['text', 'image'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      contextWindow: 1000000,
+      maxTokens: 65536,
+    },
+    {
+      id: 'qwen3-max-2026-01-23',
+      name: 'qwen3-max-2026-01-23',
+      reasoning: false,
+      input: ['text'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      contextWindow: 262144,
+      maxTokens: 65536,
+    },
+    {
+      id: 'qwen3-coder-next',
+      name: 'qwen3-coder-next',
+      reasoning: false,
+      input: ['text'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      contextWindow: 262144,
+      maxTokens: 65536,
+    },
+    {
+      id: 'MiniMax-M2.5',
+      name: 'MiniMax-M2.5',
+      reasoning: false,
+      input: ['text'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      contextWindow: 204800,
+      maxTokens: 131072,
+    },
+    {
+      id: 'glm-5',
+      name: 'glm-5',
+      reasoning: false,
+      input: ['text'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      contextWindow: 202752,
+      maxTokens: 16384,
+    },
+    {
+      id: 'glm-4.7',
+      name: 'glm-4.7',
+      reasoning: false,
+      input: ['text'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      contextWindow: 202752,
+      maxTokens: 16384,
+    },
+    {
+      id: 'kimi-k2.5',
+      name: 'kimi-k2.5',
+      reasoning: false,
+      input: ['text', 'image'],
+      cost: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      contextWindow: 262144,
+      maxTokens: 32768,
+    },
+  ]
+
+  const models = platform === 'openai' ? openAIModels : anthropicModels
+  const primaryModel = platform === 'openai' ? 'gpt-5.4' : 'qwen3.5-plus'
+
+  const content = JSON.stringify(
+    {
+      models: {
+        mode: 'replace',
+        providers: {
+          [providerId]: {
+            baseUrl,
+            apiKey,
+            auth: 'api-key',
+            api: providerApi,
+            authHeader: true,
+            models,
+          },
+        },
+      },
+      agents: {
+        defaults: {
+          model: {
+            primary: `${providerId}/${primaryModel}`,
+            fallbacks: [],
+          },
+          models: {
+            ...Object.fromEntries(models.map((model) => [`${providerId}/${model.id}`, {}])),
+          },
+        },
+      },
+    },
+    null,
+    2,
+  )
+
+  return {
+    path: configPath,
+    content,
+    hint:
+      platform === 'openai'
+        ? t('keys.useKeyModal.openclaw.openaiHint')
+        : t('keys.useKeyModal.openclaw.anthropicHint'),
   }
 }
 

@@ -594,6 +594,7 @@ export default {
         noteWindows: 'Press Win+R and enter %userprofile%\\.codex to open the config directory. Create it manually if it does not exist.',
       },
       cliTabs: {
+        openclaw: 'OpenClaw',
         claudeCode: 'Claude Code',
         geminiCli: 'Gemini CLI',
         codexCli: 'Codex CLI',
@@ -616,6 +617,20 @@ export default {
         title: 'OpenCode Example',
         subtitle: 'opencode.json',
         hint: 'Config path: ~/.config/opencode/opencode.json (or opencode.jsonc), create if not exists. Use default providers (openai/anthropic/google) or custom provider_id. API Key can be configured directly or via /connect command. This is an example, adjust models and options as needed.',
+      },
+      openclaw: {
+        openaiDescription:
+          'Write the following OpenClaw example into openclaw.json to use the current OpenAI group key. The example is intentionally generic: provider names, model IDs, and defaults can be adjusted to fit your setup.',
+        anthropicDescription:
+          'Write the following OpenClaw example into openclaw.json to use the current Anthropic group key. The example is intentionally generic: provider names, model IDs, and defaults can be adjusted to fit your setup.',
+        note:
+          'After installation, OpenClaw reads its config from ~/.openclaw/openclaw.json by default. Create the file manually if it does not exist. Restart OpenClaw or reopen your terminal after editing.',
+        noteWindows:
+          'On Windows, OpenClaw reads its config from %USERPROFILE%\\.openclaw\\openclaw.json by default. Create the file manually if it does not exist. Restart OpenClaw or reopen your terminal after editing.',
+        openaiHint:
+          'This example uses the OpenAI Responses style and is intended for API keys bound to an OpenAI group. Replace openai-compatible-model with a real model supported by the group, for example gpt-5.4.',
+        anthropicHint:
+          'This example uses the Anthropic Messages style and is intended for API keys bound to an Anthropic group. Replace anthropic-compatible-model with a real model supported by the group, for example qwen3-coder-next or qwen3.5-plus.',
       },
     },
     customKeyLabel: 'Custom Key',
