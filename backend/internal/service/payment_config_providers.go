@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -51,7 +52,9 @@ func (s *PaymentConfigService) ListProviderInstancesWithConfig(ctx context.Conte
 		}
 		resp.Config, err = s.decryptAndMaskConfig(inst.Config)
 		if err != nil {
-			return nil, fmt.Errorf("decrypt config for instance %d: %w", inst.ID, err)
+			slog.Warn("failed to decrypt config for provider instance, config will be empty",
+				"instance_id", inst.ID, "error", err)
+			resp.Config = map[string]string{"_decrypt_error": "true"}
 		}
 		result = append(result, resp)
 	}
