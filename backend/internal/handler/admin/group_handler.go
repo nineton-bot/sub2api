@@ -9,6 +9,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +17,9 @@ import (
 
 // GroupHandler handles admin group management
 type GroupHandler struct {
-	adminService service.AdminService
+	adminService         service.AdminService
+	dashboardService     *service.DashboardService
+	groupCapacityService *service.GroupCapacityService
 }
 
 type optionalLimitField struct {
@@ -118,9 +121,11 @@ func (f optionalIntField) ToServiceInput() *int {
 }
 
 // NewGroupHandler creates a new admin group handler
-func NewGroupHandler(adminService service.AdminService) *GroupHandler {
+func NewGroupHandler(adminService service.AdminService, dashboardService *service.DashboardService, groupCapacityService *service.GroupCapacityService) *GroupHandler {
 	return &GroupHandler{
-		adminService: adminService,
+		adminService:         adminService,
+		dashboardService:     dashboardService,
+		groupCapacityService: groupCapacityService,
 	}
 }
 
@@ -128,7 +133,7 @@ func NewGroupHandler(adminService service.AdminService) *GroupHandler {
 type CreateGroupRequest struct {
 	Name                string             `json:"name" binding:"required"`
 	Description         string             `json:"description"`
-	Platform            string             `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity sora"`
+	Platform            string             `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity"`
 	RateMultiplier      float64            `json:"rate_multiplier"`
 	IsExclusive         bool               `json:"is_exclusive"`
 	SubscriptionType    string             `json:"subscription_type" binding:"omitempty,oneof=standard subscription"`
@@ -143,10 +148,6 @@ type CreateGroupRequest struct {
 	ImagePrice1K                    *float64 `json:"image_price_1k"`
 	ImagePrice2K                    *float64 `json:"image_price_2k"`
 	ImagePrice4K                    *float64 `json:"image_price_4k"`
-	SoraImagePrice360               *float64 `json:"sora_image_price_360"`
-	SoraImagePrice540               *float64 `json:"sora_image_price_540"`
-	SoraVideoPricePerRequest        *float64 `json:"sora_video_price_per_request"`
-	SoraVideoPricePerRequestHD      *float64 `json:"sora_video_price_per_request_hd"`
 	ClaudeCodeOnly                  bool     `json:"claude_code_only"`
 	FallbackGroupID                 *int64   `json:"fallback_group_id"`
 	FallbackGroupIDOnInvalidRequest *int64   `json:"fallback_group_id_on_invalid_request"`
@@ -156,11 +157,12 @@ type CreateGroupRequest struct {
 	MCPXMLInject        *bool              `json:"mcp_xml_inject"`
 	// 支持的模型系列（仅 antigravity 平台使用）
 	SupportedModelScopes []string `json:"supported_model_scopes"`
-	// Sora 存储配额
-	SoraStorageQuotaBytes int64 `json:"sora_storage_quota_bytes"`
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
-	AllowMessagesDispatch bool   `json:"allow_messages_dispatch"`
-	DefaultMappedModel    string `json:"default_mapped_model"`
+	AllowMessagesDispatch       bool                                      `json:"allow_messages_dispatch"`
+	RequireOAuthOnly            bool                                      `json:"require_oauth_only"`
+	RequirePrivacySet           bool                                      `json:"require_privacy_set"`
+	DefaultMappedModel          string                                    `json:"default_mapped_model"`
+	MessagesDispatchModelConfig service.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	// 从指定分组复制账号（创建后自动绑定）
 	CopyAccountsFromGroupIDs []int64 `json:"copy_accounts_from_group_ids"`
 }
@@ -169,7 +171,7 @@ type CreateGroupRequest struct {
 type UpdateGroupRequest struct {
 	Name                string             `json:"name"`
 	Description         string             `json:"description"`
-	Platform            string             `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity sora"`
+	Platform            string             `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity"`
 	RateMultiplier      *float64           `json:"rate_multiplier"`
 	IsExclusive         *bool              `json:"is_exclusive"`
 	Status              string             `json:"status" binding:"omitempty,oneof=active inactive"`
@@ -185,10 +187,6 @@ type UpdateGroupRequest struct {
 	ImagePrice1K                    *float64 `json:"image_price_1k"`
 	ImagePrice2K                    *float64 `json:"image_price_2k"`
 	ImagePrice4K                    *float64 `json:"image_price_4k"`
-	SoraImagePrice360               *float64 `json:"sora_image_price_360"`
-	SoraImagePrice540               *float64 `json:"sora_image_price_540"`
-	SoraVideoPricePerRequest        *float64 `json:"sora_video_price_per_request"`
-	SoraVideoPricePerRequestHD      *float64 `json:"sora_video_price_per_request_hd"`
 	ClaudeCodeOnly                  *bool    `json:"claude_code_only"`
 	FallbackGroupID                 *int64   `json:"fallback_group_id"`
 	FallbackGroupIDOnInvalidRequest *int64   `json:"fallback_group_id_on_invalid_request"`
@@ -198,11 +196,12 @@ type UpdateGroupRequest struct {
 	MCPXMLInject        *bool              `json:"mcp_xml_inject"`
 	// 支持的模型系列（仅 antigravity 平台使用）
 	SupportedModelScopes *[]string `json:"supported_model_scopes"`
-	// Sora 存储配额
-	SoraStorageQuotaBytes *int64 `json:"sora_storage_quota_bytes"`
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
-	AllowMessagesDispatch *bool   `json:"allow_messages_dispatch"`
-	DefaultMappedModel    *string `json:"default_mapped_model"`
+	AllowMessagesDispatch       *bool                                      `json:"allow_messages_dispatch"`
+	RequireOAuthOnly            *bool                                      `json:"require_oauth_only"`
+	RequirePrivacySet           *bool                                      `json:"require_privacy_set"`
+	DefaultMappedModel          *string                                    `json:"default_mapped_model"`
+	MessagesDispatchModelConfig *service.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
 	CopyAccountsFromGroupIDs []int64 `json:"copy_accounts_from_group_ids"`
 }
@@ -220,6 +219,8 @@ func (h *GroupHandler) List(c *gin.Context) {
 		search = search[:100]
 	}
 	isExclusiveStr := c.Query("is_exclusive")
+	sortBy := c.DefaultQuery("sort_by", "sort_order")
+	sortOrder := c.DefaultQuery("sort_order", "asc")
 
 	var isExclusive *bool
 	if isExclusiveStr != "" {
@@ -227,7 +228,7 @@ func (h *GroupHandler) List(c *gin.Context) {
 		isExclusive = &val
 	}
 
-	groups, total, err := h.adminService.ListGroups(c.Request.Context(), page, pageSize, platform, status, search, isExclusive)
+	groups, total, err := h.adminService.ListGroups(c.Request.Context(), page, pageSize, platform, status, search, isExclusive, sortBy, sortOrder)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -310,10 +311,6 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		ImagePrice1K:                    req.ImagePrice1K,
 		ImagePrice2K:                    req.ImagePrice2K,
 		ImagePrice4K:                    req.ImagePrice4K,
-		SoraImagePrice360:               req.SoraImagePrice360,
-		SoraImagePrice540:               req.SoraImagePrice540,
-		SoraVideoPricePerRequest:        req.SoraVideoPricePerRequest,
-		SoraVideoPricePerRequestHD:      req.SoraVideoPricePerRequestHD,
 		ClaudeCodeOnly:                  req.ClaudeCodeOnly,
 		FallbackGroupID:                 req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: req.FallbackGroupIDOnInvalidRequest,
@@ -321,9 +318,11 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		ModelRoutingEnabled:             req.ModelRoutingEnabled,
 		MCPXMLInject:                    req.MCPXMLInject,
 		SupportedModelScopes:            req.SupportedModelScopes,
-		SoraStorageQuotaBytes:           req.SoraStorageQuotaBytes,
 		AllowMessagesDispatch:           req.AllowMessagesDispatch,
+		RequireOAuthOnly:                req.RequireOAuthOnly,
+		RequirePrivacySet:               req.RequirePrivacySet,
 		DefaultMappedModel:              req.DefaultMappedModel,
+		MessagesDispatchModelConfig:     req.MessagesDispatchModelConfig,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
 	})
 	if err != nil {
@@ -370,10 +369,6 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		ImagePrice1K:                    req.ImagePrice1K,
 		ImagePrice2K:                    req.ImagePrice2K,
 		ImagePrice4K:                    req.ImagePrice4K,
-		SoraImagePrice360:               req.SoraImagePrice360,
-		SoraImagePrice540:               req.SoraImagePrice540,
-		SoraVideoPricePerRequest:        req.SoraVideoPricePerRequest,
-		SoraVideoPricePerRequestHD:      req.SoraVideoPricePerRequestHD,
 		ClaudeCodeOnly:                  req.ClaudeCodeOnly,
 		FallbackGroupID:                 req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: req.FallbackGroupIDOnInvalidRequest,
@@ -381,9 +376,11 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		ModelRoutingEnabled:             req.ModelRoutingEnabled,
 		MCPXMLInject:                    req.MCPXMLInject,
 		SupportedModelScopes:            req.SupportedModelScopes,
-		SoraStorageQuotaBytes:           req.SoraStorageQuotaBytes,
 		AllowMessagesDispatch:           req.AllowMessagesDispatch,
+		RequireOAuthOnly:                req.RequireOAuthOnly,
+		RequirePrivacySet:               req.RequirePrivacySet,
 		DefaultMappedModel:              req.DefaultMappedModel,
+		MessagesDispatchModelConfig:     req.MessagesDispatchModelConfig,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
 	})
 	if err != nil {
@@ -429,6 +426,33 @@ func (h *GroupHandler) GetStats(c *gin.Context) {
 		"total_cost":      0.0,
 	})
 	_ = groupID // TODO: implement actual stats
+}
+
+// GetUsageSummary returns today's and cumulative cost for all groups.
+// GET /api/v1/admin/groups/usage-summary?timezone=Asia/Shanghai
+func (h *GroupHandler) GetUsageSummary(c *gin.Context) {
+	userTZ := c.Query("timezone")
+	now := timezone.NowInUserLocation(userTZ)
+	todayStart := timezone.StartOfDayInUserLocation(now, userTZ)
+
+	results, err := h.dashboardService.GetGroupUsageSummary(c.Request.Context(), todayStart)
+	if err != nil {
+		response.Error(c, 500, "Failed to get group usage summary")
+		return
+	}
+
+	response.Success(c, results)
+}
+
+// GetCapacitySummary returns aggregated capacity (concurrency/sessions/RPM) for all active groups.
+// GET /api/v1/admin/groups/capacity-summary
+func (h *GroupHandler) GetCapacitySummary(c *gin.Context) {
+	results, err := h.groupCapacityService.GetAllGroupCapacity(c.Request.Context())
+	if err != nil {
+		response.Error(c, 500, "Failed to get group capacity summary")
+		return
+	}
+	response.Success(c, results)
 }
 
 // GetGroupAPIKeys handles getting API keys in a group

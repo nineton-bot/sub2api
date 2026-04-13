@@ -113,6 +113,33 @@ func (s *GroupRepoSuite) TestUpdate() {
 	s.Require().Equal("updated", got.Name)
 }
 
+func (s *GroupRepoSuite) TestGetByID_PreservesMessagesDispatchModelConfig() {
+	group := &service.Group{
+		Name:                  "openai-dispatch",
+		Platform:              service.PlatformOpenAI,
+		RateMultiplier:        1.0,
+		IsExclusive:           false,
+		Status:                service.StatusActive,
+		SubscriptionType:      service.SubscriptionTypeStandard,
+		AllowMessagesDispatch: true,
+		DefaultMappedModel:    "gpt-5.4",
+		MessagesDispatchModelConfig: service.OpenAIMessagesDispatchModelConfig{
+			OpusMappedModel:   "gpt-5.4",
+			SonnetMappedModel: "gpt-5.3-codex",
+			HaikuMappedModel:  "gpt-5.4-mini",
+			ExactModelMappings: map[string]string{
+				"claude-sonnet-4.5": "gpt-5.4-nano",
+			},
+		},
+	}
+
+	s.Require().NoError(s.repo.Create(s.ctx, group))
+
+	got, err := s.repo.GetByID(s.ctx, group.ID)
+	s.Require().NoError(err)
+	s.Require().Equal(group.MessagesDispatchModelConfig, got.MessagesDispatchModelConfig)
+}
+
 func (s *GroupRepoSuite) TestDelete() {
 	group := &service.Group{
 		Name:             "to-delete",
@@ -603,7 +630,7 @@ func (s *GroupRepoSuite) TestGetAccountCount() {
 	_, err = s.tx.ExecContext(s.ctx, "INSERT INTO account_groups (account_id, group_id, priority, created_at) VALUES ($1, $2, $3, NOW())", a2, group.ID, 2)
 	s.Require().NoError(err)
 
-	count, err := s.repo.GetAccountCount(s.ctx, group.ID)
+	count, _, err := s.repo.GetAccountCount(s.ctx, group.ID)
 	s.Require().NoError(err, "GetAccountCount")
 	s.Require().Equal(int64(2), count)
 }
@@ -619,7 +646,7 @@ func (s *GroupRepoSuite) TestGetAccountCount_Empty() {
 	}
 	s.Require().NoError(s.repo.Create(s.ctx, group))
 
-	count, err := s.repo.GetAccountCount(s.ctx, group.ID)
+	count, _, err := s.repo.GetAccountCount(s.ctx, group.ID)
 	s.Require().NoError(err)
 	s.Require().Zero(count)
 }
@@ -651,7 +678,7 @@ func (s *GroupRepoSuite) TestDeleteAccountGroupsByGroupID() {
 	s.Require().NoError(err, "DeleteAccountGroupsByGroupID")
 	s.Require().Equal(int64(1), affected, "expected 1 affected row")
 
-	count, err := s.repo.GetAccountCount(s.ctx, g.ID)
+	count, _, err := s.repo.GetAccountCount(s.ctx, g.ID)
 	s.Require().NoError(err, "GetAccountCount")
 	s.Require().Equal(int64(0), count, "expected 0 account groups")
 }
@@ -692,7 +719,7 @@ func (s *GroupRepoSuite) TestDeleteAccountGroupsByGroupID_MultipleAccounts() {
 	s.Require().NoError(err)
 	s.Require().Equal(int64(3), affected)
 
-	count, _ := s.repo.GetAccountCount(s.ctx, g.ID)
+	count, _, _ := s.repo.GetAccountCount(s.ctx, g.ID)
 	s.Require().Zero(count)
 }
 

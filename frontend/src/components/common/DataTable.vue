@@ -68,7 +68,7 @@
       'is-scrollable': isScrollable
     }"
   >
-    <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-700">
+    <table class="w-full min-w-max divide-y divide-gray-200 dark:divide-dark-700">
       <thead class="table-header bg-gray-50 dark:bg-dark-800">
         <tr>
           <th
@@ -79,7 +79,8 @@
               'sticky-header-cell py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-dark-400',
               getAdaptivePaddingClass(),
               { 'cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-700': column.sortable },
-              getStickyColumnClass(column, index)
+              getStickyColumnClass(column, index),
+              column.class
             ]"
             @click="column.sortable && handleSort(column.key)"
           >
@@ -147,28 +148,47 @@
           </td>
         </tr>
 
-        <!-- Data rows -->
-        <tr
-          v-else
-          v-for="(row, index) in sortedData"
-          :key="resolveRowKey(row, index)"
-          :data-row-id="resolveRowKey(row, index)"
-          class="hover:bg-gray-50 dark:hover:bg-dark-800"
-        >
-          <td
-            v-for="(column, colIndex) in columns"
-            :key="column.key"
-            :class="[
-              'whitespace-nowrap py-4 text-sm text-gray-900 dark:text-gray-100',
-              getAdaptivePaddingClass(),
-              getStickyColumnClass(column, colIndex)
-            ]"
+        <!-- Data rows (virtual scroll) -->
+        <template v-else>
+          <tr v-if="virtualPaddingTop > 0" aria-hidden="true">
+            <td :colspan="columns.length"
+                :style="{ height: virtualPaddingTop + 'px', padding: 0, border: 'none' }">
+            </td>
+          </tr>
+          <tr
+            v-for="virtualRow in virtualItems"
+            :key="resolveRowKey(sortedData[virtualRow.index], virtualRow.index)"
+            :data-row-id="resolveRowKey(sortedData[virtualRow.index], virtualRow.index)"
+            :data-index="virtualRow.index"
+            :ref="measureElement"
+            class="hover:bg-gray-50 dark:hover:bg-dark-800"
           >
-            <slot :name="`cell-${column.key}`" :row="row" :value="row[column.key]" :expanded="actionsExpanded">
-              {{ column.formatter ? column.formatter(row[column.key], row) : row[column.key] }}
-            </slot>
-          </td>
-        </tr>
+            <td
+              v-for="(column, colIndex) in columns"
+              :key="column.key"
+              :class="[
+                'whitespace-nowrap py-4 text-sm text-gray-900 dark:text-gray-100',
+                getAdaptivePaddingClass(),
+                getStickyColumnClass(column, colIndex),
+                column.class
+              ]"
+            >
+              <slot :name="`cell-${column.key}`"
+                    :row="sortedData[virtualRow.index]"
+                    :value="sortedData[virtualRow.index][column.key]"
+                    :expanded="actionsExpanded">
+                {{ column.formatter
+                   ? column.formatter(sortedData[virtualRow.index][column.key], sortedData[virtualRow.index])
+                   : sortedData[virtualRow.index][column.key] }}
+              </slot>
+            </td>
+          </tr>
+          <tr v-if="virtualPaddingBottom > 0" aria-hidden="true">
+            <td :colspan="columns.length"
+                :style="{ height: virtualPaddingBottom + 'px', padding: 0, border: 'none' }">
+            </td>
+          </tr>
+        </template>
       </tbody>
     </table>
   </div>
@@ -176,6 +196,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useVirtualizer } from '@tanstack/vue-virtual'
 import { useI18n } from 'vue-i18n'
 import type { Column } from './types'
 import Icon from '@/components/icons/Icon.vue'
@@ -299,6 +320,10 @@ interface Props {
    * will emit 'sort' events instead of performing client-side sorting.
    */
   serverSideSort?: boolean
+  /** Estimated row height in px for the virtualizer (default 56) */
+  estimateRowHeight?: number
+  /** Number of rows to render beyond the visible area (default 5) */
+  overscan?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -499,6 +524,33 @@ const sortedData = computed(() => {
     .map(item => item.row)
 })
 
+// --- Virtual scrolling ---
+const rowVirtualizer = useVirtualizer(computed(() => ({
+  count: sortedData.value?.length ?? 0,
+  getScrollElement: () => tableWrapperRef.value,
+  estimateSize: () => props.estimateRowHeight ?? 56,
+  overscan: props.overscan ?? 5,
+})))
+
+const virtualItems = computed(() => rowVirtualizer.value.getVirtualItems())
+
+const virtualPaddingTop = computed(() => {
+  const items = virtualItems.value
+  return items.length > 0 ? items[0].start : 0
+})
+
+const virtualPaddingBottom = computed(() => {
+  const items = virtualItems.value
+  if (items.length === 0) return 0
+  return rowVirtualizer.value.getTotalSize() - items[items.length - 1].end
+})
+
+const measureElement = (el: any) => {
+  if (el) {
+    rowVirtualizer.value.measureElement(el as Element)
+  }
+}
+
 const hasActionsColumn = computed(() => {
   return props.columns.some(column => column.key === 'actions')
 })
@@ -595,6 +647,13 @@ watch(
   },
   { flush: 'post' }
 )
+
+defineExpose({
+  virtualizer: rowVirtualizer,
+  sortedData,
+  resolveRowKey,
+  tableWrapperEl: tableWrapperRef,
+})
 </script>
 
 <style scoped>
@@ -603,6 +662,9 @@ watch(
   --select-col-width: 52px; /* 勾选列宽度：px-6 (24px*2) + checkbox (16px) */
   position: relative;
   overflow-x: auto;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
   isolation: isolate;
 }
 
@@ -733,5 +795,64 @@ tbody tr:hover .sticky-col {
 
 .dark .is-scrollable .sticky-col-right::before {
   background: linear-gradient(to left, rgba(0, 0, 0, 0.2), transparent);
+}
+</style>
+
+<style>
+/* ==========================================================================
+   终极悬浮滚动条防丢器 (Sledgehammer Override)
+   绕过 style.css 中 `* { scrollbar-color: transparent }` 的全局悬停隐身诅咒！
+   ========================================================================== */
+
+/* 1. 废除全局针对所有元素的 scrollbar-width 设定，拿回 Chrome/Safari 下 Webkit 滚动条规则的控制权！ */
+.table-wrapper {
+  scrollbar-width: auto !important; /* 阻止 Chrome 121 退化到原生 Mac 闪隐滚动条 */
+}
+
+/* 2. 重写 Webkit 滚动层，全部加上 !important 强制覆盖透明悬停陷阱 */
+.table-wrapper::-webkit-scrollbar {
+  height: 12px !important;
+  width: 12px !important;
+  display: block !important;
+  background-color: transparent !important;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  border-radius: 6px !important;
+  margin: 0 4px !important;
+}
+.dark .table-wrapper::-webkit-scrollbar-track {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 常驻、不透明的滑块，无视鼠标是否 hover 都在那！ */
+.table-wrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(107, 114, 128, 0.75) !important; 
+  border-radius: 6px !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+  -webkit-appearance: none !important;
+}
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(75, 85, 99, 0.9) !important;
+}
+
+.dark .table-wrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.75) !important;
+}
+.dark .table-wrapper::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(209, 213, 219, 0.9) !important;
+}
+
+/* 3. 仅给真正的 Firefox 留的后路 */
+@supports (-moz-appearance:none) {
+  .table-wrapper {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(156, 163, 175, 0.5) rgba(0, 0, 0, 0.03) !important;
+  }
+  .dark .table-wrapper {
+    scrollbar-color: rgba(75, 85, 99, 0.5) rgba(255, 255, 255, 0.05) !important;
+  }
 }
 </style>

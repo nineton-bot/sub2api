@@ -151,3 +151,35 @@ func TestUpdateAccount_RejectQuotaMeterChange(t *testing.T) {
 	require.Equal(t, 0, repo.updateCalls)
 	require.Equal(t, AccountQuotaMeterCost, repo.account.GetQuotaMeter())
 }
+
+func TestUpdateAccount_EmptyExtraPayloadCanClearQuotaLimits(t *testing.T) {
+	accountID := int64(104)
+	repo := &updateAccountOveragesRepoStub{
+		account: &Account{
+			ID:       accountID,
+			Platform: PlatformAnthropic,
+			Type:     AccountTypeAPIKey,
+			Status:   StatusActive,
+			Extra: map[string]any{
+				"quota_limit":        100.0,
+				"quota_daily_limit":  10.0,
+				"quota_weekly_limit": 40.0,
+			},
+		},
+	}
+
+	svc := &adminServiceImpl{accountRepo: repo}
+	updated, err := svc.UpdateAccount(context.Background(), accountID, &UpdateAccountInput{
+		// 显式空对象：语义是"清空 extra 中的可配置键"（例如关闭配额限制）
+		Extra: map[string]any{},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, updated)
+	require.Equal(t, 1, repo.updateCalls)
+	require.NotNil(t, repo.account.Extra)
+	require.NotContains(t, repo.account.Extra, "quota_limit")
+	require.NotContains(t, repo.account.Extra, "quota_daily_limit")
+	require.NotContains(t, repo.account.Extra, "quota_weekly_limit")
+	require.Len(t, repo.account.Extra, 0)
+}

@@ -122,6 +122,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import Select from './Select.vue'
+import { getConfiguredTablePageSizeOptions, normalizeTablePageSize } from '@/utils/tablePreferences'
 
 const { t } = useI18n()
 
@@ -140,7 +141,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  pageSizeOptions: () => [10, 20, 50, 100],
+  pageSizeOptions: () => getConfiguredTablePageSizeOptions(),
   showPageSizeSelector: true,
   showJump: false
 })
@@ -160,7 +161,14 @@ const toItem = computed(() => {
 })
 
 const pageSizeSelectOptions = computed(() => {
-  return props.pageSizeOptions.map((size) => ({
+  const options = Array.from(
+    new Set([
+      ...getConfiguredTablePageSizeOptions(),
+      normalizeTablePageSize(props.pageSize)
+    ])
+  ).sort((a, b) => a - b)
+
+  return options.map((size) => ({
     value: size,
     label: String(size)
   }))
@@ -215,7 +223,7 @@ const goToPage = (newPage: number) => {
 
 const handlePageSizeChange = (value: string | number | boolean | null) => {
   if (value === null || typeof value === 'boolean') return
-  const newPageSize = typeof value === 'string' ? parseInt(value) : value
+  const newPageSize = normalizeTablePageSize(typeof value === 'string' ? parseInt(value, 10) : value)
   emit('update:pageSize', newPageSize)
 }
 

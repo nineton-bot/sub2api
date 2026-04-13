@@ -1,6 +1,7 @@
 import { ref, reactive, onUnmounted, toRaw } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import type { BasePaginationResponse, FetchOptions } from '@/types'
+import { getPersistedPageSize } from './usePersistedPageSize'
 
 interface PaginationState {
   page: number
@@ -21,14 +22,14 @@ interface TableLoaderOptions<T, P> {
  * 统一处理分页、筛选、搜索防抖和请求取消
  */
 export function useTableLoader<T, P extends Record<string, any>>(options: TableLoaderOptions<T, P>) {
-  const { fetchFn, initialParams, pageSize = 20, debounceMs = 300 } = options
+  const { fetchFn, initialParams, pageSize, debounceMs = 300 } = options
 
   const items = ref<T[]>([])
   const loading = ref(false)
   const params = reactive<P>({ ...(initialParams || {}) } as P)
   const pagination = reactive<PaginationState>({
     page: 1,
-    page_size: pageSize,
+    page_size: pageSize ?? getPersistedPageSize(),
     total: 0,
     pages: 0
   })

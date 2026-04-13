@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -14,6 +15,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
+
+	entsql "entgo.io/ent/dialect/sql"
 )
 
 type sqlExecutor interface {
@@ -44,6 +47,7 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetDescription(groupIn.Description).
 		SetPlatform(groupIn.Platform).
 		SetRateMultiplier(groupIn.RateMultiplier).
+		SetSortOrder(groupIn.SortOrder).
 		SetIsExclusive(groupIn.IsExclusive).
 		SetStatus(groupIn.Status).
 		SetSubscriptionType(groupIn.SubscriptionType).
@@ -57,19 +61,17 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetNillableImagePrice1k(groupIn.ImagePrice1K).
 		SetNillableImagePrice2k(groupIn.ImagePrice2K).
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
-		SetNillableSoraImagePrice360(groupIn.SoraImagePrice360).
-		SetNillableSoraImagePrice540(groupIn.SoraImagePrice540).
-		SetNillableSoraVideoPricePerRequest(groupIn.SoraVideoPricePerRequest).
-		SetNillableSoraVideoPricePerRequestHd(groupIn.SoraVideoPricePerRequestHD).
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetNillableFallbackGroupID(groupIn.FallbackGroupID).
 		SetNillableFallbackGroupIDOnInvalidRequest(groupIn.FallbackGroupIDOnInvalidRequest).
 		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled).
 		SetMcpXMLInject(groupIn.MCPXMLInject).
-		SetSoraStorageQuotaBytes(groupIn.SoraStorageQuotaBytes).
 		SetAllowMessagesDispatch(groupIn.AllowMessagesDispatch).
-		SetDefaultMappedModel(groupIn.DefaultMappedModel)
+		SetRequireOauthOnly(groupIn.RequireOAuthOnly).
+		SetRequirePrivacySet(groupIn.RequirePrivacySet).
+		SetDefaultMappedModel(groupIn.DefaultMappedModel).
+		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig)
 
 	// 设置模型路由配置
 	if groupIn.ModelRouting != nil {
@@ -96,8 +98,9 @@ func (r *groupRepository) GetByID(ctx context.Context, id int64) (*service.Group
 	if err != nil {
 		return nil, err
 	}
-	count, _ := r.GetAccountCount(ctx, out.ID)
-	out.AccountCount = count
+	total, active, _ := r.GetAccountCount(ctx, out.ID)
+	out.AccountCount = total
+	out.ActiveAccountCount = active
 	return out, nil
 }
 
@@ -135,17 +138,15 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetNillableImagePrice1k(groupIn.ImagePrice1K).
 		SetNillableImagePrice2k(groupIn.ImagePrice2K).
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
-		SetNillableSoraImagePrice360(groupIn.SoraImagePrice360).
-		SetNillableSoraImagePrice540(groupIn.SoraImagePrice540).
-		SetNillableSoraVideoPricePerRequest(groupIn.SoraVideoPricePerRequest).
-		SetNillableSoraVideoPricePerRequestHd(groupIn.SoraVideoPricePerRequestHD).
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled).
 		SetMcpXMLInject(groupIn.MCPXMLInject).
-		SetSoraStorageQuotaBytes(groupIn.SoraStorageQuotaBytes).
 		SetAllowMessagesDispatch(groupIn.AllowMessagesDispatch).
-		SetDefaultMappedModel(groupIn.DefaultMappedModel)
+		SetRequireOauthOnly(groupIn.RequireOAuthOnly).
+		SetRequirePrivacySet(groupIn.RequirePrivacySet).
+		SetDefaultMappedModel(groupIn.DefaultMappedModel).
+		SetMessagesDispatchModelConfig(groupIn.MessagesDispatchModelConfig)
 
 	// 显式处理可空字段：nil 需要 clear，非 nil 需要 set。
 	if groupIn.DailyLimitUSD != nil {
@@ -267,11 +268,18 @@ func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination
 		return nil, nil, err
 	}
 
-	groups, err := q.
+	if strings.EqualFold(strings.TrimSpace(params.SortBy), "account_count") {
+		return r.listWithAccountCountSort(ctx, q, params, total)
+	}
+
+	groupsQuery := q.
 		Offset(params.Offset()).
-		Limit(params.Limit()).
-		Order(dbent.Asc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
-		All(ctx)
+		Limit(params.Limit())
+	for _, order := range groupListOrder(params) {
+		groupsQuery = groupsQuery.Order(order)
+	}
+
+	groups, err := groupsQuery.All(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -287,11 +295,112 @@ func (r *groupRepository) ListWithFilters(ctx context.Context, params pagination
 	counts, err := r.loadAccountCounts(ctx, groupIDs)
 	if err == nil {
 		for i := range outGroups {
-			outGroups[i].AccountCount = counts[outGroups[i].ID]
+			c := counts[outGroups[i].ID]
+			outGroups[i].AccountCount = c.Total
+			outGroups[i].ActiveAccountCount = c.Active
+			outGroups[i].RateLimitedAccountCount = c.RateLimited
 		}
 	}
 
 	return outGroups, paginationResultFromTotal(int64(total), params), nil
+}
+
+func (r *groupRepository) listWithAccountCountSort(ctx context.Context, q *dbent.GroupQuery, params pagination.PaginationParams, total int) ([]service.Group, *pagination.PaginationResult, error) {
+	groups, err := q.
+		Order(dbent.Asc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	groupIDs := make([]int64, 0, len(groups))
+	outGroups := make([]service.Group, 0, len(groups))
+	for i := range groups {
+		g := groupEntityToService(groups[i])
+		outGroups = append(outGroups, *g)
+		groupIDs = append(groupIDs, g.ID)
+	}
+
+	counts, err := r.loadAccountCounts(ctx, groupIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	for i := range outGroups {
+		c := counts[outGroups[i].ID]
+		outGroups[i].AccountCount = c.Total
+		outGroups[i].ActiveAccountCount = c.Active
+		outGroups[i].RateLimitedAccountCount = c.RateLimited
+	}
+
+	sortOrder := params.NormalizedSortOrder(pagination.SortOrderDesc)
+	sort.SliceStable(outGroups, func(i, j int) bool {
+		if outGroups[i].AccountCount == outGroups[j].AccountCount {
+			if outGroups[i].SortOrder == outGroups[j].SortOrder {
+				return outGroups[i].ID < outGroups[j].ID
+			}
+			return outGroups[i].SortOrder < outGroups[j].SortOrder
+		}
+		if sortOrder == pagination.SortOrderAsc {
+			return outGroups[i].AccountCount < outGroups[j].AccountCount
+		}
+		return outGroups[i].AccountCount > outGroups[j].AccountCount
+	})
+
+	return paginateSlice(outGroups, params), paginationResultFromTotal(int64(total), params), nil
+}
+
+func groupListOrder(params pagination.PaginationParams) []func(*entsql.Selector) {
+	sortBy := strings.ToLower(strings.TrimSpace(params.SortBy))
+	sortOrder := params.NormalizedSortOrder(pagination.SortOrderAsc)
+
+	var field string
+	tieField := group.FieldID
+	defaultOrder := true
+	switch sortBy {
+	case "", "sort_order":
+		field = group.FieldSortOrder
+	case "name":
+		field = group.FieldName
+		defaultOrder = false
+	case "platform":
+		field = group.FieldPlatform
+		defaultOrder = false
+	case "billing_type", "subscription_type":
+		field = group.FieldSubscriptionType
+		defaultOrder = false
+	case "rate_multiplier":
+		field = group.FieldRateMultiplier
+		defaultOrder = false
+	case "is_exclusive":
+		field = group.FieldIsExclusive
+		defaultOrder = false
+	case "status":
+		field = group.FieldStatus
+		defaultOrder = false
+	case "created_at":
+		field = group.FieldCreatedAt
+		defaultOrder = false
+	case "id":
+		field = group.FieldID
+		defaultOrder = false
+		tieField = ""
+	default:
+		field = group.FieldSortOrder
+	}
+
+	if sortOrder == pagination.SortOrderDesc && sortBy != "" {
+		if tieField == "" {
+			return []func(*entsql.Selector){dbent.Desc(field)}
+		}
+		return []func(*entsql.Selector){dbent.Desc(field), dbent.Desc(tieField)}
+	}
+	if defaultOrder {
+		return []func(*entsql.Selector){dbent.Asc(group.FieldSortOrder), dbent.Asc(group.FieldID)}
+	}
+	if tieField == "" {
+		return []func(*entsql.Selector){dbent.Asc(field)}
+	}
+	return []func(*entsql.Selector){dbent.Asc(field), dbent.Asc(tieField)}
 }
 
 func (r *groupRepository) ListActive(ctx context.Context) ([]service.Group, error) {
@@ -314,7 +423,10 @@ func (r *groupRepository) ListActive(ctx context.Context) ([]service.Group, erro
 	counts, err := r.loadAccountCounts(ctx, groupIDs)
 	if err == nil {
 		for i := range outGroups {
-			outGroups[i].AccountCount = counts[outGroups[i].ID]
+			c := counts[outGroups[i].ID]
+			outGroups[i].AccountCount = c.Total
+			outGroups[i].ActiveAccountCount = c.Active
+			outGroups[i].RateLimitedAccountCount = c.RateLimited
 		}
 	}
 
@@ -341,7 +453,10 @@ func (r *groupRepository) ListActiveByPlatform(ctx context.Context, platform str
 	counts, err := r.loadAccountCounts(ctx, groupIDs)
 	if err == nil {
 		for i := range outGroups {
-			outGroups[i].AccountCount = counts[outGroups[i].ID]
+			c := counts[outGroups[i].ID]
+			outGroups[i].AccountCount = c.Total
+			outGroups[i].ActiveAccountCount = c.Active
+			outGroups[i].RateLimitedAccountCount = c.RateLimited
 		}
 	}
 
@@ -400,12 +515,20 @@ func (r *groupRepository) ExistsByIDs(ctx context.Context, ids []int64) (map[int
 	return result, nil
 }
 
-func (r *groupRepository) GetAccountCount(ctx context.Context, groupID int64) (int64, error) {
-	var count int64
-	if err := scanSingleRow(ctx, r.sql, "SELECT COUNT(*) FROM account_groups WHERE group_id = $1", []any{groupID}, &count); err != nil {
-		return 0, err
-	}
-	return count, nil
+func (r *groupRepository) GetAccountCount(ctx context.Context, groupID int64) (total int64, active int64, err error) {
+	var rateLimited int64
+	err = scanSingleRow(ctx, r.sql,
+		`SELECT COUNT(*),
+			COUNT(*) FILTER (WHERE a.status = 'active' AND a.schedulable = true),
+			COUNT(*) FILTER (WHERE a.status = 'active' AND (
+				a.rate_limit_reset_at > NOW() OR
+				a.overload_until > NOW() OR
+				a.temp_unschedulable_until > NOW()
+			))
+		FROM account_groups ag JOIN accounts a ON a.id = ag.account_id
+		WHERE ag.group_id = $1`,
+		[]any{groupID}, &total, &active, &rateLimited)
+	return
 }
 
 func (r *groupRepository) DeleteAccountGroupsByGroupID(ctx context.Context, groupID int64) (int64, error) {
@@ -531,15 +654,32 @@ func (r *groupRepository) DeleteCascade(ctx context.Context, id int64) ([]int64,
 	return affectedUserIDs, nil
 }
 
-func (r *groupRepository) loadAccountCounts(ctx context.Context, groupIDs []int64) (counts map[int64]int64, err error) {
-	counts = make(map[int64]int64, len(groupIDs))
+type groupAccountCounts struct {
+	Total       int64
+	Active      int64
+	RateLimited int64
+}
+
+func (r *groupRepository) loadAccountCounts(ctx context.Context, groupIDs []int64) (counts map[int64]groupAccountCounts, err error) {
+	counts = make(map[int64]groupAccountCounts, len(groupIDs))
 	if len(groupIDs) == 0 {
 		return counts, nil
 	}
 
 	rows, err := r.sql.QueryContext(
 		ctx,
-		"SELECT group_id, COUNT(*) FROM account_groups WHERE group_id = ANY($1) GROUP BY group_id",
+		`SELECT ag.group_id,
+			COUNT(*) AS total,
+			COUNT(*) FILTER (WHERE a.status = 'active' AND a.schedulable = true) AS active,
+			COUNT(*) FILTER (WHERE a.status = 'active' AND (
+				a.rate_limit_reset_at > NOW() OR
+				a.overload_until > NOW() OR
+				a.temp_unschedulable_until > NOW()
+			)) AS rate_limited
+		FROM account_groups ag
+		JOIN accounts a ON a.id = ag.account_id
+		WHERE ag.group_id = ANY($1)
+		GROUP BY ag.group_id`,
 		pq.Array(groupIDs),
 	)
 	if err != nil {
@@ -554,11 +694,11 @@ func (r *groupRepository) loadAccountCounts(ctx context.Context, groupIDs []int6
 
 	for rows.Next() {
 		var groupID int64
-		var count int64
-		if err = rows.Scan(&groupID, &count); err != nil {
+		var c groupAccountCounts
+		if err = rows.Scan(&groupID, &c.Total, &c.Active, &c.RateLimited); err != nil {
 			return nil, err
 		}
-		counts[groupID] = count
+		counts[groupID] = c
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
