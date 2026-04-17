@@ -23,6 +23,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { getReferralCodeFromCookie } from '@/utils/referralCookie'
 
 const props = withDefaults(defineProps<{
   disabled?: boolean
@@ -47,7 +48,11 @@ function startLogin(): void {
   const redirectTo = (route.query.redirect as string) || '/dashboard'
   const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/api/v1'
   const normalized = apiBase.replace(/\/$/, '')
-  const startURL = `${normalized}/auth/oauth/oidc/start?redirect=${encodeURIComponent(redirectTo)}`
+  // 邀请返佣：优先显式 URL ?ref=，其次从 /g/:code 设置的 cookie 读取。
+  // 追加到 OAuth start URL，由后端把 ref 转存到 OAuth 专用 cookie，回调时取回绑定。
+  const refCode = (route.query.ref as string) || getReferralCodeFromCookie() || ''
+  const refSuffix = refCode ? `&ref=${encodeURIComponent(refCode)}` : ''
+  const startURL = `${normalized}/auth/oauth/oidc/start?redirect=${encodeURIComponent(redirectTo)}${refSuffix}`
   window.location.href = startURL
 }
 </script>

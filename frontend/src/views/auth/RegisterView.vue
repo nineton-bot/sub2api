@@ -14,7 +14,7 @@
       <!-- Referrer Welcome Banner -->
       <transition name="fade">
         <div
-          v-if="referrerValidated"
+          v-if="referrerValidated || stealthWelcome"
           class="rounded-xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-800/50 dark:bg-primary-900/20"
         >
           <div class="flex items-start gap-3">
@@ -22,12 +22,17 @@
               <Icon name="gift" size="md" class="text-primary-600 dark:text-primary-400" />
             </div>
             <p class="text-sm text-primary-700 dark:text-primary-300">
-              {{
-                t('auth.referrerWelcome', {
-                  name: referrerName || t('auth.referrerAnonymous'),
-                  amount: refereeBonusAmount.toFixed(2)
-                })
-              }}
+              <template v-if="stealthWelcome">
+                {{ t('auth.newUserBonus', { amount: refereeBonusAmount.toFixed(2) }) }}
+              </template>
+              <template v-else>
+                {{
+                  t('auth.referrerWelcome', {
+                    name: referrerName || t('auth.referrerAnonymous'),
+                    amount: refereeBonusAmount.toFixed(2)
+                  })
+                }}
+              </template>
             </p>
           </div>
         </div>
@@ -344,6 +349,11 @@ import {
   isRegistrationEmailSuffixAllowed,
   normalizeRegistrationEmailSuffixWhitelist
 } from '@/utils/registrationEmailPolicy'
+import {
+  getReferralCodeFromCookie,
+  isStealthMode,
+  clearReferralCookies
+} from '@/utils/referralCookie'
 
 const { t, locale } = useI18n()
 
@@ -379,6 +389,7 @@ const registrationEmailSuffixWhitelist = ref<string[]>([])
 // Referrer info (from ?ref= URL param)
 const referrerName = ref<string>('')
 const referrerValidated = ref<boolean>(false)
+const stealthWelcome = ref<boolean>(false)
 
 // Turnstile
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
@@ -453,6 +464,9 @@ onMounted(async () => {
     if (referralEnabled.value) {
       const refParam = route.query.ref as string
       if (refParam) {
+        // 显式 ?ref= 胜出；同时清掉任何旧的 stealth cookie，避免用户先访问过
+        // /g/A 再手动打开 /register?ref=B 时 cookie 残留污染后续会话。
+        clearReferralCookies()
         formData.referrer_code = refParam
         try {
           const result = await validateReferrerCode(refParam)
@@ -469,6 +483,14 @@ onMounted(async () => {
         } catch (err) {
           console.error('Failed to validate referrer code:', err)
           formData.referrer_code = ''
+        }
+      } else {
+        // 隐藏模式：从 /g/:code 设置的 cookie 读取 referral_code + referral_stealth
+        // 不再调用 validate-referrer-code 接口，避免网络面板暴露邀请关系
+        const stealthCode = getReferralCodeFromCookie()
+        if (stealthCode && isStealthMode()) {
+          formData.referrer_code = stealthCode
+          stealthWelcome.value = true
         }
       }
     }
@@ -792,6 +814,9 @@ async function handleRegister(): Promise<void> {
       invitation_code: formData.invitation_code || undefined,
       referrer_code: formData.referrer_code || undefined
     })
+
+    // 注册完成后清理隐藏模式 cookie，避免下次访问继续命中
+    clearReferralCookies()
 
     // Show success toast
     appStore.showSuccess(t('auth.accountCreatedSuccess', { siteName: siteName.value }))

@@ -273,7 +273,16 @@ func (h *AuthHandler) CompleteLinuxDoOAuthRegistration(c *gin.Context) {
 		return
 	}
 
-	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, req.InvitationCode, sanitizeReferrerCode(req.ReferrerCode))
+	// 邀请返佣：优先取 request body 中的 referrer_code；若为空，从 OAuth start 阶段
+	// 落的 linuxdo_oauth_ref cookie 兜底（隐藏短链模式 + 老版本前端不传 body 的情况）。
+	referrerCode := sanitizeReferrerCode(req.ReferrerCode)
+	if referrerCode == "" {
+		if cookieCode, cErr := readCookieDecoded(c, linuxDoOAuthReferrerCookie); cErr == nil {
+			referrerCode = sanitizeReferrerCode(cookieCode)
+		}
+	}
+
+	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, req.InvitationCode, referrerCode)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

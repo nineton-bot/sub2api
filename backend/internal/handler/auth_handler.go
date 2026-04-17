@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log/slog"
+	"net/http"
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -672,6 +673,66 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // RevokeAllSessionsResponse 撤销所有会话响应
 type RevokeAllSessionsResponse struct {
 	Message string `json:"message"`
+}
+
+// RedirectReferralShortlink 隐藏模式邀请短链：GET /g/:code
+//
+// 行为：
+//   - 若 referral 功能未启用：静默 302 到 /register（不设任何 cookie，不暴露开关）
+//   - 若 code 合法：设置 referral_code + referral_stealth 两个 cookie 后 302 到 /register
+//   - 若 code 非法或查不到邀请人：也 302 到 /register 但不设 cookie（不暴露 code 合法性）
+//
+// Cookie 要求被前端 JS 读取（判断横幅文案），因此 HttpOnly=false；
+// SameSite=Lax 保证从外部链接点击时 cookie 被发送。
+// Secure / cookie 写法统一复用 OAuth 模块现有的 isRequestHTTPS + setCookie helper。
+func (h *AuthHandler) RedirectReferralShortlink(c *gin.Context) {
+	const (
+		redirectTarget   = "/register"
+		minCodeLen       = 4
+		maxCodeLen       = 32
+		cookieMaxAgeSec  = 30 * 60
+		refCodeCookie    = "referral_code"
+		refStealthCookie = "referral_stealth"
+	)
+
+	code := strings.TrimSpace(c.Param("code"))
+
+	defer func() {
+		c.Redirect(http.StatusFound, redirectTarget)
+	}()
+
+	// 入参基本校验：非法 / 异常长度 → 直接 302，不落 DB，不暴露合法性
+	if l := len(code); l < minCodeLen || l > maxCodeLen {
+		return
+	}
+	for i := 0; i < len(code); i++ {
+		b := code[i]
+		isAlnum := (b >= '0' && b <= '9') || (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z')
+		if !isAlnum {
+			return
+		}
+	}
+
+	if h.settingSvc == nil || !h.settingSvc.IsReferralEnabled(c.Request.Context()) {
+		return
+	}
+	if h.referralService == nil {
+		return
+	}
+
+	referrer, err := h.referralService.ResolveReferrerByCode(c.Request.Context(), code)
+	if err != nil || referrer == nil {
+		return
+	}
+
+	// 邀请码上方已校验为纯 [0-9a-zA-Z]（cookie-safe），直接原样写入；
+	// 不做 base64 编码（OAuth 用 encodeCookieValue 是因为后端自己读 cookie 会反解，
+	// 而这里 cookie 是给前端 JS 读取后作为 referrer_code 原值提交的）。
+	// HttpOnly=false 保持（前端需要读 referral_code + referral_stealth 标志决定横幅文案）。
+	secure := isRequestHTTPS(c)
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie(refCodeCookie, code, cookieMaxAgeSec, "/", "", secure, false)
+	c.SetCookie(refStealthCookie, "1", cookieMaxAgeSec, "/", "", secure, false)
 }
 
 // RevokeAllSessions 撤销当前用户的所有会话

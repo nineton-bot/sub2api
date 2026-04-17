@@ -43,9 +43,22 @@
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr,auto]">
           <div class="space-y-4">
             <div>
-              <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                {{ t('referral.inviteLink') }}
-              </p>
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {{ t('referral.inviteLink') }}
+                </p>
+                <label
+                  class="flex cursor-pointer items-center gap-2 text-xs text-gray-600 dark:text-gray-300"
+                  :title="t('referral.stealthModeHint')"
+                >
+                  <input
+                    type="checkbox"
+                    v-model="stealthMode"
+                    class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span>{{ t('referral.stealthModeLabel') }}</span>
+                </label>
+              </div>
               <div class="mt-2 flex gap-2">
                 <div
                   class="flex flex-1 items-center gap-2 overflow-hidden rounded-md border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-sm text-gray-900 dark:border-dark-700 dark:bg-dark-800 dark:text-white"
@@ -62,6 +75,9 @@
                   {{ copiedField === 'link' ? t('referral.copied') : t('referral.copyLink') }}
                 </button>
               </div>
+              <p v-if="stealthMode" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('referral.stealthModeActive') }}
+              </p>
             </div>
 
             <div>
@@ -337,6 +353,21 @@ const logs = ref<CommissionLog[]>([])
 const copiedField = ref<'' | 'link' | 'code'>('')
 const qrCanvas = ref<HTMLCanvasElement | null>(null)
 
+// 隐藏模式：链接格式切换为 /g/:code（无 ref 参数痕迹），本地 localStorage 记住偏好
+const STEALTH_STORAGE_KEY = 'referral_link_stealth'
+const stealthMode = ref<boolean>(
+  typeof localStorage !== 'undefined' && localStorage.getItem(STEALTH_STORAGE_KEY) === '1'
+)
+watch(stealthMode, (v) => {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STEALTH_STORAGE_KEY, v ? '1' : '0')
+    }
+  } catch {
+    /* ignore quota / privacy mode errors */
+  }
+})
+
 const pagination = reactive({
   page: 1,
   pageSize: getPersistedPageSize(),
@@ -351,6 +382,9 @@ const inviteLink = computed(() => {
   if (!stats.value?.invite_code) return ''
   const origin =
     typeof window !== 'undefined' && window.location ? window.location.origin : ''
+  if (stealthMode.value) {
+    return `${origin}/g/${stats.value.invite_code}`
+  }
   return `${origin}/register?ref=${stats.value.invite_code}`
 })
 

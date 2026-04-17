@@ -8,6 +8,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/handler"
+	"github.com/Wei-Shaw/sub2api/internal/middleware"
 	middleware2 "github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/server/routes"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -102,6 +103,16 @@ func registerRoutes(
 ) {
 	// 通用路由（健康检查、状态等）
 	routes.RegisterCommonRoutes(r)
+
+	// 邀请返佣短链（隐藏模式）：GET /g/:code → 设置 cookie 后 302 到 /register
+	// 限流策略：每分钟 60 次/IP，Redis 故障时 fail-close（防止恶意批量枚举邀请码）。
+	shortlinkLimiter := middleware.NewRateLimiter(redisClient)
+	r.GET("/g/:code",
+		shortlinkLimiter.LimitWithOptions("referral-shortlink", 60, time.Minute, middleware.RateLimitOptions{
+			FailureMode: middleware.RateLimitFailClose,
+		}),
+		h.Auth.RedirectReferralShortlink,
+	)
 
 	// API v1
 	v1 := r.Group("/api/v1")
