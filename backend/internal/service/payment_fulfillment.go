@@ -141,6 +141,11 @@ func (s *PaymentService) ExecuteBalanceFulfillment(ctx context.Context, oid int6
 		return infraerrors.NotFound("NOT_FOUND", "order not found")
 	}
 	if o.Status == OrderStatusCompleted {
+		// 订单已完成但履约钩子（返佣入账/新人赠金）可能在首次执行时因偶发故障漏做。
+		// afterBalanceFulfillment 内部所有副作用都是幂等的（UNIQUE(source_order_id,
+		// source_type) + status='pending' 过滤），此处再调一次作为兜底补偿，实现本接口
+		// 对重复调用的"最终一致"语义。
+		s.afterBalanceFulfillment(ctx, o)
 		return nil
 	}
 	if psIsRefundStatus(o.Status) {
@@ -195,7 +200,11 @@ func (s *PaymentService) doBalance(ctx context.Context, o *dbent.PaymentOrder) e
 	switch action {
 	case redeemActionSkipCompleted:
 		// Code already created and redeemed — just mark completed
-		return s.markCompleted(ctx, o, "RECHARGE_SUCCESS")
+		if err := s.markCompleted(ctx, o, "RECHARGE_SUCCESS"); err != nil {
+			return err
+		}
+		s.afterBalanceFulfillment(ctx, o)
+		return nil
 	case redeemActionCreate:
 		rc := &RedeemCode{Code: o.RechargeCode, Type: RedeemTypeBalance, Value: o.Amount, Status: StatusUnused}
 		if err := s.redeemService.CreateCode(ctx, rc); err != nil {
@@ -207,7 +216,27 @@ func (s *PaymentService) doBalance(ctx context.Context, o *dbent.PaymentOrder) e
 	if _, err := s.redeemService.Redeem(ctx, o.UserID, o.RechargeCode); err != nil {
 		return fmt.Errorf("redeem balance: %w", err)
 	}
-	return s.markCompleted(ctx, o, "RECHARGE_SUCCESS")
+	if err := s.markCompleted(ctx, o, "RECHARGE_SUCCESS"); err != nil {
+		return err
+	}
+	s.afterBalanceFulfillment(ctx, o)
+	return nil
+}
+
+// afterBalanceFulfillment 充值履约成功后的钩子：返佣入账 + 触发被邀请人首次赠金。
+// 失败仅记日志，不影响主流程（充值本身已完成）。
+func (s *PaymentService) afterBalanceFulfillment(ctx context.Context, o *dbent.PaymentOrder) {
+	if s.referralService == nil || o == nil {
+		return
+	}
+	if err := s.referralService.AccrueCommissionOnRecharge(ctx, o); err != nil {
+		slog.Warn("[Payment] accrue recharge commission failed",
+			"orderID", o.ID, "userID", o.UserID, "error", err)
+	}
+	if err := s.referralService.TryGrantPendingBonus(ctx, o.UserID, ReferralBonusTriggerRecharge, o.ID); err != nil {
+		slog.Warn("[Payment] grant referee bonus (recharge) failed",
+			"orderID", o.ID, "userID", o.UserID, "error", err)
+	}
 }
 
 func (s *PaymentService) markCompleted(ctx context.Context, o *dbent.PaymentOrder, auditAction string) error {
@@ -226,6 +255,14 @@ func (s *PaymentService) ExecuteSubscriptionFulfillment(ctx context.Context, oid
 		return infraerrors.NotFound("NOT_FOUND", "order not found")
 	}
 	if o.Status == OrderStatusCompleted {
+		// 订单已完成但履约钩子（返佣入账/新人赠金）可能在首次执行时因偶发故障漏做。
+		// afterSubscriptionFulfillment 内部幂等（UNIQUE + status filter），此处兜底补偿。
+		// 取活跃订阅以填充 starts_at/subscription_id 快照（查不到时按 nil 走零值分支）。
+		var sub *UserSubscription
+		if o.SubscriptionGroupID != nil {
+			sub, _ = s.subscriptionSvc.GetActiveSubscription(ctx, o.UserID, *o.SubscriptionGroupID)
+		}
+		s.afterSubscriptionFulfillment(ctx, o, sub)
 		return nil
 	}
 	if psIsRefundStatus(o.Status) {
@@ -262,14 +299,53 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 	// Prevents double-extension on retry after markCompleted fails.
 	if s.hasAuditLog(ctx, o.ID, "SUBSCRIPTION_SUCCESS") {
 		slog.Info("subscription already assigned for order, skipping", "orderID", o.ID, "groupID", gid)
-		return s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS")
+		if err := s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS"); err != nil {
+			return err
+		}
+		// 幂等重入：按当前活跃订阅补一次返佣入账（AccrueCommissionOnSubscription 内部
+		// 通过 UNIQUE(source_order_id, source_type) 防重）。
+		sub, _ := s.subscriptionSvc.GetActiveSubscription(ctx, o.UserID, gid)
+		s.afterSubscriptionFulfillment(ctx, o, sub)
+		return nil
 	}
 	orderNote := fmt.Sprintf("payment order %d", o.ID)
-	_, _, err = s.subscriptionSvc.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote})
+	sub, _, err := s.subscriptionSvc.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote})
 	if err != nil {
 		return fmt.Errorf("assign subscription: %w", err)
 	}
-	return s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS")
+	if err := s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS"); err != nil {
+		return err
+	}
+	s.afterSubscriptionFulfillment(ctx, o, sub)
+	return nil
+}
+
+// afterSubscriptionFulfillment 订阅履约成功后的钩子：返佣入账 + 触发被邀请人首次赠金。
+// 失败仅记日志。subscription 可能为 nil（幂等重入场景未取到），此时 subscription_id 留零值。
+//
+// 佣金 starts_at 始终用当前时间（= 本订单履约时刻），**不使用 sub.StartsAt**：
+// 对续期订单，sub.StartsAt 是原始首次开通时间，若以此作为佣金起算点，会让
+// releaseOneSubscriptionCommissionWith 一开始就算出 `elapsedHours ≫ validity_days*24`
+// → ratio=1 → 新佣金瞬间 100% 释放，绕过"按天数线性释放"的核心约束。
+// 统一用 now() 后：新开通与续期都从履约那一刻起按 validity_days 线性释放，
+// 语义清晰且与充值型的"即时起算"保持一致。
+func (s *PaymentService) afterSubscriptionFulfillment(ctx context.Context, o *dbent.PaymentOrder, sub *UserSubscription) {
+	if s.referralService == nil || o == nil {
+		return
+	}
+	var subID int64
+	if sub != nil {
+		subID = sub.ID
+	}
+	startsAt := time.Now()
+	if err := s.referralService.AccrueCommissionOnSubscription(ctx, o, subID, startsAt); err != nil {
+		slog.Warn("[Payment] accrue subscription commission failed",
+			"orderID", o.ID, "userID", o.UserID, "error", err)
+	}
+	if err := s.referralService.TryGrantPendingBonus(ctx, o.UserID, ReferralBonusTriggerSubscription, o.ID); err != nil {
+		slog.Warn("[Payment] grant referee bonus (subscription) failed",
+			"orderID", o.ID, "userID", o.UserID, "error", err)
+	}
 }
 
 func (s *PaymentService) hasAuditLog(ctx context.Context, orderID int64, action string) bool {

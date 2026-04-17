@@ -805,6 +805,83 @@ var (
 			},
 		},
 	}
+	// ReferralCommissionsColumns holds the columns for the "referral_commissions" table.
+	ReferralCommissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "referrer_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "referee_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "source_type", Type: field.TypeString, Size: 20},
+		{Name: "source_order_id", Type: field.TypeInt64},
+		{Name: "source_amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "source_subscription_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "source_validity_days", Type: field.TypeInt, Nullable: true},
+		{Name: "source_starts_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "commission_rate", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(10,6)"}},
+		{Name: "gross_commission", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "released_commission", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "consumed_attributed", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "accruing"},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ReferralCommissionsTable holds the schema information for the "referral_commissions" table.
+	ReferralCommissionsTable = &schema.Table{
+		Name:       "referral_commissions",
+		Columns:    ReferralCommissionsColumns,
+		PrimaryKey: []*schema.Column{ReferralCommissionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "referralcommission_referrer_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralCommissionsColumns[1], ReferralCommissionsColumns[13]},
+			},
+			{
+				Name:    "referralcommission_referee_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralCommissionsColumns[2]},
+			},
+			{
+				Name:    "referralcommission_source_type_status",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralCommissionsColumns[3], ReferralCommissionsColumns[13]},
+			},
+			{
+				Name:    "referralcommission_source_order_id_source_type",
+				Unique:  true,
+				Columns: []*schema.Column{ReferralCommissionsColumns[4], ReferralCommissionsColumns[3]},
+			},
+		},
+	}
+	// ReferralPendingBonusesColumns holds the columns for the "referral_pending_bonuses" table.
+	ReferralPendingBonusesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "referee_id", Type: field.TypeInt64, Unique: true},
+		{Name: "referrer_id", Type: field.TypeInt64},
+		{Name: "bonus_amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
+		{Name: "granted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "granted_trigger", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "granted_order_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ReferralPendingBonusesTable holds the schema information for the "referral_pending_bonuses" table.
+	ReferralPendingBonusesTable = &schema.Table{
+		Name:       "referral_pending_bonuses",
+		Columns:    ReferralPendingBonusesColumns,
+		PrimaryKey: []*schema.Column{ReferralPendingBonusesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "referralpendingbonus_referee_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralPendingBonusesColumns[1], ReferralPendingBonusesColumns[4]},
+			},
+			{
+				Name:    "referralpendingbonus_referrer_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralPendingBonusesColumns[2]},
+			},
+		},
+	}
 	// SecuritySecretsColumns holds the columns for the "security_secrets" table.
 	SecuritySecretsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1087,6 +1164,8 @@ var (
 		{Name: "totp_secret_encrypted", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "totp_enabled", Type: field.TypeBool, Default: false},
 		{Name: "totp_enabled_at", Type: field.TypeTime, Nullable: true},
+		{Name: "invited_by_user_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "invite_code", Type: field.TypeString, Nullable: true, Size: 16},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -1103,6 +1182,11 @@ var (
 				Name:    "user_deleted_at",
 				Unique:  false,
 				Columns: []*schema.Column{UsersColumns[3]},
+			},
+			{
+				Name:    "user_invited_by_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UsersColumns[15]},
 			},
 		},
 	}
@@ -1334,6 +1418,8 @@ var (
 		PromoCodeUsagesTable,
 		ProxiesTable,
 		RedeemCodesTable,
+		ReferralCommissionsTable,
+		ReferralPendingBonusesTable,
 		SecuritySecretsTable,
 		SettingsTable,
 		SubscriptionPlansTable,
@@ -1405,6 +1491,12 @@ func init() {
 	RedeemCodesTable.ForeignKeys[1].RefTable = UsersTable
 	RedeemCodesTable.Annotation = &entsql.Annotation{
 		Table: "redeem_codes",
+	}
+	ReferralCommissionsTable.Annotation = &entsql.Annotation{
+		Table: "referral_commissions",
+	}
+	ReferralPendingBonusesTable.Annotation = &entsql.Annotation{
+		Table: "referral_pending_bonuses",
 	}
 	SecuritySecretsTable.Annotation = &entsql.Annotation{
 		Table: "security_secrets",

@@ -134,6 +134,11 @@ export interface SystemSettings {
   payment_cancel_rate_limit_window: number
   payment_cancel_rate_limit_unit: string
   payment_cancel_rate_limit_window_mode: string
+
+  // 邀请返佣 (Referral commission)
+  referral_enabled: boolean
+  referral_commission_rate: number
+  referral_referee_bonus_amount: number
 }
 
 export interface UpdateSettingsRequest {
@@ -233,6 +238,11 @@ export interface UpdateSettingsRequest {
   payment_cancel_rate_limit_window?: number
   payment_cancel_rate_limit_unit?: string
   payment_cancel_rate_limit_window_mode?: string
+
+  // 邀请返佣 (Referral commission)
+  referral_enabled?: boolean
+  referral_commission_rate?: number
+  referral_referee_bonus_amount?: number
 }
 
 /**

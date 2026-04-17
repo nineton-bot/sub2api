@@ -359,7 +359,9 @@ export default {
     orderManagement: '订单管理',
     paymentDashboard: '支付概览',
     paymentConfig: '支付配置',
-    paymentPlans: '订阅套餐'
+    paymentPlans: '订阅套餐',
+    referral: '我的推广',
+    adminReferral: '邀请返佣'
   },
 
   // Auth
@@ -426,6 +428,8 @@ export default {
     promoCodeAlreadyUsed: '您已使用过此优惠码',
     promoCodeValidating: '优惠码正在验证中，请稍候',
     promoCodeInvalidCannotRegister: '优惠码无效，请检查后重试或清空优惠码',
+    referrerWelcome: '您由 {name} 邀请，首次充值或订阅后将获得 ¥{amount} 体验金',
+    referrerAnonymous: '朋友',
     invitationCodeLabel: '邀请码',
     invitationCodePlaceholder: '请输入邀请码',
     invitationCodeRequired: '请输入邀请码',
@@ -4427,6 +4431,16 @@ export default {
         totpKeyNotConfigured:
           '请先在环境变量中配置 TOTP_ENCRYPTION_KEY。使用命令 openssl rand -hex 32 生成密钥。'
       },
+      referral: {
+        title: '邀请返佣',
+        description: '让老用户获得持续收益，同时激励新用户通过邀请链接进入',
+        enable: '启用邀请返佣',
+        enableHint: '启用后，用户侧显示「我的推广」菜单并可分享邀请链接；新用户通过链接注册后将终身绑定邀请人',
+        commissionRate: '返佣比例',
+        commissionRateHint: '被邀请人每次充值/订阅按该比例计入邀请人账面佣金（0 ~ 100%）。示例：0.10 = 10%',
+        refereeBonus: '新人首付赠金',
+        refereeBonusHint: '被邀请人首次充值或订阅履约成功后到账的赠金金额（¥）。设置为 0 则不发放'
+      },
       turnstile: {
         title: 'Cloudflare Turnstile',
         description: '登录和注册的机器人防护',
@@ -5130,6 +5144,42 @@ export default {
       loadFailed: '加载模板失败',
       saveFailed: '保存模板失败',
       deleteFailed: '删除模板失败'
+    },
+
+    // Referral (邀请返佣) 管理端
+    referral: {
+      title: '邀请返佣',
+      description: '返佣概览与 Top 推广人',
+      statusEnabled: '激励已启用',
+      statusDisabled: '激励未启用',
+      enableHint: '请在「系统设置 → 邀请返佣」中开启后，返佣开始生效',
+      statInvited: '受邀用户',
+      statTotalGross: '累计账面佣金',
+      statTotalReleased: '已释放',
+      statTotalPending: '锁定中',
+      statRefereeBonusGranted: '新人赠金已发放',
+      statRefereeBonusPending: '新人赠金待发',
+      currentRate: '当前比例',
+      currentBonus: '新人赠金额度',
+      topReferrers: 'Top 邀请人',
+      sortByCommission: '按佣金排序',
+      sortByCount: '按邀请人数排序',
+      colUser: '用户',
+      colInvited: '邀请人数',
+      colGross: '账面佣金',
+      colReleased: '已释放',
+      colActions: '操作',
+      viewDetail: '查看被邀请人',
+      drilldownTitle: '{name} 的被邀请人',
+      colReferee: '被邀请人',
+      colJoinedAt: '加入时间',
+      colOrderCount: '订单数',
+      colBonusGranted: '赠金',
+      bonusGranted: '已发',
+      bonusPending: '未发',
+      loadFailed: '加载邀请返佣数据失败',
+      noReferrers: '暂无邀请人',
+      noReferees: '该邀请人下暂无被邀请人'
     }
   },
 
@@ -5676,5 +5726,50 @@ export default {
       },
     },
   },
+
+  // Referral (邀请返佣) 用户端
+  referral: {
+    title: '我的推广',
+    description: '分享链接，来自被邀请人的充值/订阅均可获得持续佣金',
+    inviteLink: '我的邀请链接',
+    inviteCode: '我的邀请码',
+    copyLink: '复制链接',
+    copyCode: '复制邀请码',
+    copied: '已复制',
+    qrTitle: '扫码注册',
+    downloadQr: '下载二维码',
+    statGross: '累计佣金',
+    statReleased: '可使用',
+    statPending: '锁定中',
+    statInvited: '已邀请',
+    statGrossHint: '全部被邀请人累计的账面佣金',
+    statReleasedHint: '已并入您的账户余额',
+    statPendingHint: '需等被邀请人消费或订阅生效后逐步释放',
+    statInvitedHint: '成功绑定您为邀请人的用户数',
+    commissionRate: '当前返佣比例',
+    bonusAmount: '新人首次付费赠金',
+    historyTitle: '返佣明细',
+    colReferee: '被邀请人',
+    colType: '来源',
+    colAmount: '原始金额',
+    colGross: '账面佣金',
+    colReleased: '已释放',
+    colStatus: '状态',
+    colCreatedAt: '时间',
+    typeRecharge: '充值',
+    typeSubscription: '订阅',
+    statusAccruing: '累计中',
+    statusFullyReleased: '已全部释放',
+    statusReversed: '已冲销',
+    statusPartialReversed: '部分冲销',
+    empty: '暂无返佣记录，去分享您的链接开始赚取吧',
+    disabled: '邀请返佣当前未启用，您的链接在开关开启后自动生效',
+    loadFailed: '加载返佣数据失败',
+    howItWorksTitle: '规则说明',
+    howItWorksLine1: '分享您的邀请链接，新用户通过链接注册即与您终身绑定',
+    howItWorksLine2: '他们每次充值或订阅，您可获得 {rate}% 的账面佣金',
+    howItWorksLine3: '佣金随被邀请人实际消费逐步释放（充值按余额消费进度，订阅按生效天数）',
+    howItWorksLine4: '可使用佣金将直接并入您的账户余额，无需手动提现'
+  }
 
 }

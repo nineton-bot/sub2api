@@ -11,6 +11,28 @@
         </p>
       </div>
 
+      <!-- Referrer Welcome Banner -->
+      <transition name="fade">
+        <div
+          v-if="referrerValidated"
+          class="rounded-xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-800/50 dark:bg-primary-900/20"
+        >
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0">
+              <Icon name="gift" size="md" class="text-primary-600 dark:text-primary-400" />
+            </div>
+            <p class="text-sm text-primary-700 dark:text-primary-300">
+              {{
+                t('auth.referrerWelcome', {
+                  name: referrerName || t('auth.referrerAnonymous'),
+                  amount: refereeBonusAmount.toFixed(2)
+                })
+              }}
+            </p>
+          </div>
+        </div>
+      </transition>
+
       <div v-if="linuxdoOAuthEnabled || oidcOAuthEnabled" class="space-y-4">
         <LinuxDoOAuthSection
           v-if="linuxdoOAuthEnabled"
@@ -311,7 +333,12 @@ import OidcOAuthSection from '@/components/auth/OidcOAuthSection.vue'
 import Icon from '@/components/icons/Icon.vue'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
 import { useAuthStore, useAppStore } from '@/stores'
-import { getPublicSettings, validatePromoCode, validateInvitationCode } from '@/api/auth'
+import {
+  getPublicSettings,
+  validatePromoCode,
+  validateInvitationCode,
+  validateReferrerCode
+} from '@/api/auth'
 import { buildAuthErrorMessage } from '@/utils/authError'
 import {
   isRegistrationEmailSuffixAllowed,
@@ -339,6 +366,8 @@ const registrationEnabled = ref<boolean>(true)
 const emailVerifyEnabled = ref<boolean>(false)
 const promoCodeEnabled = ref<boolean>(true)
 const invitationCodeEnabled = ref<boolean>(false)
+const referralEnabled = ref<boolean>(false)
+const refereeBonusAmount = ref<number>(0)
 const turnstileEnabled = ref<boolean>(false)
 const turnstileSiteKey = ref<string>('')
 const siteName = ref<string>('Sub2API')
@@ -346,6 +375,10 @@ const linuxdoOAuthEnabled = ref<boolean>(false)
 const oidcOAuthEnabled = ref<boolean>(false)
 const oidcOAuthProviderName = ref<string>('OIDC')
 const registrationEmailSuffixWhitelist = ref<string[]>([])
+
+// Referrer info (from ?ref= URL param)
+const referrerName = ref<string>('')
+const referrerValidated = ref<boolean>(false)
 
 // Turnstile
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
@@ -374,7 +407,8 @@ const formData = reactive({
   email: '',
   password: '',
   promo_code: '',
-  invitation_code: ''
+  invitation_code: '',
+  referrer_code: ''
 })
 
 const errors = reactive({
@@ -399,6 +433,8 @@ onMounted(async () => {
     linuxdoOAuthEnabled.value = settings.linuxdo_oauth_enabled
     oidcOAuthEnabled.value = settings.oidc_oauth_enabled
     oidcOAuthProviderName.value = settings.oidc_oauth_provider_name || 'OIDC'
+    referralEnabled.value = settings.referral_enabled
+    refereeBonusAmount.value = settings.referral_referee_bonus_amount || 0
     registrationEmailSuffixWhitelist.value = normalizeRegistrationEmailSuffixWhitelist(
       settings.registration_email_suffix_whitelist || []
     )
@@ -410,6 +446,30 @@ onMounted(async () => {
         formData.promo_code = promoParam
         // Validate the promo code from URL
         await validatePromoCodeDebounced(promoParam)
+      }
+    }
+
+    // Read referrer code from URL parameter only if referral program is enabled
+    if (referralEnabled.value) {
+      const refParam = route.query.ref as string
+      if (refParam) {
+        formData.referrer_code = refParam
+        try {
+          const result = await validateReferrerCode(refParam)
+          if (result.valid) {
+            referrerValidated.value = true
+            referrerName.value = result.referrer_name || ''
+            if (result.referee_bonus_amount != null) {
+              refereeBonusAmount.value = result.referee_bonus_amount
+            }
+          } else {
+            // Silently ignore invalid ref codes (don't block registration)
+            formData.referrer_code = ''
+          }
+        } catch (err) {
+          console.error('Failed to validate referrer code:', err)
+          formData.referrer_code = ''
+        }
       }
     }
   } catch (error) {
@@ -713,7 +773,8 @@ async function handleRegister(): Promise<void> {
           password: formData.password,
           turnstile_token: turnstileToken.value,
           promo_code: formData.promo_code || undefined,
-          invitation_code: formData.invitation_code || undefined
+          invitation_code: formData.invitation_code || undefined,
+          referrer_code: formData.referrer_code || undefined
         })
       )
 
@@ -728,7 +789,8 @@ async function handleRegister(): Promise<void> {
       password: formData.password,
       turnstile_token: turnstileEnabled.value ? turnstileToken.value : undefined,
       promo_code: formData.promo_code || undefined,
-      invitation_code: formData.invitation_code || undefined
+      invitation_code: formData.invitation_code || undefined,
+      referrer_code: formData.referrer_code || undefined
     })
 
     // Show success toast

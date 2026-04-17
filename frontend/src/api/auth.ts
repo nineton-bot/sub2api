@@ -275,6 +275,29 @@ export interface ValidateInvitationCodeResponse {
 }
 
 /**
+ * Validate referrer (邀请返佣) code response
+ */
+export interface ValidateReferrerCodeResponse {
+  valid: boolean
+  referrer_name?: string
+  referee_bonus_amount: number
+  error_code?: string
+}
+
+/**
+ * Validate referrer (邀请返佣) code (public endpoint, no auth required)
+ * @param code - Referrer invite code
+ * @returns Validation result + referrer display name + bonus amount
+ */
+export async function validateReferrerCode(code: string): Promise<ValidateReferrerCodeResponse> {
+  const { data } = await apiClient.post<ValidateReferrerCodeResponse>(
+    '/auth/validate-referrer-code',
+    { code }
+  )
+  return data
+}
+
+/**
  * Validate invitation code (public endpoint, no auth required)
  * @param code - Invitation code to validate
  * @returns Validation result
@@ -398,6 +421,7 @@ export const authAPI = {
   sendVerifyCode,
   validatePromoCode,
   validateInvitationCode,
+  validateReferrerCode,
   forgotPassword,
   resetPassword,
   refreshToken,

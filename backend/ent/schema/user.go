@@ -72,6 +72,17 @@ func (User) Fields() []ent.Field {
 		field.Time("totp_enabled_at").
 			Optional().
 			Nillable(),
+
+		// 邀请返佣字段（见迁移 103_add_referral_system.sql）
+		// invited_by_user_id 是邀请关系，终身绑定。部分用户未必被邀请，故 Optional+Nillable。
+		field.Int64("invited_by_user_id").
+			Optional().
+			Nillable(),
+		// invite_code 每个账户唯一（按需生成），用于生成邀请链接。
+		field.String("invite_code").
+			MaxLen(16).
+			Optional().
+			Nillable(),
 	}
 }
 
@@ -96,5 +107,7 @@ func (User) Indexes() []ent.Index {
 		// email 字段已在 Fields() 中声明 Unique()，无需重复索引
 		index.Fields("status"),
 		index.Fields("deleted_at"),
+		// 邀请返佣索引（唯一约束通过 WHERE invite_code IS NOT NULL 的部分索引在迁移中实现）
+		index.Fields("invited_by_user_id"),
 	}
 }

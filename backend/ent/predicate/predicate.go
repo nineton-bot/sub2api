@@ -51,6 +51,12 @@ type Proxy func(*sql.Selector)
 // RedeemCode is the predicate function for redeemcode builders.
 type RedeemCode func(*sql.Selector)
 
+// ReferralCommission is the predicate function for referralcommission builders.
+type ReferralCommission func(*sql.Selector)
+
+// ReferralPendingBonus is the predicate function for referralpendingbonus builders.
+type ReferralPendingBonus func(*sql.Selector)
+
 // SecuritySecret is the predicate function for securitysecret builders.
 type SecuritySecret func(*sql.Selector)
 

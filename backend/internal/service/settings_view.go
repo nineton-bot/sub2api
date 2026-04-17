@@ -106,6 +106,11 @@ type SystemSettings struct {
 	EnableFingerprintUnification bool // 是否统一 OAuth 账号的指纹头（默认 true）
 	EnableMetadataPassthrough    bool // 是否透传客户端原始 metadata（默认 false）
 	EnableCCHSigning             bool // 是否对 billing header cch 进行签名（默认 false）
+
+	// 邀请返佣（默认关闭）
+	ReferralEnabled            bool    // 主开关
+	ReferralCommissionRate     float64 // 佣金比例 0~1
+	ReferralRefereeBonusAmount float64 // 被邀请人首次付费后到账赠金金额
 }
 
 type DefaultSubscriptionSetting struct {
@@ -144,7 +149,12 @@ type PublicSettings struct {
 	OIDCOAuthEnabled      bool
 	OIDCOAuthProviderName string
 	PaymentEnabled        bool
-	Version               string
+
+	// 邀请返佣（公开字段：仅用于注册页是否显示推荐码输入及赠金金额）
+	ReferralEnabled            bool
+	ReferralRefereeBonusAmount float64
+
+	Version string
 }
 
 // StreamTimeoutSettings 流超时处理配置（仅控制超时后的处理方式，超时判定由网关配置控制）

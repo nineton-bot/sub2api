@@ -281,6 +281,18 @@ const routes: RouteRecordRaw[] = [
       titleKey: 'customPage.title',
     }
   },
+  {
+    path: '/referral',
+    name: 'Referral',
+    component: () => import('@/views/user/ReferralView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'My Referral',
+      titleKey: 'referral.title',
+      descriptionKey: 'referral.description'
+    }
+  },
 
   // ==================== Admin Routes ====================
   {
@@ -441,6 +453,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Usage Records',
       titleKey: 'admin.usage.title',
       descriptionKey: 'admin.usage.description'
+    }
+  },
+  {
+    path: '/admin/referral',
+    name: 'AdminReferral',
+    component: () => import('@/views/admin/ReferralView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Referral Dashboard',
+      titleKey: 'admin.referral.title',
+      descriptionKey: 'admin.referral.description'
     }
   },
 

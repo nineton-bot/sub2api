@@ -16,25 +16,27 @@ import (
 
 // AuthHandler handles authentication-related requests
 type AuthHandler struct {
-	cfg           *config.Config
-	authService   *service.AuthService
-	userService   *service.UserService
-	settingSvc    *service.SettingService
-	promoService  *service.PromoService
-	redeemService *service.RedeemService
-	totpService   *service.TotpService
+	cfg             *config.Config
+	authService     *service.AuthService
+	userService     *service.UserService
+	settingSvc      *service.SettingService
+	promoService    *service.PromoService
+	redeemService   *service.RedeemService
+	totpService     *service.TotpService
+	referralService *service.ReferralService
 }
 
 // NewAuthHandler creates a new AuthHandler
-func NewAuthHandler(cfg *config.Config, authService *service.AuthService, userService *service.UserService, settingService *service.SettingService, promoService *service.PromoService, redeemService *service.RedeemService, totpService *service.TotpService) *AuthHandler {
+func NewAuthHandler(cfg *config.Config, authService *service.AuthService, userService *service.UserService, settingService *service.SettingService, promoService *service.PromoService, redeemService *service.RedeemService, totpService *service.TotpService, referralService *service.ReferralService) *AuthHandler {
 	return &AuthHandler{
-		cfg:           cfg,
-		authService:   authService,
-		userService:   userService,
-		settingSvc:    settingService,
-		promoService:  promoService,
-		redeemService: redeemService,
-		totpService:   totpService,
+		cfg:             cfg,
+		authService:     authService,
+		userService:     userService,
+		settingSvc:      settingService,
+		promoService:    promoService,
+		redeemService:   redeemService,
+		totpService:     totpService,
+		referralService: referralService,
 	}
 }
 
@@ -45,7 +47,8 @@ type RegisterRequest struct {
 	VerifyCode     string `json:"verify_code"`
 	TurnstileToken string `json:"turnstile_token"`
 	PromoCode      string `json:"promo_code"`      // 注册优惠码
-	InvitationCode string `json:"invitation_code"` // 邀请码
+	InvitationCode string `json:"invitation_code"` // 邀请码（注册白名单）
+	ReferrerCode   string `json:"referrer_code"`   // 邀请返佣：邀请人的邀请码
 }
 
 // SendVerifyCodeRequest 发送验证码请求
@@ -119,7 +122,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	_, user, err := h.authService.RegisterWithVerification(c.Request.Context(), req.Email, req.Password, req.VerifyCode, req.PromoCode, req.InvitationCode)
+	_, user, err := h.authService.RegisterWithVerification(c.Request.Context(), req.Email, req.Password, req.VerifyCode, req.PromoCode, req.InvitationCode, req.ReferrerCode)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -431,6 +434,88 @@ func (h *AuthHandler) ValidateInvitationCode(c *gin.Context) {
 	response.Success(c, ValidateInvitationCodeResponse{
 		Valid: true,
 	})
+}
+
+// ValidateReferrerCodeRequest 验证邀请返佣的邀请人邀请码请求
+// Code 长度由 invite_code 生成规则决定（8 位大小写字母数字），为防御异常大 payload / SQL 注入探测：
+//   - 最小 4：留出 legacy/短码扩展空间
+//   - 最大 32：足以覆盖任何合理码长
+//   - alphanum：邀请码仅允许字母数字
+type ValidateReferrerCodeRequest struct {
+	Code string `json:"code" binding:"required,min=4,max=32,alphanum"`
+}
+
+// ValidateReferrerCodeResponse 验证邀请人邀请码响应
+type ValidateReferrerCodeResponse struct {
+	Valid              bool    `json:"valid"`
+	ReferrerName       string  `json:"referrer_name,omitempty"`  // 脱敏后的邀请人昵称/邮箱
+	RefereeBonusAmount float64 `json:"referee_bonus_amount"`     // 被邀请人首次付费后到账金额
+	ErrorCode          string  `json:"error_code,omitempty"`
+}
+
+// ValidateReferrerCode 验证邀请人的邀请码（公开接口，注册前调用）
+// POST /api/v1/auth/validate-referrer-code
+func (h *AuthHandler) ValidateReferrerCode(c *gin.Context) {
+	// 返佣未启用：静默返回 invalid，不暴露开关状态细节
+	if h.settingSvc == nil || !h.settingSvc.IsReferralEnabled(c.Request.Context()) {
+		response.Success(c, ValidateReferrerCodeResponse{
+			Valid:     false,
+			ErrorCode: "REFERRAL_DISABLED",
+		})
+		return
+	}
+
+	var req ValidateReferrerCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	if h.referralService == nil {
+		response.Success(c, ValidateReferrerCodeResponse{
+			Valid:     false,
+			ErrorCode: "REFERRAL_DISABLED",
+		})
+		return
+	}
+
+	referrer, err := h.referralService.ResolveReferrerByCode(c.Request.Context(), req.Code)
+	if err != nil || referrer == nil {
+		response.Success(c, ValidateReferrerCodeResponse{
+			Valid:     false,
+			ErrorCode: "REFERRER_NOT_FOUND",
+		})
+		return
+	}
+
+	// 展示名：优先 username，否则脱敏 email（复用 service.MaskEmail 若存在，此处直接取 username）
+	displayName := referrer.Username
+	if displayName == "" {
+		displayName = maskEmailForDisplay(referrer.Email)
+	}
+
+	response.Success(c, ValidateReferrerCodeResponse{
+		Valid:              true,
+		ReferrerName:       displayName,
+		RefereeBonusAmount: h.settingSvc.GetReferralRefereeBonusAmount(c.Request.Context()),
+	})
+}
+
+// maskEmailForDisplay 简易邮箱脱敏：a***@example.com
+func maskEmailForDisplay(email string) string {
+	if email == "" {
+		return ""
+	}
+	at := strings.IndexByte(email, '@')
+	if at <= 0 {
+		return "***"
+	}
+	local := email[:at]
+	domain := email[at:]
+	if len(local) <= 1 {
+		return local + "**" + domain
+	}
+	return string(local[0]) + "***" + domain
 }
 
 // ForgotPasswordRequest 忘记密码请求

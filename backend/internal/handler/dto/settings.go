@@ -145,6 +145,11 @@ type SystemSettings struct {
 	PaymentCancelRateLimitWindow  int    `json:"payment_cancel_rate_limit_window"`
 	PaymentCancelRateLimitUnit    string `json:"payment_cancel_rate_limit_unit"`
 	PaymentCancelRateLimitMode    string `json:"payment_cancel_rate_limit_window_mode"`
+
+	// 邀请返佣（Referral）
+	ReferralEnabled            bool    `json:"referral_enabled"`
+	ReferralCommissionRate     float64 `json:"referral_commission_rate"`
+	ReferralRefereeBonusAmount float64 `json:"referral_referee_bonus_amount"`
 }
 
 type DefaultSubscriptionSetting struct {
@@ -182,6 +187,8 @@ type PublicSettings struct {
 	SoraClientEnabled                bool             `json:"sora_client_enabled"`
 	BackendModeEnabled               bool             `json:"backend_mode_enabled"`
 	PaymentEnabled                   bool             `json:"payment_enabled"`
+	ReferralEnabled                  bool             `json:"referral_enabled"`
+	ReferralRefereeBonusAmount       float64          `json:"referral_referee_bonus_amount"`
 	Version                          string           `json:"version"`
 }
 

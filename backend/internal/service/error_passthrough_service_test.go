@@ -1010,5 +1010,6 @@ func newPassthroughRuleForWritePathTest(id int64, keyword, customMsg string) *mo
 }
 
 // Helper functions
-func testIntPtr(i int) *int       { return &i }
+// testIntPtr lives in request_quota_subscription_test.go (no build tag) so that
+// both unit-tagged and default builds share a single definition.
 func testStrPtr(s string) *string { return &s }

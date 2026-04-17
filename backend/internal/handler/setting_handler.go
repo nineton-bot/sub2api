@@ -60,6 +60,8 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		OIDCOAuthProviderName:            settings.OIDCOAuthProviderName,
 		BackendModeEnabled:               settings.BackendModeEnabled,
 		PaymentEnabled:                   settings.PaymentEnabled,
+		ReferralEnabled:                  settings.ReferralEnabled,
+		ReferralRefereeBonusAmount:       settings.ReferralRefereeBonusAmount,
 		Version:                          h.version,
 	})
 }

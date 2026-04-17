@@ -30,6 +30,10 @@ type User struct {
 	TotpEnabled         bool       // 是否启用 TOTP
 	TotpEnabledAt       *time.Time // TOTP 启用时间
 
+	// 邀请返佣字段
+	InvitedByUserID *int64  // 邀请人 user id（注册时终身绑定；nil=未被邀请）
+	InviteCode      *string // 该用户自己的邀请码（按需生成，唯一）
+
 	APIKeys       []APIKey
 	Subscriptions []UserSubscription
 }

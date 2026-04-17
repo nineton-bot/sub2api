@@ -189,6 +189,30 @@ func (f RedeemCodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RedeemCodeMutation", m)
 }
 
+// The ReferralCommissionFunc type is an adapter to allow the use of ordinary
+// function as ReferralCommission mutator.
+type ReferralCommissionFunc func(context.Context, *ent.ReferralCommissionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ReferralCommissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ReferralCommissionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReferralCommissionMutation", m)
+}
+
+// The ReferralPendingBonusFunc type is an adapter to allow the use of ordinary
+// function as ReferralPendingBonus mutator.
+type ReferralPendingBonusFunc func(context.Context, *ent.ReferralPendingBonusMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ReferralPendingBonusFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ReferralPendingBonusMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReferralPendingBonusMutation", m)
+}
+
 // The SecuritySecretFunc type is an adapter to allow the use of ordinary
 // function as SecuritySecret mutator.
 type SecuritySecretFunc func(context.Context, *ent.SecuritySecretMutation) (ent.Value, error)

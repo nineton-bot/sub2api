@@ -359,7 +359,9 @@ export default {
     orderManagement: 'Orders',
     paymentDashboard: 'Payment Dashboard',
     paymentConfig: 'Payment Config',
-    paymentPlans: 'Plans'
+    paymentPlans: 'Plans',
+    referral: 'My Referral',
+    adminReferral: 'Referral'
   },
 
   // Auth
@@ -427,6 +429,8 @@ export default {
     promoCodeAlreadyUsed: 'You have already used this promo code',
     promoCodeValidating: 'Promo code is being validated, please wait',
     promoCodeInvalidCannotRegister: 'Invalid promo code. Please check and try again or clear the promo code field',
+    referrerWelcome: "You're invited by {name}. After your first payment, you'll receive ¥{amount} bonus balance.",
+    referrerAnonymous: 'a friend',
     invitationCodeLabel: 'Invitation Code',
     invitationCodePlaceholder: 'Enter invitation code',
     invitationCodeRequired: 'Invitation code is required',
@@ -4262,6 +4266,16 @@ export default {
         totpKeyNotConfigured:
           'Please configure TOTP_ENCRYPTION_KEY in environment variables first. Generate a key with: openssl rand -hex 32'
       },
+      referral: {
+        title: 'Referral Program (邀请返佣)',
+        description: 'Reward loyal users for bringing in new paying customers',
+        enable: 'Enable Referral Program',
+        enableHint: 'When enabled, users see a "My Referral" menu and can share their invite link; new users registering via the link are bound to the referrer forever.',
+        commissionRate: 'Commission Rate',
+        commissionRateHint: 'Fraction of each invitee recharge / subscription credited to the referrer (0 ~ 100%). Example: 0.10 = 10%.',
+        refereeBonus: 'Referee First-Payment Bonus',
+        refereeBonusHint: 'Amount (in ¥) credited to the invitee after their first successful recharge or subscription. Set to 0 to disable the bonus.'
+      },
       turnstile: {
         title: 'Cloudflare Turnstile',
         description: 'Bot protection for login and registration',
@@ -4967,6 +4981,42 @@ export default {
       loadFailed: 'Failed to load profiles',
       saveFailed: 'Failed to save profile',
       deleteFailed: 'Failed to delete profile'
+    },
+
+    // Referral (邀请返佣) admin dashboard
+    referral: {
+      title: 'Referral Program',
+      description: 'Overview of referral commissions and top referrers',
+      statusEnabled: 'Program is enabled',
+      statusDisabled: 'Program is disabled',
+      enableHint: 'Enable the program in Settings → Referral to start rewarding referrers',
+      statInvited: 'Invited Users',
+      statTotalGross: 'Total Gross Commission',
+      statTotalReleased: 'Released Commission',
+      statTotalPending: 'Locked (Accruing)',
+      statRefereeBonusGranted: 'Bonuses Granted',
+      statRefereeBonusPending: 'Bonuses Pending',
+      currentRate: 'Current Rate',
+      currentBonus: 'Current Referee Bonus',
+      topReferrers: 'Top Referrers',
+      sortByCommission: 'By Commission',
+      sortByCount: 'By Invited Count',
+      colUser: 'User',
+      colInvited: 'Invited',
+      colGross: 'Gross Commission',
+      colReleased: 'Released',
+      colActions: 'Actions',
+      viewDetail: 'View Referees',
+      drilldownTitle: 'Referees of {name}',
+      colReferee: 'Referee',
+      colJoinedAt: 'Joined At',
+      colOrderCount: 'Orders',
+      colBonusGranted: 'Bonus',
+      bonusGranted: 'Granted',
+      bonusPending: 'Pending',
+      loadFailed: 'Failed to load referral data',
+      noReferrers: 'No referrers yet',
+      noReferees: 'No referees under this user'
     }
   },
 
@@ -5488,5 +5538,50 @@ export default {
       },
     },
   },
+
+  // Referral (邀请返佣) user page
+  referral: {
+    title: 'My Referral',
+    description: 'Share and earn lifetime commission from your invitees',
+    inviteLink: 'Your Invite Link',
+    inviteCode: 'Your Invite Code',
+    copyLink: 'Copy Link',
+    copyCode: 'Copy Code',
+    copied: 'Copied',
+    qrTitle: 'Scan to register',
+    downloadQr: 'Download QR',
+    statGross: 'Total Commission',
+    statReleased: 'Available',
+    statPending: 'Locked',
+    statInvited: 'Invited',
+    statGrossHint: 'Accrued earnings across all invitees',
+    statReleasedHint: 'Already added to your balance',
+    statPendingHint: 'Releases as your invitees use their balance / subscription',
+    statInvitedHint: 'People you have invited',
+    commissionRate: 'Commission rate',
+    bonusAmount: 'Referee first-payment bonus',
+    historyTitle: 'Commission Log',
+    colReferee: 'Referee',
+    colType: 'Source',
+    colAmount: 'Source Amount',
+    colGross: 'Gross',
+    colReleased: 'Released',
+    colStatus: 'Status',
+    colCreatedAt: 'Time',
+    typeRecharge: 'Recharge',
+    typeSubscription: 'Subscription',
+    statusAccruing: 'Accruing',
+    statusFullyReleased: 'Fully Released',
+    statusReversed: 'Reversed',
+    statusPartialReversed: 'Partially Reversed',
+    empty: 'No commissions yet. Share your link to start earning.',
+    disabled: 'Referral program is currently disabled. Your link will become active once it is enabled.',
+    loadFailed: 'Failed to load referral data',
+    howItWorksTitle: 'How it works',
+    howItWorksLine1: 'Share your invite link — new users who register through it are bound to you forever.',
+    howItWorksLine2: 'Every time they recharge or subscribe, you accrue {rate}% gross commission.',
+    howItWorksLine3: 'Commission is released as your invitees actually consume: by balance usage for recharges, and by elapsed days for subscriptions.',
+    howItWorksLine4: 'Released commission is added directly to your balance — no manual withdrawal needed.'
+  }
 
 }

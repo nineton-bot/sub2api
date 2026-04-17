@@ -952,6 +952,80 @@
           </div>
         </div>
 
+        <!-- Referral (邀请返佣) Settings -->
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.referral.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.referral.description') }}
+            </p>
+          </div>
+          <div class="space-y-5 p-6">
+            <!-- Enable -->
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="font-medium text-gray-900 dark:text-white">{{
+                  t('admin.settings.referral.enable')
+                }}</label>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.referral.enableHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.referral_enabled" />
+            </div>
+
+            <!-- Commission rate / bonus amount - only when enabled -->
+            <div
+              v-if="form.referral_enabled"
+              class="border-t border-gray-100 pt-4 dark:border-dark-700"
+            >
+              <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ t('admin.settings.referral.commissionRate') }}
+                  </label>
+                  <div class="flex items-center gap-2">
+                    <input
+                      v-model.number="form.referral_commission_rate"
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      class="input"
+                    />
+                    <span class="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      ({{ Math.round(((form.referral_commission_rate ?? 0) as number) * 100) }}%)
+                    </span>
+                  </div>
+                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('admin.settings.referral.commissionRateHint') }}
+                  </p>
+                </div>
+                <div>
+                  <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ t('admin.settings.referral.refereeBonus') }}
+                  </label>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">¥</span>
+                    <input
+                      v-model.number="form.referral_referee_bonus_amount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="input"
+                    />
+                  </div>
+                  <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ t('admin.settings.referral.refereeBonusHint') }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Cloudflare Turnstile Settings -->
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
@@ -2743,7 +2817,11 @@ const form = reactive<SettingsForm>({
   // Gateway forwarding behavior
   enable_fingerprint_unification: true,
   enable_metadata_passthrough: false,
-  enable_cch_signing: false
+  enable_cch_signing: false,
+  // Referral (邀请返佣)
+  referral_enabled: false,
+  referral_commission_rate: 0.10,
+  referral_referee_bonus_amount: 2.00
 })
 
 const defaultSubscriptionGroupOptions = computed<DefaultSubscriptionGroupOption[]>(() =>
@@ -3161,6 +3239,10 @@ async function saveSettings() {
       payment_cancel_rate_limit_window: Number(form.payment_cancel_rate_limit_window) || 1,
       payment_cancel_rate_limit_unit: form.payment_cancel_rate_limit_unit,
       payment_cancel_rate_limit_window_mode: form.payment_cancel_rate_limit_window_mode,
+      // Referral (邀请返佣)
+      referral_enabled: form.referral_enabled,
+      referral_commission_rate: Math.max(0, Math.min(1, Number(form.referral_commission_rate) || 0)),
+      referral_referee_bonus_amount: Math.max(0, Number(form.referral_referee_bonus_amount) || 0),
     }
 
     const updated = await adminAPI.settings.updateSettings(payload)

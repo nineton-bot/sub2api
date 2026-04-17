@@ -218,6 +218,18 @@ func (s *PaymentService) markRefundOk(ctx context.Context, p *RefundPlan) (*Refu
 		return nil, fmt.Errorf("mark refund: %w", err)
 	}
 	s.writeAuditLog(ctx, p.OrderID, "REFUND_SUCCESS", "admin", map[string]any{"refundAmount": p.RefundAmount, "reason": p.Reason, "balanceDeducted": p.BalanceToDeduct, "force": p.Force})
+
+	// 退款完成后同步回算返佣：重读订单以确保 refund_amount/refund_at 字段已持久化。
+	// 若返佣服务缺失或订单与返佣无关（未被邀请人、功能未启用等），内部自动短路。
+	if s.referralService != nil {
+		if updated, gerr := s.entClient.PaymentOrder.Get(ctx, p.OrderID); gerr == nil {
+			if rerr := s.referralService.ReverseCommissionOnRefund(ctx, updated); rerr != nil {
+				slog.Warn("[Payment] reverse commission on refund failed",
+					"orderID", p.OrderID, "error", rerr)
+			}
+		}
+	}
+
 	return &RefundResult{Success: true, BalanceDeducted: p.BalanceToDeduct, SubDaysDeducted: p.SubDaysToDeduct}, nil
 }
 

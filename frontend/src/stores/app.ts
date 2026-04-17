@@ -339,6 +339,8 @@ export const useAppStore = defineStore('app', () => {
         oidc_oauth_enabled: false,
         oidc_oauth_provider_name: 'OIDC',
         backend_mode_enabled: false,
+        referral_enabled: false,
+        referral_referee_bonus_amount: 0,
         version: siteVersion.value
       }
     }

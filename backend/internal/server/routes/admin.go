@@ -88,6 +88,18 @@ func RegisterAdminRoutes(
 
 		// 渠道管理
 		registerChannelRoutes(admin, h)
+
+		// 邀请返佣管理
+		registerReferralRoutes(admin, h)
+	}
+}
+
+func registerReferralRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	referral := admin.Group("/referral")
+	{
+		referral.GET("/overview", h.Admin.Referral.GetOverview)
+		referral.GET("/top", h.Admin.Referral.ListTopReferrers)
+		referral.GET("/user/:id", h.Admin.Referral.GetReferrerDrilldown)
 	}
 }
 

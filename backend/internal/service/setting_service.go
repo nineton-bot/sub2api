@@ -171,6 +171,8 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyOIDCConnectEnabled,
 		SettingKeyOIDCConnectProviderName,
 		SettingPaymentEnabled,
+		SettingKeyReferralEnabled,
+		SettingKeyReferralRefereeBonusAmount,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -238,6 +240,18 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		OIDCOAuthEnabled:                 oidcEnabled,
 		OIDCOAuthProviderName:            oidcProviderName,
 		PaymentEnabled:                   settings[SettingPaymentEnabled] == "true",
+		ReferralEnabled:                  settings[SettingKeyReferralEnabled] == "true",
+		ReferralRefereeBonusAmount: func() float64 {
+			if v, err := strconv.ParseFloat(strings.TrimSpace(settings[SettingKeyReferralRefereeBonusAmount]), 64); err == nil && v >= 0 {
+				// 与 GetReferralRefereeBonusAmount getter 保持一致：即使 DB 里被直接改写
+				// 了异常大值，对外暴露（注册页 banner、frontend 公共配置注入）也必须钳制。
+				if v > ReferralRefereeBonusMax {
+					return ReferralRefereeBonusMax
+				}
+				return v
+			}
+			return 2.00
+		}(),
 	}, nil
 }
 
@@ -290,6 +304,8 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		OIDCOAuthEnabled                 bool            `json:"oidc_oauth_enabled"`
 		OIDCOAuthProviderName            string          `json:"oidc_oauth_provider_name"`
 		PaymentEnabled                   bool            `json:"payment_enabled"`
+		ReferralEnabled                  bool            `json:"referral_enabled"`
+		ReferralRefereeBonusAmount       float64         `json:"referral_referee_bonus_amount"`
 		Version                          string          `json:"version,omitempty"`
 	}{
 		RegistrationEnabled:              settings.RegistrationEnabled,
@@ -320,6 +336,8 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		OIDCOAuthEnabled:                 settings.OIDCOAuthEnabled,
 		OIDCOAuthProviderName:            settings.OIDCOAuthProviderName,
 		PaymentEnabled:                   settings.PaymentEnabled,
+		ReferralEnabled:                  settings.ReferralEnabled,
+		ReferralRefereeBonusAmount:       settings.ReferralRefereeBonusAmount,
 		Version:                          s.version,
 	}, nil
 }
@@ -595,6 +613,23 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 	updates[SettingKeyEnableMetadataPassthrough] = strconv.FormatBool(settings.EnableMetadataPassthrough)
 	updates[SettingKeyEnableCCHSigning] = strconv.FormatBool(settings.EnableCCHSigning)
 
+	// 邀请返佣
+	updates[SettingKeyReferralEnabled] = strconv.FormatBool(settings.ReferralEnabled)
+	rate := settings.ReferralCommissionRate
+	if rate < 0 {
+		rate = 0
+	} else if rate > 1 {
+		rate = 1
+	}
+	updates[SettingKeyReferralCommissionRate] = strconv.FormatFloat(rate, 'f', -1, 64)
+	bonus := settings.ReferralRefereeBonusAmount
+	if bonus < 0 {
+		bonus = 0
+	} else if bonus > ReferralRefereeBonusMax {
+		bonus = ReferralRefereeBonusMax
+	}
+	updates[SettingKeyReferralRefereeBonusAmount] = strconv.FormatFloat(bonus, 'f', -1, 64)
+
 	err = s.settingRepo.SetMultiple(ctx, updates)
 	if err == nil {
 		// 先使 inflight singleflight 失效，再刷新缓存，缩小旧值覆盖新值的竞态窗口
@@ -809,6 +844,49 @@ func (s *SettingService) IsInvitationCodeEnabled(ctx context.Context) bool {
 	return value == "true"
 }
 
+// IsReferralEnabled 检查是否启用邀请返佣功能（默认关闭）
+func (s *SettingService) IsReferralEnabled(ctx context.Context) bool {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralEnabled)
+	if err != nil {
+		return false
+	}
+	return value == "true"
+}
+
+// GetReferralCommissionRate 获取佣金比例（0~1，默认 0.10）
+func (s *SettingService) GetReferralCommissionRate(ctx context.Context) float64 {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralCommissionRate)
+	if err != nil {
+		return 0.10
+	}
+	v, err := strconv.ParseFloat(value, 64)
+	if err != nil || v < 0 {
+		return 0.10
+	}
+	if v > 1 {
+		v = 1
+	}
+	return v
+}
+
+// GetReferralRefereeBonusAmount 获取被邀请人首次付费后到账的赠金金额（¥，默认 2.00，<0 视为 0）
+// 读取时同样按 ReferralRefereeBonusMax 上限钳制，哪怕历史配置或直接改表写入了异常大值，
+// 运行时也不会爆发性赠金。
+func (s *SettingService) GetReferralRefereeBonusAmount(ctx context.Context) float64 {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralRefereeBonusAmount)
+	if err != nil {
+		return 2.00
+	}
+	v, err := strconv.ParseFloat(value, 64)
+	if err != nil || v < 0 {
+		return 0
+	}
+	if v > ReferralRefereeBonusMax {
+		return ReferralRefereeBonusMax
+	}
+	return v
+}
+
 // IsPasswordResetEnabled 检查是否启用密码重置功能
 // 要求：必须同时开启邮件验证
 func (s *SettingService) IsPasswordResetEnabled(ctx context.Context) bool {
@@ -935,6 +1013,11 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 
 		// 分组隔离（默认不允许未分组 Key 调度）
 		SettingKeyAllowUngroupedKeyScheduling: "false",
+
+		// 邀请返佣（默认关闭，开启后 10% 佣金 + 被邀请人首次付费后到账 ¥2）
+		SettingKeyReferralEnabled:            "false",
+		SettingKeyReferralCommissionRate:     "0.10",
+		SettingKeyReferralRefereeBonusAmount: "2.00",
 	}
 
 	return s.settingRepo.SetMultiple(ctx, defaults)
@@ -1216,6 +1299,23 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	}
 	result.EnableMetadataPassthrough = settings[SettingKeyEnableMetadataPassthrough] == "true"
 	result.EnableCCHSigning = settings[SettingKeyEnableCCHSigning] == "true"
+
+	// 邀请返佣：默认关闭；比例默认 0.10；赠金默认 2.00
+	result.ReferralEnabled = settings[SettingKeyReferralEnabled] == "true"
+	if v, err := strconv.ParseFloat(strings.TrimSpace(settings[SettingKeyReferralCommissionRate]), 64); err == nil && v >= 0 && v <= 1 {
+		result.ReferralCommissionRate = v
+	} else {
+		result.ReferralCommissionRate = 0.10
+	}
+	if v, err := strconv.ParseFloat(strings.TrimSpace(settings[SettingKeyReferralRefereeBonusAmount]), 64); err == nil && v >= 0 {
+		// 钳到 ReferralRefereeBonusMax 上限，防止历史脏数据/直写 DB 让运行时产生爆发赠金。
+		if v > ReferralRefereeBonusMax {
+			v = ReferralRefereeBonusMax
+		}
+		result.ReferralRefereeBonusAmount = v
+	} else {
+		result.ReferralRefereeBonusAmount = 2.00
+	}
 
 	return result
 }

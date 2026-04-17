@@ -261,7 +261,25 @@ const (
 	SettingKeyEnableMetadataPassthrough = "enable_metadata_passthrough"
 	// SettingKeyEnableCCHSigning 是否对 billing header 中的 cch 进行 xxHash64 签名（默认 false）
 	SettingKeyEnableCCHSigning = "enable_cch_signing"
+
+	// =========================
+	// Referral / Commission
+	// =========================
+
+	// SettingKeyReferralEnabled 邀请返佣总开关（默认 false）。
+	// 关闭时注册页不展示 ref 参数、所有触发点短路。
+	SettingKeyReferralEnabled = "referral_enabled"
+
+	// SettingKeyReferralCommissionRate 佣金比例，对充值和订阅同时生效（默认 0.10）。
+	SettingKeyReferralCommissionRate = "referral_commission_rate"
+
+	// SettingKeyReferralRefereeBonusAmount 被邀请人首次付费后到账的赠金金额（¥，默认 2.00）。
+	SettingKeyReferralRefereeBonusAmount = "referral_referee_bonus_amount"
 )
+
+// ReferralRefereeBonusMax 是被邀请人首次付费赠金的上限（¥），用于防止管理员误填成灾难性数值
+// （例如 10000000），保护账面与现金流。如需调高可直接修改此常量。
+const ReferralRefereeBonusMax = 10000.0
 
 // AdminAPIKeyPrefix is the prefix for admin API keys (distinct from user "sk-" keys).
 const AdminAPIKeyPrefix = "admin-"

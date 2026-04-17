@@ -29,6 +29,7 @@ const (
 	linuxDoOAuthStateCookieName   = "linuxdo_oauth_state"
 	linuxDoOAuthVerifierCookie    = "linuxdo_oauth_verifier"
 	linuxDoOAuthRedirectCookie    = "linuxdo_oauth_redirect"
+	linuxDoOAuthReferrerCookie    = "linuxdo_oauth_ref"
 	linuxDoOAuthCookieMaxAgeSec   = 10 * 60 // 10 minutes
 	linuxDoOAuthDefaultRedirectTo = "/dashboard"
 	linuxDoOAuthDefaultFrontendCB = "/auth/linuxdo/callback"
@@ -36,6 +37,7 @@ const (
 	linuxDoOAuthMaxRedirectLen      = 2048
 	linuxDoOAuthMaxFragmentValueLen = 512
 	linuxDoOAuthMaxSubjectLen       = 64 - len("linuxdo-")
+	linuxDoOAuthMaxReferrerLen      = 32
 )
 
 type linuxDoTokenResponse struct {
@@ -90,6 +92,11 @@ func (h *AuthHandler) LinuxDoOAuthStart(c *gin.Context) {
 	secureCookie := isRequestHTTPS(c)
 	setCookie(c, linuxDoOAuthStateCookieName, encodeCookieValue(state), linuxDoOAuthCookieMaxAgeSec, secureCookie)
 	setCookie(c, linuxDoOAuthRedirectCookie, encodeCookieValue(redirectTo), linuxDoOAuthCookieMaxAgeSec, secureCookie)
+
+	// 邀请返佣：把 ref 参数通过 cookie 保留到回调阶段，供新用户注册时绑定邀请关系
+	if refCode := sanitizeReferrerCode(c.Query("ref")); refCode != "" {
+		setCookie(c, linuxDoOAuthReferrerCookie, encodeCookieValue(refCode), linuxDoOAuthCookieMaxAgeSec, secureCookie)
+	}
 
 	codeChallenge := ""
 	if cfg.UsePKCE {
@@ -148,6 +155,7 @@ func (h *AuthHandler) LinuxDoOAuthCallback(c *gin.Context) {
 		clearCookie(c, linuxDoOAuthStateCookieName, secureCookie)
 		clearCookie(c, linuxDoOAuthVerifierCookie, secureCookie)
 		clearCookie(c, linuxDoOAuthRedirectCookie, secureCookie)
+		clearCookie(c, linuxDoOAuthReferrerCookie, secureCookie)
 	}()
 
 	expectedState, err := readCookieDecoded(c, linuxDoOAuthStateCookieName)
@@ -211,8 +219,10 @@ func (h *AuthHandler) LinuxDoOAuthCallback(c *gin.Context) {
 		email = linuxDoSyntheticEmail(subject)
 	}
 
+	// 邀请返佣：从 cookie 读回 ref（仅对新注册用户生效）
+	referrerCode, _ := readCookieDecoded(c, linuxDoOAuthReferrerCookie)
 	// 传入空邀请码；如果需要邀请码，服务层返回 ErrOAuthInvitationRequired
-	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, "")
+	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, "", referrerCode)
 	if err != nil {
 		if errors.Is(err, service.ErrOAuthInvitationRequired) {
 			pendingToken, tokenErr := h.authService.CreatePendingOAuthToken(email, username)
@@ -244,6 +254,7 @@ func (h *AuthHandler) LinuxDoOAuthCallback(c *gin.Context) {
 type completeLinuxDoOAuthRequest struct {
 	PendingOAuthToken string `json:"pending_oauth_token" binding:"required"`
 	InvitationCode    string `json:"invitation_code"     binding:"required"`
+	ReferrerCode      string `json:"referrer_code"`
 }
 
 // CompleteLinuxDoOAuthRegistration completes a pending OAuth registration by validating
@@ -262,7 +273,7 @@ func (h *AuthHandler) CompleteLinuxDoOAuthRegistration(c *gin.Context) {
 		return
 	}
 
-	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, req.InvitationCode)
+	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, req.InvitationCode, sanitizeReferrerCode(req.ReferrerCode))
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -592,6 +603,24 @@ func singleLine(value string) string {
 		return ""
 	}
 	return strings.Join(strings.Fields(value), " ")
+}
+
+// sanitizeReferrerCode 过滤并截断邀请返佣邀请码，防 header/cookie 注入。
+// 允许字符：字母 + 数字（邀请码字符集已去掉容易混淆的 0/O/1/l/I）。
+func sanitizeReferrerCode(code string) string {
+	code = strings.TrimSpace(code)
+	if code == "" {
+		return ""
+	}
+	if len(code) > linuxDoOAuthMaxReferrerLen {
+		return ""
+	}
+	for _, r := range code {
+		if !((r >= '0' && r <= '9') || (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z')) {
+			return ""
+		}
+	}
+	return code
 }
 
 func sanitizeFrontendRedirectPath(path string) string {

@@ -151,6 +151,14 @@ func ProvideSubscriptionExpiryService(userSubRepo UserSubscriptionRepository) *S
 	return svc
 }
 
+// ProvideReferralReleaseService creates and starts ReferralReleaseService.
+// 订阅型返佣按天释放，每小时扫一遍即可。
+func ProvideReferralReleaseService(referralService *ReferralService) *ReferralReleaseService {
+	svc := NewReferralReleaseService(referralService, time.Hour)
+	svc.Start()
+	return svc
+}
+
 // ProvideTimingWheelService creates and starts TimingWheelService
 func ProvideTimingWheelService() (*TimingWheelService, error) {
 	svc, err := NewTimingWheelService()
@@ -392,6 +400,7 @@ var ProviderSet = wire.NewSet(
 	NewProxyService,
 	NewRedeemService,
 	NewPromoService,
+	NewReferralService,
 	NewUsageService,
 	NewDashboardService,
 	ProvidePricingService,
@@ -443,6 +452,7 @@ var ProviderSet = wire.NewSet(
 	ProvideTokenRefreshService,
 	ProvideAccountExpiryService,
 	ProvideSubscriptionExpiryService,
+	ProvideReferralReleaseService,
 	ProvideTimingWheelService,
 	ProvideDashboardAggregationService,
 	ProvideUsageCleanupService,

@@ -1,11 +1,16 @@
 package routes
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/Wei-Shaw/sub2api/internal/handler"
+	rateMW "github.com/Wei-Shaw/sub2api/internal/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/server/middleware"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 // RegisterUserRoutes 注册用户相关路由（需要认证）
@@ -14,7 +19,21 @@ func RegisterUserRoutes(
 	h *handler.Handlers,
 	jwtAuth middleware.JWTAuthMiddleware,
 	settingService *service.SettingService,
+	redisClient *redis.Client,
 ) {
+	// 用户侧敏感接口用的速率限制器（每用户 30/分钟），保护邀请返佣等偶发型查询接口
+	// 不被刷。Redis 故障时 fail-open（用户体验优先）。
+	rateLimiter := rateMW.NewRateLimiter(redisClient)
+
+	// userIDKey 从 JWT auth 结果中提取 user ID 做限流细分。未登录/异常取不到时回落
+	// 到 ClientIP（rate_limiter.go 内部会处理）。
+	userIDKey := func(c *gin.Context) string {
+		if sub, ok := middleware.GetAuthSubjectFromContext(c); ok && sub.UserID > 0 {
+			return "u:" + strconv.FormatInt(sub.UserID, 10)
+		}
+		return ""
+	}
+
 	authenticated := v1.Group("")
 	authenticated.Use(gin.HandlerFunc(jwtAuth))
 	authenticated.Use(middleware.BackendModeUserGuard(settingService))
@@ -89,6 +108,21 @@ func RegisterUserRoutes(
 			subscriptions.GET("/active", h.Subscription.GetActive)
 			subscriptions.GET("/progress", h.Subscription.GetProgress)
 			subscriptions.GET("/summary", h.Subscription.GetSummary)
+		}
+
+		// 邀请返佣（用户视角）
+		// 这组接口虽然是查询型但涉及 DB 连表 + 脱敏邮箱拉取，容易被脚本刷爆；
+		// 每用户每分钟 30 次足够正常前端页面使用（刷新+翻页）。
+		referral := authenticated.Group("/user/referral")
+		referral.Use(rateLimiter.LimitWithKeyFn(
+			"user-referral", 30, time.Minute,
+			rateMW.RateLimitOptions{FailureMode: rateMW.RateLimitFailOpen},
+			userIDKey,
+		))
+		{
+			referral.GET("/overview", h.Referral.GetMyOverview)
+			referral.GET("/commissions", h.Referral.ListMyCommissions)
+			referral.POST("/ensure-code", h.Referral.EnsureInviteCode)
 		}
 	}
 }

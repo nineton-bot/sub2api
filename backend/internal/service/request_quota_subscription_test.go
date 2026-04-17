@@ -83,6 +83,6 @@ func TestSubscriptionServiceValidateAndCheckLimits_RequestQuotaResetsExpiredCoun
 	require.Zero(t, sub.MonthlyRequestCount)
 }
 
-func testIntPtr(v int) *int {
-	return &v
-}
+// testIntPtr is shared across service tests regardless of build tag.
+func testIntPtr(i int) *int { return &i }
+

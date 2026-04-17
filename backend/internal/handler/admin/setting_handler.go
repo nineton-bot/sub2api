@@ -193,6 +193,9 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		PaymentCancelRateLimitWindow:         paymentCfg.CancelRateLimitWindow,
 		PaymentCancelRateLimitUnit:           paymentCfg.CancelRateLimitUnit,
 		PaymentCancelRateLimitMode:           paymentCfg.CancelRateLimitMode,
+		ReferralEnabled:                      settings.ReferralEnabled,
+		ReferralCommissionRate:               settings.ReferralCommissionRate,
+		ReferralRefereeBonusAmount:           settings.ReferralRefereeBonusAmount,
 	})
 }
 
@@ -325,6 +328,11 @@ type UpdateSettingsRequest struct {
 	PaymentCancelRateLimitWindow  *int    `json:"payment_cancel_rate_limit_window"`
 	PaymentCancelRateLimitUnit    *string `json:"payment_cancel_rate_limit_unit"`
 	PaymentCancelRateLimitMode    *string `json:"payment_cancel_rate_limit_window_mode"`
+
+	// 邀请返佣（指针类型 → 允许部分更新）
+	ReferralEnabled            *bool    `json:"referral_enabled"`
+	ReferralCommissionRate     *float64 `json:"referral_commission_rate"`
+	ReferralRefereeBonusAmount *float64 `json:"referral_referee_bonus_amount"`
 }
 
 // UpdateSettings 更新系统设置
@@ -881,6 +889,24 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.EnableCCHSigning
 		}(),
+		ReferralEnabled: func() bool {
+			if req.ReferralEnabled != nil {
+				return *req.ReferralEnabled
+			}
+			return previousSettings.ReferralEnabled
+		}(),
+		ReferralCommissionRate: func() float64 {
+			if req.ReferralCommissionRate != nil {
+				return *req.ReferralCommissionRate
+			}
+			return previousSettings.ReferralCommissionRate
+		}(),
+		ReferralRefereeBonusAmount: func() float64 {
+			if req.ReferralRefereeBonusAmount != nil {
+				return *req.ReferralRefereeBonusAmount
+			}
+			return previousSettings.ReferralRefereeBonusAmount
+		}(),
 	}
 
 	if err := h.settingService.UpdateSettings(c.Request.Context(), settings); err != nil {
@@ -1045,6 +1071,9 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		PaymentCancelRateLimitWindow:         updatedPaymentCfg.CancelRateLimitWindow,
 		PaymentCancelRateLimitUnit:           updatedPaymentCfg.CancelRateLimitUnit,
 		PaymentCancelRateLimitMode:           updatedPaymentCfg.CancelRateLimitMode,
+		ReferralEnabled:                      updatedSettings.ReferralEnabled,
+		ReferralCommissionRate:               updatedSettings.ReferralCommissionRate,
+		ReferralRefereeBonusAmount:           updatedSettings.ReferralRefereeBonusAmount,
 	})
 }
 

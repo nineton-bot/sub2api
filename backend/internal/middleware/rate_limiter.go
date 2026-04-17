@@ -82,14 +82,35 @@ func (r *RateLimiter) Limit(key string, limit int, window time.Duration) gin.Han
 
 // LimitWithOptions 返回速率限制中间件（带可选配置）
 func (r *RateLimiter) LimitWithOptions(key string, limit int, window time.Duration, opts RateLimitOptions) gin.HandlerFunc {
+	return r.LimitWithKeyFn(key, limit, window, opts, func(c *gin.Context) string {
+		return c.ClientIP()
+	})
+}
+
+// LimitWithKeyFn 返回速率限制中间件，并允许调用方通过 keyFn 自定义每请求的细分 key
+// （例如 IP、JWT user ID 等）。keyFn 返回空字符串时使用 ClientIP 作为兜底，避免
+// 因认证缺失导致所有请求共享同一 key 被互相挤压限流。
+func (r *RateLimiter) LimitWithKeyFn(
+	key string,
+	limit int,
+	window time.Duration,
+	opts RateLimitOptions,
+	keyFn func(c *gin.Context) string,
+) gin.HandlerFunc {
 	failureMode := opts.FailureMode
 	if failureMode != RateLimitFailClose {
 		failureMode = RateLimitFailOpen
 	}
 
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
-		redisKey := r.prefix + key + ":" + ip
+		sub := ""
+		if keyFn != nil {
+			sub = keyFn(c)
+		}
+		if sub == "" {
+			sub = c.ClientIP()
+		}
+		redisKey := r.prefix + key + ":" + sub
 
 		ctx := c.Request.Context()
 

@@ -570,6 +570,17 @@ type GatewayService struct {
 	resolver              *ModelPricingResolver
 	debugGatewayBodyFile  atomic.Pointer[os.File] // non-nil when SUB2API_DEBUG_GATEWAY_BODY is set
 	tlsFPProfileService   *TLSFingerprintProfileService
+	referralService       *ReferralService // 可选：用于消费扣费后异步释放充值型佣金
+}
+
+// SetReferralService 在 wire 初始化完成后注入 ReferralService，避免与 PaymentService
+// 之间形成循环依赖（ReferralService 需要 billingCacheService 等基础设施，已在 gateway
+// 启动后构造）。不注入时，gateway 扣费路径的返佣释放短路跳过。
+func (s *GatewayService) SetReferralService(rs *ReferralService) {
+	if s == nil {
+		return
+	}
+	s.referralService = rs
 }
 
 // NewGatewayService creates a new GatewayService
@@ -7373,6 +7384,30 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 				slog.Error("deduct balance failed", "user_id", p.User.ID, "error", err)
 			}
 			deps.billingCacheService.QueueDeductBalance(p.User.ID, cost.ActualCost)
+			// 异步释放充值型返佣：按 FIFO 把本次扣费金额归因到被邀请人最早未充分归因
+			// 的充值型 commission 上。失败仅记日志，不影响扣费主流程。
+			if deps.referralService != nil {
+				referralSvc := deps.referralService
+				userID := p.User.ID
+				consumed := cost.ActualCost
+				go func() {
+					// 防御 panic：脱离请求 context 的 goroutine 若 panic 会被 Go runtime 当作
+					// 未捕获异常拉爆进程（并非 gin 中间件能接到的 panic）。哪怕底层 DB/Redis 驱动
+					// 偶发空指针/断言失败，也必须被吞掉，不能影响其他正在处理的请求。
+					defer func() {
+						if r := recover(); r != nil {
+							slog.Error("release referral commission panic recovered",
+								"user_id", userID, "consumed", consumed, "panic", r)
+						}
+					}()
+					rctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					defer cancel()
+					if err := referralSvc.ReleaseCommissionForRechargeConsumption(rctx, userID, consumed); err != nil {
+						slog.Warn("release referral commission failed",
+							"user_id", userID, "consumed", consumed, "error", err)
+					}
+				}()
+			}
 		}
 	}
 
@@ -7568,6 +7603,7 @@ type billingDeps struct {
 	userSubRepo         UserSubscriptionRepository
 	billingCacheService *BillingCacheService
 	deferredService     *DeferredService
+	referralService     *ReferralService
 }
 
 func (s *GatewayService) billingDeps() *billingDeps {
@@ -7577,6 +7613,7 @@ func (s *GatewayService) billingDeps() *billingDeps {
 		userSubRepo:         s.userSubRepo,
 		billingCacheService: s.billingCacheService,
 		deferredService:     s.deferredService,
+		referralService:     s.referralService,
 	}
 }
 

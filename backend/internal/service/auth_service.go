@@ -70,6 +70,7 @@ type AuthService struct {
 	turnstileService   *TurnstileService
 	emailQueueService  *EmailQueueService
 	promoService       *PromoService
+	referralService    *ReferralService
 	defaultSubAssigner DefaultSubscriptionAssigner
 }
 
@@ -89,6 +90,7 @@ func NewAuthService(
 	turnstileService *TurnstileService,
 	emailQueueService *EmailQueueService,
 	promoService *PromoService,
+	referralService *ReferralService,
 	defaultSubAssigner DefaultSubscriptionAssigner,
 ) *AuthService {
 	return &AuthService{
@@ -102,17 +104,21 @@ func NewAuthService(
 		turnstileService:   turnstileService,
 		emailQueueService:  emailQueueService,
 		promoService:       promoService,
+		referralService:    referralService,
 		defaultSubAssigner: defaultSubAssigner,
 	}
 }
 
 // Register 用户注册，返回token和用户
 func (s *AuthService) Register(ctx context.Context, email, password string) (string, *User, error) {
-	return s.RegisterWithVerification(ctx, email, password, "", "", "")
+	return s.RegisterWithVerification(ctx, email, password, "", "", "", "")
 }
 
-// RegisterWithVerification 用户注册（支持邮件验证、优惠码和邀请码），返回token和用户
-func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode string) (string, *User, error) {
+// RegisterWithVerification 用户注册（支持邮件验证、优惠码、邀请码和返佣邀请码），返回token和用户
+//
+// referrerCode 是"邀请返佣"体系下的邀请人邀请码（与 invitationCode 注册白名单解耦）。
+// 即使邀请码无效或返佣功能未启用，也不阻断注册（宽松策略，同 promo_code）。
+func (s *AuthService) RegisterWithVerification(ctx context.Context, email, password, verifyCode, promoCode, invitationCode, referrerCode string) (string, *User, error) {
 	// 检查是否开放注册（默认关闭：settingService 未配置时不允许注册）
 	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
 		return "", nil, ErrRegDisabled
@@ -206,6 +212,12 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		return "", nil, ErrServiceUnavailable
 	}
 	s.assignDefaultSubscriptions(ctx, user.ID)
+
+	// 为新用户生成邀请码（邀请返佣体系，失败不阻断注册）
+	s.ensureInviteCodeAfterRegister(ctx, user.ID)
+
+	// 绑定邀请人（邀请返佣体系，失败只记日志；与优惠码一致的宽松策略）
+	s.bindReferrerAfterRegister(ctx, user.ID, referrerCode)
 
 	// 标记邀请码为已使用（如果使用了邀请码）
 	if invitationRedeemCode != nil {
@@ -437,7 +449,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (string
 //
 // 注意：该函数用于 LinuxDo OAuth 登录场景（不同于上游账号的 OAuth，例如 Claude/OpenAI/Gemini）。
 // 为了满足现有数据库约束（需要密码哈希），新用户会生成随机密码并进行哈希保存。
-func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username string) (string, *User, error) {
+func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username, referrerCode string) (string, *User, error) {
 	email = strings.TrimSpace(email)
 	if email == "" || len(email) > 255 {
 		return "", nil, infraerrors.BadRequest("INVALID_EMAIL", "invalid email")
@@ -502,6 +514,8 @@ func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username 
 			} else {
 				user = newUser
 				s.assignDefaultSubscriptions(ctx, user.ID)
+				s.ensureInviteCodeAfterRegister(ctx, user.ID)
+				s.bindReferrerAfterRegister(ctx, user.ID, referrerCode)
 			}
 		} else {
 			logger.LegacyPrintf("service.auth", "[Auth] Database error during oauth login: %v", err)
@@ -531,7 +545,8 @@ func (s *AuthService) LoginOrRegisterOAuth(ctx context.Context, email, username 
 // LoginOrRegisterOAuthWithTokenPair 用于第三方 OAuth/SSO 登录，返回完整的 TokenPair。
 // 与 LoginOrRegisterOAuth 功能相同，但返回 TokenPair 而非单个 token。
 // invitationCode 仅在邀请码注册模式下新用户注册时使用；已有账号登录时忽略。
-func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, email, username, invitationCode string) (*TokenPair, *User, error) {
+// referrerCode 为返佣邀请码，只对新用户生效，登录老账号时忽略。
+func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, email, username, invitationCode, referrerCode string) (*TokenPair, *User, error) {
 	// 检查 refreshTokenCache 是否可用
 	if s.refreshTokenCache == nil {
 		return nil, nil, errors.New("refresh token cache not configured")
@@ -631,6 +646,8 @@ func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 					}
 					user = newUser
 					s.assignDefaultSubscriptions(ctx, user.ID)
+					s.ensureInviteCodeAfterRegister(ctx, user.ID)
+					s.bindReferrerAfterRegister(ctx, user.ID, referrerCode)
 				}
 			} else {
 				if err := s.userRepo.Create(ctx, newUser); err != nil {
@@ -647,6 +664,8 @@ func (s *AuthService) LoginOrRegisterOAuthWithTokenPair(ctx context.Context, ema
 				} else {
 					user = newUser
 					s.assignDefaultSubscriptions(ctx, user.ID)
+					s.ensureInviteCodeAfterRegister(ctx, user.ID)
+					s.bindReferrerAfterRegister(ctx, user.ID, referrerCode)
 					if invitationRedeemCode != nil {
 						if err := s.redeemRepo.Use(ctx, invitationRedeemCode.ID, user.ID); err != nil {
 							return nil, nil, ErrInvitationCodeInvalid
@@ -733,6 +752,29 @@ func (s *AuthService) VerifyPendingOAuthToken(tokenStr string) (email, username 
 		return "", "", ErrInvalidToken
 	}
 	return claims.Email, claims.Username, nil
+}
+
+// ensureInviteCodeAfterRegister 为新用户生成邀请码（返佣体系需要）。
+// 失败只记日志，不阻断注册流程。
+func (s *AuthService) ensureInviteCodeAfterRegister(ctx context.Context, userID int64) {
+	if s.referralService == nil || userID <= 0 {
+		return
+	}
+	if _, err := s.referralService.EnsureInviteCode(ctx, userID); err != nil {
+		logger.LegacyPrintf("service.auth", "[Auth] Failed to ensure invite_code for user %d: %v", userID, err)
+	}
+}
+
+// bindReferrerAfterRegister 绑定返佣邀请关系。
+// referrerCode 为空、返佣功能关闭、或邀请码无效时静默通过。
+// 失败只记日志，保持"宽松策略"（与 promo_code 行为一致）。
+func (s *AuthService) bindReferrerAfterRegister(ctx context.Context, userID int64, referrerCode string) {
+	if s.referralService == nil || userID <= 0 || strings.TrimSpace(referrerCode) == "" {
+		return
+	}
+	if err := s.referralService.BindReferrer(ctx, userID, referrerCode); err != nil {
+		logger.LegacyPrintf("service.auth", "[Auth] Failed to bind referrer for user %d (code=%s): %v", userID, referrerCode, err)
+	}
 }
 
 func (s *AuthService) assignDefaultSubscriptions(ctx context.Context, userID int64) {

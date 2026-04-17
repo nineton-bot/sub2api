@@ -60,6 +60,7 @@ export interface RegisterRequest {
   turnstile_token?: string
   promo_code?: string
   invitation_code?: string
+  referrer_code?: string
 }
 
 export interface SendVerifyCodeRequest {
@@ -113,6 +114,8 @@ export interface PublicSettings {
   oidc_oauth_enabled: boolean
   oidc_oauth_provider_name: string
   backend_mode_enabled: boolean
+  referral_enabled: boolean
+  referral_referee_bonus_amount: number
   version: string
 }
 
