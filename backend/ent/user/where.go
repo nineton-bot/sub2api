@@ -135,6 +135,11 @@ func InviteCode(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldInviteCode, v))
 }
 
+// ReferralUsable applies equality check predicate on the "referral_usable" field. It's identical to ReferralUsableEQ.
+func ReferralUsable(v float64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldReferralUsable, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldCreatedAt, v))
@@ -993,6 +998,46 @@ func InviteCodeEqualFold(v string) predicate.User {
 // InviteCodeContainsFold applies the ContainsFold predicate on the "invite_code" field.
 func InviteCodeContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldInviteCode, v))
+}
+
+// ReferralUsableEQ applies the EQ predicate on the "referral_usable" field.
+func ReferralUsableEQ(v float64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldReferralUsable, v))
+}
+
+// ReferralUsableNEQ applies the NEQ predicate on the "referral_usable" field.
+func ReferralUsableNEQ(v float64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldReferralUsable, v))
+}
+
+// ReferralUsableIn applies the In predicate on the "referral_usable" field.
+func ReferralUsableIn(vs ...float64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldReferralUsable, vs...))
+}
+
+// ReferralUsableNotIn applies the NotIn predicate on the "referral_usable" field.
+func ReferralUsableNotIn(vs ...float64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldReferralUsable, vs...))
+}
+
+// ReferralUsableGT applies the GT predicate on the "referral_usable" field.
+func ReferralUsableGT(v float64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldReferralUsable, v))
+}
+
+// ReferralUsableGTE applies the GTE predicate on the "referral_usable" field.
+func ReferralUsableGTE(v float64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldReferralUsable, v))
+}
+
+// ReferralUsableLT applies the LT predicate on the "referral_usable" field.
+func ReferralUsableLT(v float64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldReferralUsable, v))
+}
+
+// ReferralUsableLTE applies the LTE predicate on the "referral_usable" field.
+func ReferralUsableLTE(v float64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldReferralUsable, v))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

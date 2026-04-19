@@ -239,6 +239,20 @@ func (_c *UserCreate) SetNillableInviteCode(v *string) *UserCreate {
 	return _c
 }
 
+// SetReferralUsable sets the "referral_usable" field.
+func (_c *UserCreate) SetReferralUsable(v float64) *UserCreate {
+	_c.mutation.SetReferralUsable(v)
+	return _c
+}
+
+// SetNillableReferralUsable sets the "referral_usable" field if the given value is not nil.
+func (_c *UserCreate) SetNillableReferralUsable(v *float64) *UserCreate {
+	if v != nil {
+		_c.SetReferralUsable(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *UserCreate) AddAPIKeyIDs(ids ...int64) *UserCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -468,6 +482,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultTotpEnabled
 		_c.mutation.SetTotpEnabled(v)
 	}
+	if _, ok := _c.mutation.ReferralUsable(); !ok {
+		v := user.DefaultReferralUsable
+		_c.mutation.SetReferralUsable(v)
+	}
 	return nil
 }
 
@@ -535,6 +553,9 @@ func (_c *UserCreate) check() error {
 		if err := user.InviteCodeValidator(v); err != nil {
 			return &ValidationError{Name: "invite_code", err: fmt.Errorf(`ent: validator failed for field "User.invite_code": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.ReferralUsable(); !ok {
+		return &ValidationError{Name: "referral_usable", err: errors.New(`ent: missing required field "User.referral_usable"`)}
 	}
 	return nil
 }
@@ -626,6 +647,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.InviteCode(); ok {
 		_spec.SetField(user.FieldInviteCode, field.TypeString, value)
 		_node.InviteCode = &value
+	}
+	if value, ok := _c.mutation.ReferralUsable(); ok {
+		_spec.SetField(user.FieldReferralUsable, field.TypeFloat64, value)
+		_node.ReferralUsable = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1071,6 +1096,24 @@ func (u *UserUpsert) ClearInviteCode() *UserUpsert {
 	return u
 }
 
+// SetReferralUsable sets the "referral_usable" field.
+func (u *UserUpsert) SetReferralUsable(v float64) *UserUpsert {
+	u.Set(user.FieldReferralUsable, v)
+	return u
+}
+
+// UpdateReferralUsable sets the "referral_usable" field to the value that was provided on create.
+func (u *UserUpsert) UpdateReferralUsable() *UserUpsert {
+	u.SetExcluded(user.FieldReferralUsable)
+	return u
+}
+
+// AddReferralUsable adds v to the "referral_usable" field.
+func (u *UserUpsert) AddReferralUsable(v float64) *UserUpsert {
+	u.Add(user.FieldReferralUsable, v)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -1379,6 +1422,27 @@ func (u *UserUpsertOne) UpdateInviteCode() *UserUpsertOne {
 func (u *UserUpsertOne) ClearInviteCode() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearInviteCode()
+	})
+}
+
+// SetReferralUsable sets the "referral_usable" field.
+func (u *UserUpsertOne) SetReferralUsable(v float64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferralUsable(v)
+	})
+}
+
+// AddReferralUsable adds v to the "referral_usable" field.
+func (u *UserUpsertOne) AddReferralUsable(v float64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddReferralUsable(v)
+	})
+}
+
+// UpdateReferralUsable sets the "referral_usable" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateReferralUsable() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferralUsable()
 	})
 }
 
@@ -1856,6 +1920,27 @@ func (u *UserUpsertBulk) UpdateInviteCode() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearInviteCode() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearInviteCode()
+	})
+}
+
+// SetReferralUsable sets the "referral_usable" field.
+func (u *UserUpsertBulk) SetReferralUsable(v float64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferralUsable(v)
+	})
+}
+
+// AddReferralUsable adds v to the "referral_usable" field.
+func (u *UserUpsertBulk) AddReferralUsable(v float64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddReferralUsable(v)
+	})
+}
+
+// UpdateReferralUsable sets the "referral_usable" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateReferralUsable() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferralUsable()
 	})
 }
 

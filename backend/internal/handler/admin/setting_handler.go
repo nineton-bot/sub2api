@@ -196,6 +196,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		ReferralEnabled:                      settings.ReferralEnabled,
 		ReferralCommissionRate:               settings.ReferralCommissionRate,
 		ReferralRefereeBonusAmount:           settings.ReferralRefereeBonusAmount,
+		ReferralDefaultForAllUsers:           settings.ReferralDefaultForAllUsers,
 	})
 }
 
@@ -333,6 +334,7 @@ type UpdateSettingsRequest struct {
 	ReferralEnabled            *bool    `json:"referral_enabled"`
 	ReferralCommissionRate     *float64 `json:"referral_commission_rate"`
 	ReferralRefereeBonusAmount *float64 `json:"referral_referee_bonus_amount"`
+	ReferralDefaultForAllUsers *bool    `json:"referral_default_for_all_users"`
 }
 
 // UpdateSettings 更新系统设置
@@ -907,6 +909,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.ReferralRefereeBonusAmount
 		}(),
+		ReferralDefaultForAllUsers: func() bool {
+			if req.ReferralDefaultForAllUsers != nil {
+				return *req.ReferralDefaultForAllUsers
+			}
+			return previousSettings.ReferralDefaultForAllUsers
+		}(),
 	}
 
 	if err := h.settingService.UpdateSettings(c.Request.Context(), settings); err != nil {
@@ -1074,6 +1082,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		ReferralEnabled:                      updatedSettings.ReferralEnabled,
 		ReferralCommissionRate:               updatedSettings.ReferralCommissionRate,
 		ReferralRefereeBonusAmount:           updatedSettings.ReferralRefereeBonusAmount,
+		ReferralDefaultForAllUsers:           updatedSettings.ReferralDefaultForAllUsers,
 	})
 }
 

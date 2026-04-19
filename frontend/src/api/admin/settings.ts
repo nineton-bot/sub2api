@@ -139,6 +139,11 @@ export interface SystemSettings {
   referral_enabled: boolean
   referral_commission_rate: number
   referral_referee_bonus_amount: number
+  /**
+   * V2：推广页默认可见性（仅在 referral_enabled=true 时生效）。
+   * true=全员默认可见；false=仅 admin 在单用户 override 中显式启用才可见。
+   */
+  referral_default_for_all_users: boolean
 }
 
 export interface UpdateSettingsRequest {
@@ -243,6 +248,7 @@ export interface UpdateSettingsRequest {
   referral_enabled?: boolean
   referral_commission_rate?: number
   referral_referee_bonus_amount?: number
+  referral_default_for_all_users?: boolean
 }
 
 /**

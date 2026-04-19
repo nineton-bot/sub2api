@@ -150,6 +150,9 @@ type SystemSettings struct {
 	ReferralEnabled            bool    `json:"referral_enabled"`
 	ReferralCommissionRate     float64 `json:"referral_commission_rate"`
 	ReferralRefereeBonusAmount float64 `json:"referral_referee_bonus_amount"`
+	// ReferralDefaultForAllUsers V2 推广页默认可见性（仅在 ReferralEnabled=true 时生效）。
+	// true=全员默认可见；false=仅 admin 显式启用才可见。
+	ReferralDefaultForAllUsers bool `json:"referral_default_for_all_users"`
 }
 
 type DefaultSubscriptionSetting struct {
@@ -189,6 +192,7 @@ type PublicSettings struct {
 	PaymentEnabled                   bool             `json:"payment_enabled"`
 	ReferralEnabled                  bool             `json:"referral_enabled"`
 	ReferralRefereeBonusAmount       float64          `json:"referral_referee_bonus_amount"`
+	ReferralDefaultForAllUsers       bool             `json:"referral_default_for_all_users"`
 	Version                          string           `json:"version"`
 }
 

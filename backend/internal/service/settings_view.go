@@ -111,6 +111,9 @@ type SystemSettings struct {
 	ReferralEnabled            bool    // 主开关
 	ReferralCommissionRate     float64 // 佣金比例 0~1
 	ReferralRefereeBonusAmount float64 // 被邀请人首次付费后到账赠金金额
+	// V2：推广页默认可见性（仅在 ReferralEnabled 为 true 时才生效）。
+	// true = 全员默认可见；false = 仅 admin 在单用户 override 中显式启用才可见。
+	ReferralDefaultForAllUsers bool
 }
 
 type DefaultSubscriptionSetting struct {
@@ -153,6 +156,9 @@ type PublicSettings struct {
 	// 邀请返佣（公开字段：仅用于注册页是否显示推荐码输入及赠金金额）
 	ReferralEnabled            bool
 	ReferralRefereeBonusAmount float64
+	// ReferralDefaultForAllUsers V2：推广页默认可见性。管理员面板上的单用户 override
+	// modal 需要读此字段作为默认勾选状态。
+	ReferralDefaultForAllUsers bool
 
 	Version string
 }

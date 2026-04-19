@@ -21,7 +21,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralcommission"
+	"github.com/Wei-Shaw/sub2api/ent/referralcommissionreleaselog"
 	"github.com/Wei-Shaw/sub2api/ent/referralpendingbonus"
+	"github.com/Wei-Shaw/sub2api/ent/referralwithdrawal"
 	"github.com/Wei-Shaw/sub2api/ent/schema"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
@@ -33,6 +35,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/userreferralconfig"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
@@ -901,6 +904,20 @@ func init() {
 	referralcommission.DefaultUpdatedAt = referralcommissionDescUpdatedAt.Default.(func() time.Time)
 	// referralcommission.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	referralcommission.UpdateDefaultUpdatedAt = referralcommissionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	referralcommissionreleaselogFields := schema.ReferralCommissionReleaseLog{}.Fields()
+	_ = referralcommissionreleaselogFields
+	// referralcommissionreleaselogDescTriggerType is the schema descriptor for trigger_type field.
+	referralcommissionreleaselogDescTriggerType := referralcommissionreleaselogFields[3].Descriptor()
+	// referralcommissionreleaselog.TriggerTypeValidator is a validator for the "trigger_type" field. It is called by the builders before save.
+	referralcommissionreleaselog.TriggerTypeValidator = referralcommissionreleaselogDescTriggerType.Validators[0].(func(string) error)
+	// referralcommissionreleaselogDescComputationDetail is the schema descriptor for computation_detail field.
+	referralcommissionreleaselogDescComputationDetail := referralcommissionreleaselogFields[5].Descriptor()
+	// referralcommissionreleaselog.DefaultComputationDetail holds the default value on creation for the computation_detail field.
+	referralcommissionreleaselog.DefaultComputationDetail = referralcommissionreleaselogDescComputationDetail.Default.(string)
+	// referralcommissionreleaselogDescCreatedAt is the schema descriptor for created_at field.
+	referralcommissionreleaselogDescCreatedAt := referralcommissionreleaselogFields[6].Descriptor()
+	// referralcommissionreleaselog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	referralcommissionreleaselog.DefaultCreatedAt = referralcommissionreleaselogDescCreatedAt.Default.(func() time.Time)
 	referralpendingbonusFields := schema.ReferralPendingBonus{}.Fields()
 	_ = referralpendingbonusFields
 	// referralpendingbonusDescStatus is the schema descriptor for status field.
@@ -917,6 +934,39 @@ func init() {
 	referralpendingbonusDescCreatedAt := referralpendingbonusFields[7].Descriptor()
 	// referralpendingbonus.DefaultCreatedAt holds the default value on creation for the created_at field.
 	referralpendingbonus.DefaultCreatedAt = referralpendingbonusDescCreatedAt.Default.(func() time.Time)
+	referralwithdrawalMixin := schema.ReferralWithdrawal{}.Mixin()
+	referralwithdrawalMixinFields0 := referralwithdrawalMixin[0].Fields()
+	_ = referralwithdrawalMixinFields0
+	referralwithdrawalFields := schema.ReferralWithdrawal{}.Fields()
+	_ = referralwithdrawalFields
+	// referralwithdrawalDescCreatedAt is the schema descriptor for created_at field.
+	referralwithdrawalDescCreatedAt := referralwithdrawalMixinFields0[0].Descriptor()
+	// referralwithdrawal.DefaultCreatedAt holds the default value on creation for the created_at field.
+	referralwithdrawal.DefaultCreatedAt = referralwithdrawalDescCreatedAt.Default.(func() time.Time)
+	// referralwithdrawalDescUpdatedAt is the schema descriptor for updated_at field.
+	referralwithdrawalDescUpdatedAt := referralwithdrawalMixinFields0[1].Descriptor()
+	// referralwithdrawal.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	referralwithdrawal.DefaultUpdatedAt = referralwithdrawalDescUpdatedAt.Default.(func() time.Time)
+	// referralwithdrawal.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	referralwithdrawal.UpdateDefaultUpdatedAt = referralwithdrawalDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// referralwithdrawalDescPayoutMethod is the schema descriptor for payout_method field.
+	referralwithdrawalDescPayoutMethod := referralwithdrawalFields[2].Descriptor()
+	// referralwithdrawal.PayoutMethodValidator is a validator for the "payout_method" field. It is called by the builders before save.
+	referralwithdrawal.PayoutMethodValidator = referralwithdrawalDescPayoutMethod.Validators[0].(func(string) error)
+	// referralwithdrawalDescNotes is the schema descriptor for notes field.
+	referralwithdrawalDescNotes := referralwithdrawalFields[4].Descriptor()
+	// referralwithdrawal.DefaultNotes holds the default value on creation for the notes field.
+	referralwithdrawal.DefaultNotes = referralwithdrawalDescNotes.Default.(string)
+	// referralwithdrawalDescStatus is the schema descriptor for status field.
+	referralwithdrawalDescStatus := referralwithdrawalFields[5].Descriptor()
+	// referralwithdrawal.DefaultStatus holds the default value on creation for the status field.
+	referralwithdrawal.DefaultStatus = referralwithdrawalDescStatus.Default.(string)
+	// referralwithdrawal.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	referralwithdrawal.StatusValidator = referralwithdrawalDescStatus.Validators[0].(func(string) error)
+	// referralwithdrawalDescReviewNotes is the schema descriptor for review_notes field.
+	referralwithdrawalDescReviewNotes := referralwithdrawalFields[10].Descriptor()
+	// referralwithdrawal.DefaultReviewNotes holds the default value on creation for the review_notes field.
+	referralwithdrawal.DefaultReviewNotes = referralwithdrawalDescReviewNotes.Default.(string)
 	securitysecretMixin := schema.SecuritySecret{}.Mixin()
 	securitysecretMixinFields0 := securitysecretMixin[0].Fields()
 	_ = securitysecretMixinFields0
@@ -1351,6 +1401,10 @@ func init() {
 	userDescInviteCode := userFields[12].Descriptor()
 	// user.InviteCodeValidator is a validator for the "invite_code" field. It is called by the builders before save.
 	user.InviteCodeValidator = userDescInviteCode.Validators[0].(func(string) error)
+	// userDescReferralUsable is the schema descriptor for referral_usable field.
+	userDescReferralUsable := userFields[13].Descriptor()
+	// user.DefaultReferralUsable holds the default value on creation for the referral_usable field.
+	user.DefaultReferralUsable = userDescReferralUsable.Default.(float64)
 	userallowedgroupFields := schema.UserAllowedGroup{}.Fields()
 	_ = userallowedgroupFields
 	// userallowedgroupDescCreatedAt is the schema descriptor for created_at field.
@@ -1479,6 +1533,29 @@ func init() {
 	userattributevalueDescValue := userattributevalueFields[2].Descriptor()
 	// userattributevalue.DefaultValue holds the default value on creation for the value field.
 	userattributevalue.DefaultValue = userattributevalueDescValue.Default.(string)
+	userreferralconfigMixin := schema.UserReferralConfig{}.Mixin()
+	userreferralconfigMixinFields0 := userreferralconfigMixin[0].Fields()
+	_ = userreferralconfigMixinFields0
+	userreferralconfigFields := schema.UserReferralConfig{}.Fields()
+	_ = userreferralconfigFields
+	// userreferralconfigDescCreatedAt is the schema descriptor for created_at field.
+	userreferralconfigDescCreatedAt := userreferralconfigMixinFields0[0].Descriptor()
+	// userreferralconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
+	userreferralconfig.DefaultCreatedAt = userreferralconfigDescCreatedAt.Default.(func() time.Time)
+	// userreferralconfigDescUpdatedAt is the schema descriptor for updated_at field.
+	userreferralconfigDescUpdatedAt := userreferralconfigMixinFields0[1].Descriptor()
+	// userreferralconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	userreferralconfig.DefaultUpdatedAt = userreferralconfigDescUpdatedAt.Default.(func() time.Time)
+	// userreferralconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	userreferralconfig.UpdateDefaultUpdatedAt = userreferralconfigDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userreferralconfigDescWithdrawalAllowed is the schema descriptor for withdrawal_allowed field.
+	userreferralconfigDescWithdrawalAllowed := userreferralconfigFields[4].Descriptor()
+	// userreferralconfig.DefaultWithdrawalAllowed holds the default value on creation for the withdrawal_allowed field.
+	userreferralconfig.DefaultWithdrawalAllowed = userreferralconfigDescWithdrawalAllowed.Default.(bool)
+	// userreferralconfigDescNotes is the schema descriptor for notes field.
+	userreferralconfigDescNotes := userreferralconfigFields[5].Descriptor()
+	// userreferralconfig.DefaultNotes holds the default value on creation for the notes field.
+	userreferralconfig.DefaultNotes = userreferralconfigDescNotes.Default.(string)
 	usersubscriptionMixin := schema.UserSubscription{}.Mixin()
 	usersubscriptionMixinHooks1 := usersubscriptionMixin[1].Hooks()
 	usersubscription.Hooks[0] = usersubscriptionMixinHooks1[0]

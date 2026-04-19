@@ -248,6 +248,43 @@ export async function replaceGroup(
   return data
 }
 
+// ---------- Per-user referral config (V2) ----------
+
+export interface UserReferralConfig {
+  user_id: number
+  enabled: boolean | null
+  commission_rate_override: number | null
+  referee_bonus_override: number | null
+  withdrawal_allowed: boolean
+  notes: string
+}
+
+export interface UpsertUserReferralConfigRequest {
+  enabled: boolean | null
+  commission_rate_override: number | null
+  referee_bonus_override: number | null
+  withdrawal_allowed: boolean
+  notes: string
+}
+
+export async function getReferralConfig(userId: number): Promise<UserReferralConfig> {
+  const { data } = await apiClient.get<UserReferralConfig>(
+    `/admin/users/${userId}/referral-config`
+  )
+  return data
+}
+
+export async function upsertReferralConfig(
+  userId: number,
+  payload: UpsertUserReferralConfigRequest
+): Promise<UserReferralConfig> {
+  const { data } = await apiClient.put<UserReferralConfig>(
+    `/admin/users/${userId}/referral-config`,
+    payload
+  )
+  return data
+}
+
 export const usersAPI = {
   list,
   getById,
@@ -260,7 +297,9 @@ export const usersAPI = {
   getUserApiKeys,
   getUserUsageStats,
   getUserBalanceHistory,
-  replaceGroup
+  replaceGroup,
+  getReferralConfig,
+  upsertReferralConfig
 }
 
 export default usersAPI

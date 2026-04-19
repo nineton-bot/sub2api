@@ -852,6 +852,35 @@ var (
 			},
 		},
 	}
+	// ReferralCommissionReleaseLogsColumns holds the columns for the "referral_commission_release_logs" table.
+	ReferralCommissionReleaseLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "commission_id", Type: field.TypeInt64},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "trigger_type", Type: field.TypeString, Size: 30},
+		{Name: "rate_snapshot", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(10,6)"}},
+		{Name: "computation_detail", Type: field.TypeString, Default: "{}", SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ReferralCommissionReleaseLogsTable holds the schema information for the "referral_commission_release_logs" table.
+	ReferralCommissionReleaseLogsTable = &schema.Table{
+		Name:       "referral_commission_release_logs",
+		Columns:    ReferralCommissionReleaseLogsColumns,
+		PrimaryKey: []*schema.Column{ReferralCommissionReleaseLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "referralcommissionreleaselog_commission_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralCommissionReleaseLogsColumns[1]},
+			},
+			{
+				Name:    "referralcommissionreleaselog_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralCommissionReleaseLogsColumns[2], ReferralCommissionReleaseLogsColumns[7]},
+			},
+		},
+	}
 	// ReferralPendingBonusesColumns holds the columns for the "referral_pending_bonuses" table.
 	ReferralPendingBonusesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -879,6 +908,41 @@ var (
 				Name:    "referralpendingbonus_referrer_id",
 				Unique:  false,
 				Columns: []*schema.Column{ReferralPendingBonusesColumns[2]},
+			},
+		},
+	}
+	// ReferralWithdrawalsColumns holds the columns for the "referral_withdrawals" table.
+	ReferralWithdrawalsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "payout_method", Type: field.TypeString, Size: 20},
+		{Name: "payout_account", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "notes", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
+		{Name: "requested_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "reviewed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "completed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "reviewed_by", Type: field.TypeInt64, Nullable: true},
+		{Name: "review_notes", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+	}
+	// ReferralWithdrawalsTable holds the schema information for the "referral_withdrawals" table.
+	ReferralWithdrawalsTable = &schema.Table{
+		Name:       "referral_withdrawals",
+		Columns:    ReferralWithdrawalsColumns,
+		PrimaryKey: []*schema.Column{ReferralWithdrawalsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "referralwithdrawal_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralWithdrawalsColumns[3], ReferralWithdrawalsColumns[8]},
+			},
+			{
+				Name:    "referralwithdrawal_status_requested_at",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralWithdrawalsColumns[8], ReferralWithdrawalsColumns[9]},
 			},
 		},
 	}
@@ -1166,6 +1230,7 @@ var (
 		{Name: "totp_enabled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "invited_by_user_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "invite_code", Type: field.TypeString, Nullable: true, Size: 16},
+		{Name: "referral_usable", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -1309,6 +1374,31 @@ var (
 			},
 		},
 	}
+	// UserReferralConfigsColumns holds the columns for the "user_referral_configs" table.
+	UserReferralConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "user_id", Type: field.TypeInt64, Unique: true},
+		{Name: "enabled", Type: field.TypeBool, Nullable: true},
+		{Name: "commission_rate_override", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,6)"}},
+		{Name: "referee_bonus_override", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "withdrawal_allowed", Type: field.TypeBool, Default: false},
+		{Name: "notes", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+	}
+	// UserReferralConfigsTable holds the schema information for the "user_referral_configs" table.
+	UserReferralConfigsTable = &schema.Table{
+		Name:       "user_referral_configs",
+		Columns:    UserReferralConfigsColumns,
+		PrimaryKey: []*schema.Column{UserReferralConfigsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "userreferralconfig_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserReferralConfigsColumns[3]},
+			},
+		},
+	}
 	// UserSubscriptionsColumns holds the columns for the "user_subscriptions" table.
 	UserSubscriptionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1419,7 +1509,9 @@ var (
 		ProxiesTable,
 		RedeemCodesTable,
 		ReferralCommissionsTable,
+		ReferralCommissionReleaseLogsTable,
 		ReferralPendingBonusesTable,
+		ReferralWithdrawalsTable,
 		SecuritySecretsTable,
 		SettingsTable,
 		SubscriptionPlansTable,
@@ -1430,6 +1522,7 @@ var (
 		UserAllowedGroupsTable,
 		UserAttributeDefinitionsTable,
 		UserAttributeValuesTable,
+		UserReferralConfigsTable,
 		UserSubscriptionsTable,
 	}
 )
@@ -1495,8 +1588,14 @@ func init() {
 	ReferralCommissionsTable.Annotation = &entsql.Annotation{
 		Table: "referral_commissions",
 	}
+	ReferralCommissionReleaseLogsTable.Annotation = &entsql.Annotation{
+		Table: "referral_commission_release_logs",
+	}
 	ReferralPendingBonusesTable.Annotation = &entsql.Annotation{
 		Table: "referral_pending_bonuses",
+	}
+	ReferralWithdrawalsTable.Annotation = &entsql.Annotation{
+		Table: "referral_withdrawals",
 	}
 	SecuritySecretsTable.Annotation = &entsql.Annotation{
 		Table: "security_secrets",
@@ -1536,6 +1635,9 @@ func init() {
 	UserAttributeValuesTable.ForeignKeys[1].RefTable = UserAttributeDefinitionsTable
 	UserAttributeValuesTable.Annotation = &entsql.Annotation{
 		Table: "user_attribute_values",
+	}
+	UserReferralConfigsTable.Annotation = &entsql.Annotation{
+		Table: "user_referral_configs",
 	}
 	UserSubscriptionsTable.ForeignKeys[0].RefTable = GroupsTable
 	UserSubscriptionsTable.ForeignKeys[1].RefTable = UsersTable

@@ -275,11 +275,44 @@ const (
 
 	// SettingKeyReferralRefereeBonusAmount 被邀请人首次付费后到账的赠金金额（¥，默认 2.00）。
 	SettingKeyReferralRefereeBonusAmount = "referral_referee_bonus_amount"
+
+	// SettingKeyReferralDefaultForAllUsers 默认可见性（V2）。
+	// 总开关 referral_enabled 为 ON 前提下生效：
+	//   ON  = 每个用户默认能看到"我的推广"页并积累佣金
+	//   OFF = 只有管理员在用户列表里显式启用的用户才能看到
+	// 默认 true（保持 V1 行为）。
+	SettingKeyReferralDefaultForAllUsers = "referral_default_for_all_users"
 )
 
 // ReferralRefereeBonusMax 是被邀请人首次付费赠金的上限（¥），用于防止管理员误填成灾难性数值
 // （例如 10000000），保护账面与现金流。如需调高可直接修改此常量。
 const ReferralRefereeBonusMax = 10000.0
+
+// V2 返佣常量
+const (
+	// ReferralWithdrawal 状态机
+	ReferralWithdrawalStatusPending   = "pending"
+	ReferralWithdrawalStatusApproved  = "approved"
+	ReferralWithdrawalStatusRejected  = "rejected"
+	ReferralWithdrawalStatusCompleted = "completed"
+	ReferralWithdrawalStatusCancelled = "cancelled"
+
+	// 释放日志触发类型
+	ReferralReleaseTriggerRechargeConsumed  = "recharge_consumed"
+	ReferralReleaseTriggerSubscriptionDaily = "subscription_daily"
+	ReferralReleaseTriggerManualAdmin       = "manual_admin"
+	ReferralReleaseTriggerRefundReversal    = "refund_reversal"
+
+	// 提现方式
+	ReferralPayoutMethodWeChat = "wechat"
+	ReferralPayoutMethodAlipay = "alipay"
+	ReferralPayoutMethodBank   = "bank"
+	ReferralPayoutMethodOther  = "other"
+)
+
+// ReferralUsableMinTransfer 转入余额 / 申请提现的最小金额（¥）。
+// 防止低价值请求造成 DB 抖动；业务上也不接受 0.001 这种细碎操作。
+const ReferralUsableMinTransfer = 0.01
 
 // AdminAPIKeyPrefix is the prefix for admin API keys (distinct from user "sk-" keys).
 const AdminAPIKeyPrefix = "admin-"

@@ -392,6 +392,36 @@ func (r *userRepository) UpdateBalance(ctx context.Context, id int64, amount flo
 	return nil
 }
 
+// UpdateReferralUsable 原子增减 referral_usable 池。
+//
+// 幂等/并发安全：
+//   - delta >= 0：无条件累加
+//   - delta < 0：叠加 WHERE referral_usable >= -delta，结果集为空即视为"余额不足"
+//
+// 事务感知：在 ctx 含 ent.Tx 时使用事务 client；调用方负责整体 commit/rollback。
+// 错误语义：
+//   - 用户不存在 且 delta >= 0 → ErrUserNotFound
+//   - delta < 0 且更新行数为 0 → ErrInsufficientReferralUsable（兼容"用户不存在"；调用方应
+//     确保 userID 来自已存在用户，对"余额不足"不需要再区分）
+func (r *userRepository) UpdateReferralUsable(ctx context.Context, id int64, delta float64) error {
+	client := clientFromContext(ctx, r.client)
+	q := client.User.Update().Where(dbuser.IDEQ(id))
+	if delta < 0 {
+		q = q.Where(dbuser.ReferralUsableGTE(-delta))
+	}
+	n, err := q.AddReferralUsable(delta).Save(ctx)
+	if err != nil {
+		return translatePersistenceError(err, service.ErrUserNotFound, nil)
+	}
+	if n == 0 {
+		if delta < 0 {
+			return service.ErrInsufficientReferralUsable
+		}
+		return service.ErrUserNotFound
+	}
+	return nil
+}
+
 // DeductBalance 扣除用户余额
 // 透支策略：允许余额变为负数，确保当前请求能够完成
 // 中间件会阻止余额 <= 0 的用户发起后续请求

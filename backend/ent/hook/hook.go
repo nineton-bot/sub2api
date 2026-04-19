@@ -201,6 +201,18 @@ func (f ReferralCommissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReferralCommissionMutation", m)
 }
 
+// The ReferralCommissionReleaseLogFunc type is an adapter to allow the use of ordinary
+// function as ReferralCommissionReleaseLog mutator.
+type ReferralCommissionReleaseLogFunc func(context.Context, *ent.ReferralCommissionReleaseLogMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ReferralCommissionReleaseLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ReferralCommissionReleaseLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReferralCommissionReleaseLogMutation", m)
+}
+
 // The ReferralPendingBonusFunc type is an adapter to allow the use of ordinary
 // function as ReferralPendingBonus mutator.
 type ReferralPendingBonusFunc func(context.Context, *ent.ReferralPendingBonusMutation) (ent.Value, error)
@@ -211,6 +223,18 @@ func (f ReferralPendingBonusFunc) Mutate(ctx context.Context, m ent.Mutation) (e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReferralPendingBonusMutation", m)
+}
+
+// The ReferralWithdrawalFunc type is an adapter to allow the use of ordinary
+// function as ReferralWithdrawal mutator.
+type ReferralWithdrawalFunc func(context.Context, *ent.ReferralWithdrawalMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ReferralWithdrawalFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ReferralWithdrawalMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReferralWithdrawalMutation", m)
 }
 
 // The SecuritySecretFunc type is an adapter to allow the use of ordinary
@@ -331,6 +355,18 @@ func (f UserAttributeValueFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserAttributeValueMutation", m)
+}
+
+// The UserReferralConfigFunc type is an adapter to allow the use of ordinary
+// function as UserReferralConfig mutator.
+type UserReferralConfigFunc func(context.Context, *ent.UserReferralConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserReferralConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserReferralConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserReferralConfigMutation", m)
 }
 
 // The UserSubscriptionFunc type is an adapter to allow the use of ordinary

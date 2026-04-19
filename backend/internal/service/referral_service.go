@@ -14,6 +14,7 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -25,8 +26,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/referralcommission"
 	"github.com/Wei-Shaw/sub2api/ent/referralpendingbonus"
 	"github.com/Wei-Shaw/sub2api/ent/user"
+	"github.com/Wei-Shaw/sub2api/ent/userreferralconfig"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
 )
 
 // --- 错误定义 ---
@@ -73,10 +76,15 @@ type ReferralStats struct {
 	InviteCode         string  `json:"invite_code"`
 	InvitedCount       int64   `json:"invited_count"`        // 成功邀请人数（users.invited_by_user_id）
 	GrossCommission    float64 `json:"gross_commission"`     // 累计账面佣金
-	ReleasedCommission float64 `json:"released_commission"`  // 累计已释放
+	ReleasedCommission float64 `json:"released_commission"`  // 累计已释放（历史+V2）
 	PendingCommission  float64 `json:"pending_commission"`   // gross − released
+	// UsableCommission V2 后新释放、尚未转入余额或提现的可用池（users.referral_usable）。
+	// 注意：V2 之前已释放部分已并入 user.balance，不回溯进入此字段。
+	UsableCommission   float64 `json:"usable_commission"`
 	CommissionRate     float64 `json:"commission_rate"`      // 当前比例（snapshot 设置）
 	RefereeBonusAmount float64 `json:"referee_bonus_amount"` // 被邀请人首次付费赠金额度
+	// WithdrawalAllowed 是否允许提现（读 user_referral_configs.withdrawal_allowed，默认 false）。
+	WithdrawalAllowed bool `json:"withdrawal_allowed"`
 }
 
 // CommissionLog 返佣明细行
@@ -117,6 +125,18 @@ type ReferrerRank struct {
 	InvitedCount       int64   `json:"invited_count"`
 	GrossCommission    float64 `json:"gross_commission"`
 	ReleasedCommission float64 `json:"released_commission"`
+}
+
+// ReleaseLogDayAggregate 按天聚合的释放日志（用户端展开返佣行时显示）
+//
+// Day 按全局 timezone.Name()（由启动 TZ 决定，默认 Asia/Shanghai）分桶，格式 "YYYY-MM-DD"。
+// 与 dashboard_aggregation_repo / usage_log_repo 等处保持同一时区口径，避免各页日期错位。
+// 直接返回字符串可免除前端二次时区换算。
+type ReleaseLogDayAggregate struct {
+	Day         string  `json:"day"`          // "YYYY-MM-DD"
+	TriggerType string  `json:"trigger_type"` // recharge_consumed | subscription_daily | manual_admin | refund_reversal
+	TotalAmount float64 `json:"total_amount"` // 当日该触发类型的净释放金额（可为负）
+	EventCount  int64   `json:"event_count"`
 }
 
 // RefereeDrilldown 管理端下钻单个邀请人的被邀请人列表
@@ -252,7 +272,7 @@ func (s *ReferralService) BindReferrer(ctx context.Context, refereeID int64, ref
 		return ErrReferralSelfReferrer
 	}
 
-	bonusAmount := s.settingService.GetReferralRefereeBonusAmount(ctx)
+	bonusAmount := s.GetEffectiveRefereeBonusAmount(ctx, referrer.ID)
 
 	tx, err := s.entClient.Tx(ctx)
 	if err != nil {
@@ -314,7 +334,7 @@ func (s *ReferralService) AccrueCommissionOnRecharge(ctx context.Context, order 
 		return err
 	}
 
-	rate := s.settingService.GetReferralCommissionRate(ctx)
+	rate := s.GetEffectiveCommissionRate(ctx, referrerID)
 	gross := roundMoney(order.Amount * rate)
 	if gross <= 0 {
 		return nil
@@ -366,7 +386,7 @@ func (s *ReferralService) AccrueCommissionOnSubscription(
 	if err != nil || referrerID == 0 {
 		return err
 	}
-	rate := s.settingService.GetReferralCommissionRate(ctx)
+	rate := s.GetEffectiveCommissionRate(ctx, referrerID)
 	gross := roundMoney(order.Amount * rate)
 	if gross <= 0 {
 		return nil
@@ -478,24 +498,36 @@ func (s *ReferralService) ReleaseCommissionForRechargeConsumption(
 			SetConsumedAttributed(newAttributed).
 			SetReleasedCommission(shouldRelease)
 
-		newStatus := c.Status
 		// 归因占满 + 全释放 → fully_released
 		if newAttributed+1e-8 >= c.SourceAmount && shouldRelease+1e-8 >= c.GrossCommission {
-			newStatus = ReferralStatusFullyReleased
 			upd = upd.SetStatus(ReferralStatusFullyReleased)
 		}
 		if _, err := upd.Save(txCtx); err != nil {
 			return fmt.Errorf("update commission: %w", err)
 		}
 
+		// 仅在本次实际有释放（delta>0）时写 log；零 delta 事件（归因已占满但无新释放）
+		// 对审计无信息量，跳过以减少噪声。
+		if delta > 0 {
+			if err := s.writeReleaseLog(txCtx, client, c.ID, referrerID, delta,
+				ReferralReleaseTriggerRechargeConsumed, c.CommissionRate,
+				map[string]any{
+					"consumed_attributed": newAttributed,
+					"alloc_this_event":    alloc,
+					"ratio":               ratio,
+					"gross_snapshot":      c.GrossCommission,
+				}); err != nil {
+				return fmt.Errorf("write release log: %w", err)
+			}
+		}
+
 		totalNewReleased += delta
 		remaining -= alloc
-		_ = newStatus
 	}
 
 	if totalNewReleased > 0 {
-		if err := s.userRepo.UpdateBalance(txCtx, referrerID, totalNewReleased); err != nil {
-			return fmt.Errorf("credit referrer balance: %w", err)
+		if err := s.userRepo.UpdateReferralUsable(txCtx, referrerID, totalNewReleased); err != nil {
+			return fmt.Errorf("credit referrer usable: %w", err)
 		}
 	}
 
@@ -504,7 +536,7 @@ func (s *ReferralService) ReleaseCommissionForRechargeConsumption(
 	}
 
 	if totalNewReleased > 0 {
-		s.invalidateReferrerCache(referrerID, totalNewReleased)
+		s.invalidateUserCache(referrerID)
 		slog.Info("[Referral] released recharge commission",
 			"referee", refereeID, "referrer", referrerID,
 			"released_delta", totalNewReleased, "consumed", amountConsumed)
@@ -620,15 +652,25 @@ func (s *ReferralService) releaseOneSubscriptionCommissionWith(
 
 	referrerID := *c.ReferrerID
 	if delta > 0 {
-		if err := s.userRepo.UpdateBalance(txCtx, referrerID, delta); err != nil {
+		if err := s.userRepo.UpdateReferralUsable(txCtx, referrerID, delta); err != nil {
 			return err
+		}
+		if err := s.writeReleaseLog(txCtx, client, c.ID, referrerID, delta,
+			ReferralReleaseTriggerSubscriptionDaily, c.CommissionRate,
+			map[string]any{
+				"days_elapsed":   daysElapsed,
+				"total_days":     totalDays,
+				"ratio":          ratio,
+				"gross_snapshot": c.GrossCommission,
+			}); err != nil {
+			return fmt.Errorf("write release log: %w", err)
 		}
 	}
 	if err := tx.Commit(); err != nil {
 		return err
 	}
 	if delta > 0 {
-		s.invalidateReferrerCache(referrerID, delta)
+		s.invalidateUserCache(referrerID)
 		slog.Info("[Referral] released subscription commission",
 			"id", c.ID, "referrer", referrerID, "days", daysElapsed,
 			"total_days", totalDays, "delta", delta)
@@ -738,6 +780,23 @@ func (s *ReferralService) ReverseCommissionOnRefund(ctx context.Context, order *
 		Save(txCtx); err != nil {
 		return fmt.Errorf("update commission on refund: %w", err)
 	}
+
+	// 写反转日志（amount 可为负：表示 gross 被下调但不回收 released）。
+	// 为保留完整审计时间线，只要 gross 有变化就写一行。
+	grossDelta := effectiveGross - c.GrossCommission
+	if math.Abs(grossDelta) > 1e-8 && c.ReferrerID != nil {
+		detail := map[string]any{
+			"old_gross":        c.GrossCommission,
+			"new_gross":        effectiveGross,
+			"released_frozen":  c.ReleasedCommission,
+			"refund_amount":    order.RefundAmount,
+			"new_source_amount": newSourceAmount,
+		}
+		if err := s.writeReleaseLog(txCtx, client, c.ID, *c.ReferrerID, grossDelta,
+			ReferralReleaseTriggerRefundReversal, c.CommissionRate, detail); err != nil {
+			return fmt.Errorf("write refund reversal log: %w", err)
+		}
+	}
 	if err := tx.Commit(); err != nil {
 		return err
 	}
@@ -803,13 +862,291 @@ func (s *ReferralService) TryGrantPendingBonus(
 	if err := tx.Commit(); err != nil {
 		return err
 	}
-	s.invalidateReferrerCache(refereeID, b.BonusAmount)
+	s.invalidateUserCache(refereeID)
 	slog.Info("[Referral] granted referee bonus",
 		"referee", refereeID, "bonus", b.BonusAmount, "trigger", trigger, "order", orderID)
 	return nil
 }
 
 // --- 用户视角查询 ---
+
+// ReferralEligibilityReason 推广页可见性判定原因（分层优先级从高到低）。
+const (
+	ReferralReasonFeatureDisabled   = "feature_disabled"    // 系统总开关 OFF
+	ReferralReasonDisabledForUser   = "disabled_for_user"   // 单用户 override 强制关闭
+	ReferralReasonUserOverride      = "user_override"       // 单用户 override 强制启用
+	ReferralReasonGlobalDefault     = "global_default"      // 全局默认可见
+	ReferralReasonNotEnabledForUser = "not_enabled_for_user" // 全局默认关 + 未被显式启用
+)
+
+// IsReferralVisibleForUser 判定某用户是否可见/可用推广页。
+//
+// 分层优先级（从高到低）：
+//  1. referral_enabled=false → feature_disabled
+//  2. user_referral_configs.enabled=false → disabled_for_user（admin 强制关闭单用户）
+//  3. user_referral_configs.enabled=true → user_override（admin 强制启用单用户）
+//  4. referral_default_for_all_users=true → global_default
+//  5. 其他 → not_enabled_for_user
+func (s *ReferralService) IsReferralVisibleForUser(ctx context.Context, userID int64) (bool, string, error) {
+	if !s.settingService.IsReferralEnabled(ctx) {
+		return false, ReferralReasonFeatureDisabled, nil
+	}
+	cfg, err := s.entClient.UserReferralConfig.Query().
+		Where(userreferralconfig.UserIDEQ(userID)).
+		Only(ctx)
+	if err != nil && !dbent.IsNotFound(err) {
+		return false, "", fmt.Errorf("query user referral config: %w", err)
+	}
+	if cfg != nil && cfg.Enabled != nil {
+		if !*cfg.Enabled {
+			return false, ReferralReasonDisabledForUser, nil
+		}
+		return true, ReferralReasonUserOverride, nil
+	}
+	if s.settingService.IsReferralDefaultForAllUsers(ctx) {
+		return true, ReferralReasonGlobalDefault, nil
+	}
+	return false, ReferralReasonNotEnabledForUser, nil
+}
+
+// userReferralConfigOrNil 读取单用户返佣配置；无记录返回 (nil, nil)。
+func (s *ReferralService) userReferralConfigOrNil(ctx context.Context, userID int64) (*dbent.UserReferralConfig, error) {
+	cfg, err := s.entClient.UserReferralConfig.Query().
+		Where(userreferralconfig.UserIDEQ(userID)).
+		Only(ctx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("query user referral config: %w", err)
+	}
+	return cfg, nil
+}
+
+// UserReferralConfigView 暴露给 handler 的配置视图。
+// 三个 Optional 字段：nil 表示"跟随全局默认"，非 nil 表示"强制覆盖"。
+type UserReferralConfigView struct {
+	UserID                 int64    `json:"user_id"`
+	Enabled                *bool    `json:"enabled"`
+	CommissionRateOverride *float64 `json:"commission_rate_override"`
+	RefereeBonusOverride   *float64 `json:"referee_bonus_override"`
+	WithdrawalAllowed      bool     `json:"withdrawal_allowed"`
+	Notes                  string   `json:"notes"`
+}
+
+// UserReferralConfigInput 管理员写入的配置载荷。
+// 三个 Optional 字段语义与 view 相同：nil=跟随全局，非 nil=覆盖。
+type UserReferralConfigInput struct {
+	Enabled                *bool
+	CommissionRateOverride *float64
+	RefereeBonusOverride   *float64
+	WithdrawalAllowed      bool
+	Notes                  string
+}
+
+// GetUserReferralConfig 读取单用户配置视图。未配置时返回默认（全跟随全局，withdrawal_allowed=false）。
+func (s *ReferralService) GetUserReferralConfig(ctx context.Context, userID int64) (*UserReferralConfigView, error) {
+	if userID <= 0 {
+		return nil, ErrUserNotFound
+	}
+	cfg, err := s.userReferralConfigOrNil(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	view := &UserReferralConfigView{UserID: userID}
+	if cfg != nil {
+		view.Enabled = cfg.Enabled
+		view.CommissionRateOverride = cfg.CommissionRateOverride
+		view.RefereeBonusOverride = cfg.RefereeBonusOverride
+		view.WithdrawalAllowed = cfg.WithdrawalAllowed
+		view.Notes = cfg.Notes
+	}
+	return view, nil
+}
+
+// UpsertUserReferralConfig 新增或更新单用户返佣配置。
+//
+// 校验：
+//   - commission_rate_override 必须在 [0,1]
+//   - referee_bonus_override 必须 >= 0
+//   - 用户必须存在
+//
+// 写完后失效该用户的 billing + auth 缓存（因为 stats 里会读这张表）。
+func (s *ReferralService) UpsertUserReferralConfig(ctx context.Context, userID int64, input UserReferralConfigInput) (*UserReferralConfigView, error) {
+	if userID <= 0 {
+		return nil, ErrUserNotFound
+	}
+	if input.CommissionRateOverride != nil {
+		r := *input.CommissionRateOverride
+		if r < 0 || r > 1 {
+			return nil, infraerrors.BadRequest("INVALID_COMMISSION_RATE", "commission_rate_override must be in [0,1]")
+		}
+	}
+	if input.RefereeBonusOverride != nil {
+		if *input.RefereeBonusOverride < 0 {
+			return nil, infraerrors.BadRequest("INVALID_REFEREE_BONUS", "referee_bonus_override must be >= 0")
+		}
+	}
+
+	// 确认用户存在（避免脏写孤儿记录）
+	if _, err := s.entClient.User.Query().Where(user.IDEQ(userID)).Only(ctx); err != nil {
+		return nil, translateUserErr(err)
+	}
+
+	existing, err := s.userReferralConfigOrNil(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if existing == nil {
+		create := s.entClient.UserReferralConfig.Create().
+			SetUserID(userID).
+			SetWithdrawalAllowed(input.WithdrawalAllowed).
+			SetNotes(input.Notes)
+		if input.Enabled != nil {
+			create = create.SetEnabled(*input.Enabled)
+		}
+		if input.CommissionRateOverride != nil {
+			create = create.SetCommissionRateOverride(*input.CommissionRateOverride)
+		}
+		if input.RefereeBonusOverride != nil {
+			create = create.SetRefereeBonusOverride(*input.RefereeBonusOverride)
+		}
+		if _, err := create.Save(ctx); err != nil {
+			return nil, fmt.Errorf("create user referral config: %w", err)
+		}
+	} else {
+		upd := s.entClient.UserReferralConfig.UpdateOneID(existing.ID).
+			SetWithdrawalAllowed(input.WithdrawalAllowed).
+			SetNotes(input.Notes)
+		if input.Enabled != nil {
+			upd = upd.SetEnabled(*input.Enabled)
+		} else {
+			upd = upd.ClearEnabled()
+		}
+		if input.CommissionRateOverride != nil {
+			upd = upd.SetCommissionRateOverride(*input.CommissionRateOverride)
+		} else {
+			upd = upd.ClearCommissionRateOverride()
+		}
+		if input.RefereeBonusOverride != nil {
+			upd = upd.SetRefereeBonusOverride(*input.RefereeBonusOverride)
+		} else {
+			upd = upd.ClearRefereeBonusOverride()
+		}
+		if _, err := upd.Save(ctx); err != nil {
+			return nil, fmt.Errorf("update user referral config: %w", err)
+		}
+	}
+
+	s.invalidateUserCache(userID)
+	return s.GetUserReferralConfig(ctx, userID)
+}
+
+// GetEffectiveCommissionRate 返回某邀请人（referrer）本次入账应用的佣金比例。
+// 优先单用户 override，否则读全局默认。失败时回退到全局默认（不阻塞主流程）。
+func (s *ReferralService) GetEffectiveCommissionRate(ctx context.Context, referrerID int64) float64 {
+	global := s.settingService.GetReferralCommissionRate(ctx)
+	if referrerID <= 0 {
+		return global
+	}
+	cfg, err := s.userReferralConfigOrNil(ctx, referrerID)
+	if err != nil {
+		slog.Warn("[Referral] load user config failed, fallback to global rate",
+			"referrer_id", referrerID, "error", err)
+		return global
+	}
+	if cfg != nil && cfg.CommissionRateOverride != nil {
+		r := *cfg.CommissionRateOverride
+		if r >= 0 && r <= 1 {
+			return r
+		}
+	}
+	return global
+}
+
+// GetEffectiveRefereeBonusAmount 返回某邀请人（referrer）名下新被邀请人的首次付费赠金金额。
+// 优先单用户 override，否则读全局默认。
+func (s *ReferralService) GetEffectiveRefereeBonusAmount(ctx context.Context, referrerID int64) float64 {
+	global := s.settingService.GetReferralRefereeBonusAmount(ctx)
+	if referrerID <= 0 {
+		return global
+	}
+	cfg, err := s.userReferralConfigOrNil(ctx, referrerID)
+	if err != nil {
+		slog.Warn("[Referral] load user config failed, fallback to global bonus",
+			"referrer_id", referrerID, "error", err)
+		return global
+	}
+	if cfg != nil && cfg.RefereeBonusOverride != nil {
+		b := *cfg.RefereeBonusOverride
+		if b >= 0 {
+			return b
+		}
+	}
+	return global
+}
+
+// --- 可使用佣金池 ---
+
+// ErrReferralInvalidAmount 金额不合法（<=0 或低于最小阈值）。
+var ErrReferralInvalidAmount = infraerrors.BadRequest(
+	"INVALID_AMOUNT",
+	"amount must be at least the minimum transfer threshold",
+)
+
+// TransferUsableToBalance 从 referral_usable 池转入 balance。
+//
+// 事务保证：单 tx 内串行执行（SELECT ... FOR UPDATE 锁用户行）：
+//  1. 锁定用户行防并发扣减
+//  2. 校验金额 >= ReferralUsableMinTransfer 且 referral_usable >= amount
+//  3. UpdateReferralUsable(-amount) + UpdateBalance(+amount)
+//  4. Commit 后失效两份缓存
+func (s *ReferralService) TransferUsableToBalance(ctx context.Context, userID int64, amount float64) error {
+	if userID <= 0 {
+		return ErrUserNotFound
+	}
+	amount = roundMoney(amount)
+	if amount < ReferralUsableMinTransfer {
+		return ErrReferralInvalidAmount
+	}
+
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	txCtx := dbent.NewTxContext(ctx, tx)
+	client := tx.Client()
+
+	// 锁用户行，校验池余额足够
+	u, err := client.User.Query().Where(user.IDEQ(userID)).ForUpdate().Only(txCtx)
+	if err != nil {
+		return translateUserErr(err)
+	}
+	if u.ReferralUsable < amount {
+		return ErrInsufficientReferralUsable
+	}
+
+	// 先扣 referral_usable（带 >= amount 的 WHERE 双重保险）
+	if err := s.userRepo.UpdateReferralUsable(txCtx, userID, -amount); err != nil {
+		return err
+	}
+	// 再加 balance
+	if err := s.userRepo.UpdateBalance(txCtx, userID, amount); err != nil {
+		return fmt.Errorf("credit balance: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+
+	// 成功后一次性失效该用户的 billing + auth 缓存
+	s.invalidateUserCache(userID)
+	slog.Info("[Referral] transferred usable to balance",
+		"user_id", userID, "amount", amount)
+	return nil
+}
 
 // GetMyReferralStats 返回某用户的邀请总览
 func (s *ReferralService) GetMyReferralStats(ctx context.Context, userID int64) (*ReferralStats, error) {
@@ -835,14 +1172,33 @@ func (s *ReferralService) GetMyReferralStats(ctx context.Context, userID int64) 
 		return nil, fmt.Errorf("sum commission: %w", err)
 	}
 
+	// 读 users.referral_usable（V2 可用池）
+	u, err := s.entClient.User.Query().Where(user.IDEQ(userID)).Only(ctx)
+	if err != nil {
+		return nil, translateUserErr(err)
+	}
+
+	// 读单用户 override（可能不存在）— 仅取 withdrawal_allowed
+	withdrawalAllowed := false
+	cfg, cfgErr := s.entClient.UserReferralConfig.Query().
+		Where(userreferralconfig.UserIDEQ(userID)).
+		Only(ctx)
+	if cfgErr == nil && cfg != nil {
+		withdrawalAllowed = cfg.WithdrawalAllowed
+	} else if cfgErr != nil && !dbent.IsNotFound(cfgErr) {
+		return nil, fmt.Errorf("query user referral config: %w", cfgErr)
+	}
+
 	return &ReferralStats{
 		InviteCode:         code,
 		InvitedCount:       int64(invitedCount),
 		GrossCommission:    gross.Float64,
 		ReleasedCommission: released.Float64,
 		PendingCommission:  math.Max(0, gross.Float64-released.Float64),
+		UsableCommission:   u.ReferralUsable,
 		CommissionRate:     s.settingService.GetReferralCommissionRate(ctx),
 		RefereeBonusAmount: s.settingService.GetReferralRefereeBonusAmount(ctx),
+		WithdrawalAllowed:  withdrawalAllowed,
 	}, nil
 }
 
@@ -913,6 +1269,88 @@ func (s *ReferralService) ListMyCommissionLogs(
 		})
 	}
 	return out, int64(total), nil
+}
+
+// ListMyReleaseLogsDaily 按 (day, trigger_type) 聚合返回某用户的释放日志。
+// 强制 user_id 过滤防越权；commissionID 非 nil 时限定单笔 commission。
+// Day 按服务器时区（Asia/Shanghai）分桶，格式 "YYYY-MM-DD"；
+// 按 day DESC、trigger_type ASC 排序（字符串排序对 YYYY-MM-DD 天然正确）。
+func (s *ReferralService) ListMyReleaseLogsDaily(
+	ctx context.Context, userID int64, commissionID *int64, page, size int,
+) ([]*ReleaseLogDayAggregate, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if size <= 0 || size > 100 {
+		size = 30
+	}
+
+	// 时区作为 SQL 参数传入，占位符从 $2 起；where 条件可能再追加 commission_id。
+	// 参数顺序：$1=userID, $2=tz, (可选) $3=commissionID, 末尾 $N/$N+1=limit/offset。
+	whereSQL := "WHERE user_id = $1"
+	args := []any{userID, timezone.Name()}
+	if commissionID != nil {
+		whereSQL += " AND commission_id = $3"
+		args = append(args, *commissionID)
+	}
+
+	// 聚合表达式：先把 timestamptz 投影到 Asia/Shanghai 本地时间，再 date_trunc 截到当天。
+	dayExpr := `date_trunc('day', created_at AT TIME ZONE $2)`
+
+	countQ := `
+		SELECT COUNT(*) FROM (
+			SELECT 1 FROM referral_commission_release_logs
+			` + whereSQL + `
+			GROUP BY ` + dayExpr + `, trigger_type
+		) sub`
+	var total int64
+	if err := s.sqlDB.QueryRowContext(ctx, countQ, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	if total == 0 {
+		return []*ReleaseLogDayAggregate{}, 0, nil
+	}
+
+	offset := (page - 1) * size
+	// 动态定位 LIMIT/OFFSET 占位符：无 commissionID 时从 $3 起，有则从 $4 起。
+	limitPlaceholder := "$3"
+	offsetPlaceholder := "$4"
+	if commissionID != nil {
+		limitPlaceholder = "$4"
+		offsetPlaceholder = "$5"
+	}
+	args = append(args, size, offset)
+
+	q := `
+		SELECT
+			to_char(` + dayExpr + `, 'YYYY-MM-DD') AS day,
+			trigger_type,
+			SUM(amount) AS total_amount,
+			COUNT(*) AS event_count
+		FROM referral_commission_release_logs
+		` + whereSQL + `
+		GROUP BY ` + dayExpr + `, trigger_type
+		ORDER BY ` + dayExpr + ` DESC, trigger_type ASC
+		LIMIT ` + limitPlaceholder + ` OFFSET ` + offsetPlaceholder
+
+	rows, err := s.sqlDB.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	out := make([]*ReleaseLogDayAggregate, 0, size)
+	for rows.Next() {
+		a := &ReleaseLogDayAggregate{}
+		if err := rows.Scan(&a.Day, &a.TriggerType, &a.TotalAmount, &a.EventCount); err != nil {
+			return nil, 0, err
+		}
+		out = append(out, a)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+	return out, total, nil
 }
 
 // --- 管理端查询 ---
@@ -1104,8 +1542,8 @@ func (s *ReferralService) fetchEmailsByIDs(ctx context.Context, ids []int64) (ma
 	return result, nil
 }
 
-// invalidateReferrerCache 当 balance 变动时，失效邀请人的缓存。
-func (s *ReferralService) invalidateReferrerCache(userID int64, _ float64) {
+// invalidateUserCache 当 balance / referral_usable 变动时，失效该用户的 billing + auth 缓存。
+func (s *ReferralService) invalidateUserCache(userID int64) {
 	if s.billingCacheService != nil {
 		go func() {
 			cctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -1117,6 +1555,35 @@ func (s *ReferralService) invalidateReferrerCache(userID int64, _ float64) {
 		bg := context.Background()
 		s.authCacheInvalidator.InvalidateAuthCacheByUserID(bg, userID)
 	}
+}
+
+// writeReleaseLog 在 tx 内写一条 referral_commission_release_logs（append-only 审计）。
+// amount 可为负值（refund_reversal 场景表示 gross 被下调）。
+// detail 使用 map[string]any 编码为 JSONB 存储；JSON marshal 失败时落 "{}" 兜底以保证日志不丢。
+func (s *ReferralService) writeReleaseLog(
+	txCtx context.Context, client *dbent.Client,
+	commissionID, userID int64, amount float64,
+	trigger string, rateSnapshot float64,
+	detail map[string]any,
+) error {
+	detailJSON := "{}"
+	if detail != nil {
+		if b, err := json.Marshal(detail); err == nil {
+			detailJSON = string(b)
+		} else {
+			slog.Warn("[Referral] marshal release log detail failed",
+				"commission_id", commissionID, "error", err)
+		}
+	}
+	_, err := client.ReferralCommissionReleaseLog.Create().
+		SetCommissionID(commissionID).
+		SetUserID(userID).
+		SetAmount(amount).
+		SetTriggerType(trigger).
+		SetRateSnapshot(rateSnapshot).
+		SetComputationDetail(detailJSON).
+		Save(txCtx)
+	return err
 }
 
 // generateInviteCode 生成 8 位随机邀请码

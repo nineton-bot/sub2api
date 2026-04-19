@@ -47,6 +47,8 @@ const (
 	FieldInvitedByUserID = "invited_by_user_id"
 	// FieldInviteCode holds the string denoting the invite_code field in the database.
 	FieldInviteCode = "invite_code"
+	// FieldReferralUsable holds the string denoting the referral_usable field in the database.
+	FieldReferralUsable = "referral_usable"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -167,6 +169,7 @@ var Columns = []string{
 	FieldTotpEnabledAt,
 	FieldInvitedByUserID,
 	FieldInviteCode,
+	FieldReferralUsable,
 }
 
 var (
@@ -225,6 +228,8 @@ var (
 	DefaultTotpEnabled bool
 	// InviteCodeValidator is a validator for the "invite_code" field. It is called by the builders before save.
 	InviteCodeValidator func(string) error
+	// DefaultReferralUsable holds the default value on creation for the "referral_usable" field.
+	DefaultReferralUsable float64
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -313,6 +318,11 @@ func ByInvitedByUserID(opts ...sql.OrderTermOption) OrderOption {
 // ByInviteCode orders the results by the invite_code field.
 func ByInviteCode(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldInviteCode, opts...).ToFunc()
+}
+
+// ByReferralUsable orders the results by the referral_usable field.
+func ByReferralUsable(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferralUsable, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

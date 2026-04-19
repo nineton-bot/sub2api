@@ -173,6 +173,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingPaymentEnabled,
 		SettingKeyReferralEnabled,
 		SettingKeyReferralRefereeBonusAmount,
+		SettingKeyReferralDefaultForAllUsers,
 	}
 
 	settings, err := s.settingRepo.GetMultiple(ctx, keys)
@@ -252,6 +253,14 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 			}
 			return 2.00
 		}(),
+		ReferralDefaultForAllUsers: func() bool {
+			// 默认 true（与 IsReferralDefaultForAllUsers getter 保持一致，保留 V1 行为）
+			v, ok := settings[SettingKeyReferralDefaultForAllUsers]
+			if !ok || strings.TrimSpace(v) == "" {
+				return true
+			}
+			return v == "true"
+		}(),
 	}, nil
 }
 
@@ -306,6 +315,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		PaymentEnabled                   bool            `json:"payment_enabled"`
 		ReferralEnabled                  bool            `json:"referral_enabled"`
 		ReferralRefereeBonusAmount       float64         `json:"referral_referee_bonus_amount"`
+		ReferralDefaultForAllUsers       bool            `json:"referral_default_for_all_users"`
 		Version                          string          `json:"version,omitempty"`
 	}{
 		RegistrationEnabled:              settings.RegistrationEnabled,
@@ -338,6 +348,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		PaymentEnabled:                   settings.PaymentEnabled,
 		ReferralEnabled:                  settings.ReferralEnabled,
 		ReferralRefereeBonusAmount:       settings.ReferralRefereeBonusAmount,
+		ReferralDefaultForAllUsers:       settings.ReferralDefaultForAllUsers,
 		Version:                          s.version,
 	}, nil
 }
@@ -629,6 +640,7 @@ func (s *SettingService) UpdateSettings(ctx context.Context, settings *SystemSet
 		bonus = ReferralRefereeBonusMax
 	}
 	updates[SettingKeyReferralRefereeBonusAmount] = strconv.FormatFloat(bonus, 'f', -1, 64)
+	updates[SettingKeyReferralDefaultForAllUsers] = strconv.FormatBool(settings.ReferralDefaultForAllUsers)
 
 	err = s.settingRepo.SetMultiple(ctx, updates)
 	if err == nil {
@@ -887,6 +899,25 @@ func (s *SettingService) GetReferralRefereeBonusAmount(ctx context.Context) floa
 	return v
 }
 
+// IsReferralDefaultForAllUsers 返回"推广页默认对所有用户可见"开关。
+//
+// 语义（V2）：
+//   - true：所有未显式被管理员关闭（user_referral_configs.enabled=false）的用户都能看到"我的推广"页，佣金照常积累
+//   - false：白名单模式，只有被管理员在单用户 override 里显式启用（user_referral_configs.enabled=true）的用户可见
+//
+// 注意：此开关从属于 IsReferralEnabled。若总开关为 false，整个返佣系统禁用，此开关无意义。
+// 默认 true（保持 V1 行为）。
+func (s *SettingService) IsReferralDefaultForAllUsers(ctx context.Context) bool {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyReferralDefaultForAllUsers)
+	if err != nil {
+		return true
+	}
+	if strings.TrimSpace(value) == "" {
+		return true
+	}
+	return value == "true"
+}
+
 // IsPasswordResetEnabled 检查是否启用密码重置功能
 // 要求：必须同时开启邮件验证
 func (s *SettingService) IsPasswordResetEnabled(ctx context.Context) bool {
@@ -1018,6 +1049,9 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyReferralEnabled:            "false",
 		SettingKeyReferralCommissionRate:     "0.10",
 		SettingKeyReferralRefereeBonusAmount: "2.00",
+		// V2：推广页默认可见性。种子为 "true" 保持 V1 行为（全员可见）；
+		// 管理员可关闭进入白名单模式（仅 user_referral_configs.enabled=true 的用户可见）。
+		SettingKeyReferralDefaultForAllUsers: "true",
 	}
 
 	return s.settingRepo.SetMultiple(ctx, defaults)
@@ -1315,6 +1349,12 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		result.ReferralRefereeBonusAmount = v
 	} else {
 		result.ReferralRefereeBonusAmount = 2.00
+	}
+	// V2：未写 key 时默认 true（保持 V1 全员可见行为）
+	if v, ok := settings[SettingKeyReferralDefaultForAllUsers]; ok && v != "" {
+		result.ReferralDefaultForAllUsers = v == "true"
+	} else {
+		result.ReferralDefaultForAllUsers = true
 	}
 
 	return result

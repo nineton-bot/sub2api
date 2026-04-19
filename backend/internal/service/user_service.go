@@ -14,6 +14,12 @@ var (
 	ErrUserNotFound      = infraerrors.NotFound("USER_NOT_FOUND", "user not found")
 	ErrPasswordIncorrect = infraerrors.BadRequest("PASSWORD_INCORRECT", "current password is incorrect")
 	ErrInsufficientPerms = infraerrors.Forbidden("INSUFFICIENT_PERMISSIONS", "insufficient permissions")
+	// ErrInsufficientReferralUsable 余额不足（referral_usable 池）。
+	// 使用 BadRequest 而非 Conflict，保持与前端"财务不足"错误一致风格（便于 UI 直接展示提示）。
+	ErrInsufficientReferralUsable = infraerrors.BadRequest(
+		"INSUFFICIENT_REFERRAL_USABLE",
+		"referral usable balance is insufficient",
+	)
 )
 
 // UserListFilters contains all filter options for listing users
@@ -42,6 +48,11 @@ type UserRepository interface {
 
 	UpdateBalance(ctx context.Context, id int64, amount float64) error
 	DeductBalance(ctx context.Context, id int64, amount float64) error
+	// UpdateReferralUsable 原子更新 referral_usable 池。
+	// delta > 0 直接累加；delta < 0 仅在当前 referral_usable >= -delta 时成功，否则返回
+	// ErrInsufficientReferralUsable。用户不存在仍返回 ErrUserNotFound。
+	// 在事务 context 中调用时自动使用事务 client。
+	UpdateReferralUsable(ctx context.Context, id int64, delta float64) error
 	UpdateConcurrency(ctx context.Context, id int64, amount int) error
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	RemoveGroupFromAllowedGroups(ctx context.Context, groupID int64) (int64, error)
@@ -202,6 +213,28 @@ func (s *UserService) UpdateBalance(ctx context.Context, userID int64, amount fl
 			defer cancel()
 			if err := s.billingCache.InvalidateUserBalance(cacheCtx, userID); err != nil {
 				log.Printf("invalidate user balance cache failed: user_id=%d err=%v", userID, err)
+			}
+		}()
+	}
+	return nil
+}
+
+// UpdateReferralUsable 原子增减用户 referral_usable 池，成功后失效两份缓存。
+// 语义同 Repository 层：delta<0 时若当前余额不足返回 ErrInsufficientReferralUsable。
+// 事务支持：调用方若传入含 tx 的 ctx，写入在同一事务内；缓存失效异步执行，不参与事务提交保证。
+func (s *UserService) UpdateReferralUsable(ctx context.Context, userID int64, delta float64) error {
+	if err := s.userRepo.UpdateReferralUsable(ctx, userID, delta); err != nil {
+		return err
+	}
+	if s.authCacheInvalidator != nil {
+		s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, userID)
+	}
+	if s.billingCache != nil {
+		go func() {
+			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := s.billingCache.InvalidateUserBalance(cacheCtx, userID); err != nil {
+				log.Printf("invalidate user balance cache failed (referral_usable): user_id=%d err=%v", userID, err)
 			}
 		}()
 	}

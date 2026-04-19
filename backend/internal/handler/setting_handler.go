@@ -62,6 +62,7 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		PaymentEnabled:                   settings.PaymentEnabled,
 		ReferralEnabled:                  settings.ReferralEnabled,
 		ReferralRefereeBonusAmount:       settings.ReferralRefereeBonusAmount,
+		ReferralDefaultForAllUsers:       settings.ReferralDefaultForAllUsers,
 		Version:                          h.version,
 	})
 }

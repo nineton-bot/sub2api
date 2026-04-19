@@ -83,6 +83,13 @@ func (User) Fields() []ent.Field {
 			MaxLen(16).
 			Optional().
 			Nillable(),
+
+		// 可使用佣金池（V2），与 balance 解耦。
+		// 释放事件写入此字段；用户可主动"转入余额"或"申请提现"。
+		// 见迁移 105_referral_usable_and_withdrawals.sql。
+		field.Float("referral_usable").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(0),
 	}
 }
 

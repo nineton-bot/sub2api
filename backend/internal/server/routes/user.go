@@ -120,9 +120,22 @@ func RegisterUserRoutes(
 			userIDKey,
 		))
 		{
+			referral.GET("/eligibility", h.Referral.GetEligibility)
 			referral.GET("/overview", h.Referral.GetMyOverview)
 			referral.GET("/commissions", h.Referral.ListMyCommissions)
+			referral.GET("/release-logs", h.Referral.ListMyReleaseLogsDaily)
 			referral.POST("/ensure-code", h.Referral.EnsureInviteCode)
+
+			// 资金动作额外加严限流（10 次/分钟）——防刷扣减
+			moneyActions := referral.Group("")
+			moneyActions.Use(rateLimiter.LimitWithKeyFn(
+				"user-referral-money", 10, time.Minute,
+				rateMW.RateLimitOptions{FailureMode: rateMW.RateLimitFailOpen},
+				userIDKey,
+			))
+			{
+				moneyActions.POST("/transfer-to-balance", h.Referral.TransferToBalance)
+			}
 		}
 	}
 }

@@ -290,6 +290,27 @@ func (_u *UserUpdate) ClearInviteCode() *UserUpdate {
 	return _u
 }
 
+// SetReferralUsable sets the "referral_usable" field.
+func (_u *UserUpdate) SetReferralUsable(v float64) *UserUpdate {
+	_u.mutation.ResetReferralUsable()
+	_u.mutation.SetReferralUsable(v)
+	return _u
+}
+
+// SetNillableReferralUsable sets the "referral_usable" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableReferralUsable(v *float64) *UserUpdate {
+	if v != nil {
+		_u.SetReferralUsable(*v)
+	}
+	return _u
+}
+
+// AddReferralUsable adds value to the "referral_usable" field.
+func (_u *UserUpdate) AddReferralUsable(v float64) *UserUpdate {
+	_u.mutation.AddReferralUsable(v)
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *UserUpdate) AddAPIKeyIDs(ids ...int64) *UserUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -812,6 +833,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.InviteCodeCleared() {
 		_spec.ClearField(user.FieldInviteCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReferralUsable(); ok {
+		_spec.SetField(user.FieldReferralUsable, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedReferralUsable(); ok {
+		_spec.AddField(user.FieldReferralUsable, field.TypeFloat64, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1548,6 +1575,27 @@ func (_u *UserUpdateOne) ClearInviteCode() *UserUpdateOne {
 	return _u
 }
 
+// SetReferralUsable sets the "referral_usable" field.
+func (_u *UserUpdateOne) SetReferralUsable(v float64) *UserUpdateOne {
+	_u.mutation.ResetReferralUsable()
+	_u.mutation.SetReferralUsable(v)
+	return _u
+}
+
+// SetNillableReferralUsable sets the "referral_usable" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableReferralUsable(v *float64) *UserUpdateOne {
+	if v != nil {
+		_u.SetReferralUsable(*v)
+	}
+	return _u
+}
+
+// AddReferralUsable adds value to the "referral_usable" field.
+func (_u *UserUpdateOne) AddReferralUsable(v float64) *UserUpdateOne {
+	_u.mutation.AddReferralUsable(v)
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *UserUpdateOne) AddAPIKeyIDs(ids ...int64) *UserUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -2100,6 +2148,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.InviteCodeCleared() {
 		_spec.ClearField(user.FieldInviteCode, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReferralUsable(); ok {
+		_spec.SetField(user.FieldReferralUsable, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedReferralUsable(); ok {
+		_spec.AddField(user.FieldReferralUsable, field.TypeFloat64, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{

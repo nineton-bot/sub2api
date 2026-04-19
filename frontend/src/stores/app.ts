@@ -32,6 +32,9 @@ export const useAppStore = defineStore('app', () => {
   const docUrl = ref<string>('')
   const cachedPublicSettings = ref<PublicSettings | null>(null)
 
+  // Per-user referral eligibility (null = 未查询；boolean = 最新查询结果)
+  const referralEligible = ref<boolean | null>(null)
+
   // Version cache state
   const versionLoaded = ref<boolean>(false)
   const versionLoading = ref<boolean>(false)
@@ -341,6 +344,7 @@ export const useAppStore = defineStore('app', () => {
         backend_mode_enabled: false,
         referral_enabled: false,
         referral_referee_bonus_amount: 0,
+        referral_default_for_all_users: false,
         version: siteVersion.value
       }
     }
@@ -369,6 +373,30 @@ export const useAppStore = defineStore('app', () => {
   function clearPublicSettingsCache(): void {
     publicSettingsLoaded.value = false
     cachedPublicSettings.value = null
+  }
+
+  /**
+   * Fetch per-user referral eligibility (authenticated endpoint).
+   * Sidebar uses this to decide whether to show the "我的推广" entry.
+   */
+  async function fetchReferralEligibility(force = false): Promise<void> {
+    if (referralEligible.value !== null && !force) return
+    if (cachedPublicSettings.value?.referral_enabled !== true) {
+      referralEligible.value = false
+      return
+    }
+    try {
+      const { getEligibility } = await import('@/api/referral')
+      const resp = await getEligibility()
+      referralEligible.value = resp.enabled
+    } catch (err) {
+      console.error('fetchReferralEligibility failed:', err)
+      referralEligible.value = false
+    }
+  }
+
+  function clearReferralEligibility(): void {
+    referralEligible.value = null
   }
 
   /**
@@ -402,6 +430,7 @@ export const useAppStore = defineStore('app', () => {
     apiBaseUrl,
     docUrl,
     cachedPublicSettings,
+    referralEligible,
 
     // Version state
     versionLoaded,
@@ -440,6 +469,10 @@ export const useAppStore = defineStore('app', () => {
     // Public settings actions
     fetchPublicSettings,
     clearPublicSettingsCache,
-    initFromInjectedConfig
+    initFromInjectedConfig,
+
+    // Referral eligibility actions
+    fetchReferralEligibility,
+    clearReferralEligibility
   }
 })

@@ -116,6 +116,7 @@ export interface PublicSettings {
   backend_mode_enabled: boolean
   referral_enabled: boolean
   referral_referee_bonus_amount: number
+  referral_default_for_all_users: boolean
   version: string
 }
 

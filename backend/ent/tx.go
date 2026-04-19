@@ -46,8 +46,12 @@ type Tx struct {
 	RedeemCode *RedeemCodeClient
 	// ReferralCommission is the client for interacting with the ReferralCommission builders.
 	ReferralCommission *ReferralCommissionClient
+	// ReferralCommissionReleaseLog is the client for interacting with the ReferralCommissionReleaseLog builders.
+	ReferralCommissionReleaseLog *ReferralCommissionReleaseLogClient
 	// ReferralPendingBonus is the client for interacting with the ReferralPendingBonus builders.
 	ReferralPendingBonus *ReferralPendingBonusClient
+	// ReferralWithdrawal is the client for interacting with the ReferralWithdrawal builders.
+	ReferralWithdrawal *ReferralWithdrawalClient
 	// SecuritySecret is the client for interacting with the SecuritySecret builders.
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
@@ -68,6 +72,8 @@ type Tx struct {
 	UserAttributeDefinition *UserAttributeDefinitionClient
 	// UserAttributeValue is the client for interacting with the UserAttributeValue builders.
 	UserAttributeValue *UserAttributeValueClient
+	// UserReferralConfig is the client for interacting with the UserReferralConfig builders.
+	UserReferralConfig *UserReferralConfigClient
 	// UserSubscription is the client for interacting with the UserSubscription builders.
 	UserSubscription *UserSubscriptionClient
 
@@ -217,7 +223,9 @@ func (tx *Tx) init() {
 	tx.Proxy = NewProxyClient(tx.config)
 	tx.RedeemCode = NewRedeemCodeClient(tx.config)
 	tx.ReferralCommission = NewReferralCommissionClient(tx.config)
+	tx.ReferralCommissionReleaseLog = NewReferralCommissionReleaseLogClient(tx.config)
 	tx.ReferralPendingBonus = NewReferralPendingBonusClient(tx.config)
+	tx.ReferralWithdrawal = NewReferralWithdrawalClient(tx.config)
 	tx.SecuritySecret = NewSecuritySecretClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
 	tx.SubscriptionPlan = NewSubscriptionPlanClient(tx.config)
@@ -228,6 +236,7 @@ func (tx *Tx) init() {
 	tx.UserAllowedGroup = NewUserAllowedGroupClient(tx.config)
 	tx.UserAttributeDefinition = NewUserAttributeDefinitionClient(tx.config)
 	tx.UserAttributeValue = NewUserAttributeValueClient(tx.config)
+	tx.UserReferralConfig = NewUserReferralConfigClient(tx.config)
 	tx.UserSubscription = NewUserSubscriptionClient(tx.config)
 }
 

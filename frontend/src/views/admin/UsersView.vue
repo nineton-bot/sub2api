@@ -577,6 +577,18 @@
                 {{ t('admin.users.balanceHistory') }}
               </button>
 
+              <!-- Referral Config (V2) — gated by master referral_enabled -->
+              <template v-if="appStore.cachedPublicSettings?.referral_enabled">
+                <div class="my-1 border-t border-gray-100 dark:border-dark-700"></div>
+                <button
+                  @click="handleReferralConfig(user); closeActionMenu()"
+                  class="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
+                >
+                  <Icon name="users" size="sm" class="text-indigo-500" :stroke-width="2" />
+                  {{ t('admin.users.referralConfig.menuItem') }}
+                </button>
+              </template>
+
               <div class="my-1 border-t border-gray-100 dark:border-dark-700"></div>
 
               <!-- Delete (not for admin) -->
@@ -603,6 +615,7 @@
     <UserBalanceHistoryModal :show="showBalanceHistoryModal" :user="balanceHistoryUser" @close="closeBalanceHistoryModal" @deposit="handleDepositFromHistory" @withdraw="handleWithdrawFromHistory" />
     <GroupReplaceModal :show="showGroupReplaceModal" :user="groupReplaceUser" :old-group="groupReplaceOldGroup" :all-groups="allGroups" @close="closeGroupReplaceModal" @success="loadUsers" />
     <UserAttributesConfigModal :show="showAttributesModal" @close="handleAttributesModalClose" />
+    <UserReferralConfigModal :show="showReferralConfigModal" :user="referralConfigUser" @close="closeReferralConfigModal" @success="loadUsers" />
   </AppLayout>
 </template>
 
@@ -636,6 +649,7 @@ import UserAllowedGroupsModal from '@/components/admin/user/UserAllowedGroupsMod
 import UserBalanceModal from '@/components/admin/user/UserBalanceModal.vue'
 import UserBalanceHistoryModal from '@/components/admin/user/UserBalanceHistoryModal.vue'
 import GroupReplaceModal from '@/components/admin/user/GroupReplaceModal.vue'
+import UserReferralConfigModal from '@/components/admin/user/UserReferralConfigModal.vue'
 
 const appStore = useAppStore()
 
@@ -1370,6 +1384,20 @@ const handleBalanceHistory = (user: AdminUser) => {
 const closeBalanceHistoryModal = () => {
   showBalanceHistoryModal.value = false
   balanceHistoryUser.value = null
+}
+
+// Referral config (V2)
+const showReferralConfigModal = ref(false)
+const referralConfigUser = ref<AdminUser | null>(null)
+
+const handleReferralConfig = (user: AdminUser) => {
+  referralConfigUser.value = user
+  showReferralConfigModal.value = true
+}
+
+const closeReferralConfigModal = () => {
+  showReferralConfigModal.value = false
+  referralConfigUser.value = null
 }
 
 // Handle deposit from balance history modal

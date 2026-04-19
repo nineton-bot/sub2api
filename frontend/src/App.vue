@@ -68,12 +68,18 @@ watch(
         announcementStore.fetchAnnouncements()
       }
 
+      // Re-fetch per-user referral eligibility (force, so login switches account refresh)
+      appStore.fetchReferralEligibility(true).catch((err) => {
+        console.error('fetchReferralEligibility (auth watch) failed:', err)
+      })
+
       // Register visibility change listener
       document.addEventListener('visibilitychange', onVisibilityChange)
     } else {
       // User logged out: clear data and stop polling
       subscriptionStore.clear()
       announcementStore.reset()
+      appStore.clearReferralEligibility()
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   },
@@ -105,6 +111,14 @@ onMounted(async () => {
 
   // Load public settings into appStore (will be cached for other components)
   await appStore.fetchPublicSettings()
+
+  // publicSettings 现在已是最新值 → 重新查一次 eligibility，覆盖
+  // watcher 在 cachedPublicSettings 未加载前 immediate 触发的早期结果。
+  if (authStore.isAuthenticated) {
+    appStore.fetchReferralEligibility(true).catch((err) => {
+      console.error('fetchReferralEligibility (boot) failed:', err)
+    })
+  }
 
   // Re-resolve document title now that siteName is available
   document.title = resolveDocumentTitle(route.meta.title, appStore.siteName, route.meta.titleKey as string)

@@ -1022,6 +1022,21 @@
                   </p>
                 </div>
               </div>
+
+              <!-- V2: 默认可见性 -->
+              <div
+                class="mt-5 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
+              >
+                <div>
+                  <label class="font-medium text-gray-900 dark:text-white">{{
+                    t('admin.settings.referral.defaultForAllUsers')
+                  }}</label>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ t('admin.settings.referral.defaultForAllUsersHint') }}
+                  </p>
+                </div>
+                <Toggle v-model="form.referral_default_for_all_users" />
+              </div>
             </div>
           </div>
         </div>
@@ -2821,7 +2836,8 @@ const form = reactive<SettingsForm>({
   // Referral (邀请返佣)
   referral_enabled: false,
   referral_commission_rate: 0.10,
-  referral_referee_bonus_amount: 2.00
+  referral_referee_bonus_amount: 2.00,
+  referral_default_for_all_users: true
 })
 
 const defaultSubscriptionGroupOptions = computed<DefaultSubscriptionGroupOption[]>(() =>
@@ -3243,6 +3259,7 @@ async function saveSettings() {
       referral_enabled: form.referral_enabled,
       referral_commission_rate: Math.max(0, Math.min(1, Number(form.referral_commission_rate) || 0)),
       referral_referee_bonus_amount: Math.max(0, Number(form.referral_referee_bonus_amount) || 0),
+      referral_default_for_all_users: !!form.referral_default_for_all_users,
     }
 
     const updated = await adminAPI.settings.updateSettings(payload)

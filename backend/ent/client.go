@@ -31,7 +31,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/referralcommission"
+	"github.com/Wei-Shaw/sub2api/ent/referralcommissionreleaselog"
 	"github.com/Wei-Shaw/sub2api/ent/referralpendingbonus"
+	"github.com/Wei-Shaw/sub2api/ent/referralwithdrawal"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
@@ -42,6 +44,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/userallowedgroup"
 	"github.com/Wei-Shaw/sub2api/ent/userattributedefinition"
 	"github.com/Wei-Shaw/sub2api/ent/userattributevalue"
+	"github.com/Wei-Shaw/sub2api/ent/userreferralconfig"
 	"github.com/Wei-Shaw/sub2api/ent/usersubscription"
 
 	stdsql "database/sql"
@@ -84,8 +87,12 @@ type Client struct {
 	RedeemCode *RedeemCodeClient
 	// ReferralCommission is the client for interacting with the ReferralCommission builders.
 	ReferralCommission *ReferralCommissionClient
+	// ReferralCommissionReleaseLog is the client for interacting with the ReferralCommissionReleaseLog builders.
+	ReferralCommissionReleaseLog *ReferralCommissionReleaseLogClient
 	// ReferralPendingBonus is the client for interacting with the ReferralPendingBonus builders.
 	ReferralPendingBonus *ReferralPendingBonusClient
+	// ReferralWithdrawal is the client for interacting with the ReferralWithdrawal builders.
+	ReferralWithdrawal *ReferralWithdrawalClient
 	// SecuritySecret is the client for interacting with the SecuritySecret builders.
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
@@ -106,6 +113,8 @@ type Client struct {
 	UserAttributeDefinition *UserAttributeDefinitionClient
 	// UserAttributeValue is the client for interacting with the UserAttributeValue builders.
 	UserAttributeValue *UserAttributeValueClient
+	// UserReferralConfig is the client for interacting with the UserReferralConfig builders.
+	UserReferralConfig *UserReferralConfigClient
 	// UserSubscription is the client for interacting with the UserSubscription builders.
 	UserSubscription *UserSubscriptionClient
 }
@@ -135,7 +144,9 @@ func (c *Client) init() {
 	c.Proxy = NewProxyClient(c.config)
 	c.RedeemCode = NewRedeemCodeClient(c.config)
 	c.ReferralCommission = NewReferralCommissionClient(c.config)
+	c.ReferralCommissionReleaseLog = NewReferralCommissionReleaseLogClient(c.config)
 	c.ReferralPendingBonus = NewReferralPendingBonusClient(c.config)
+	c.ReferralWithdrawal = NewReferralWithdrawalClient(c.config)
 	c.SecuritySecret = NewSecuritySecretClient(c.config)
 	c.Setting = NewSettingClient(c.config)
 	c.SubscriptionPlan = NewSubscriptionPlanClient(c.config)
@@ -146,6 +157,7 @@ func (c *Client) init() {
 	c.UserAllowedGroup = NewUserAllowedGroupClient(c.config)
 	c.UserAttributeDefinition = NewUserAttributeDefinitionClient(c.config)
 	c.UserAttributeValue = NewUserAttributeValueClient(c.config)
+	c.UserReferralConfig = NewUserReferralConfigClient(c.config)
 	c.UserSubscription = NewUserSubscriptionClient(c.config)
 }
 
@@ -237,36 +249,39 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                     ctx,
-		config:                  cfg,
-		APIKey:                  NewAPIKeyClient(cfg),
-		Account:                 NewAccountClient(cfg),
-		AccountGroup:            NewAccountGroupClient(cfg),
-		Announcement:            NewAnnouncementClient(cfg),
-		AnnouncementRead:        NewAnnouncementReadClient(cfg),
-		ErrorPassthroughRule:    NewErrorPassthroughRuleClient(cfg),
-		Group:                   NewGroupClient(cfg),
-		IdempotencyRecord:       NewIdempotencyRecordClient(cfg),
-		PaymentAuditLog:         NewPaymentAuditLogClient(cfg),
-		PaymentOrder:            NewPaymentOrderClient(cfg),
-		PaymentProviderInstance: NewPaymentProviderInstanceClient(cfg),
-		PromoCode:               NewPromoCodeClient(cfg),
-		PromoCodeUsage:          NewPromoCodeUsageClient(cfg),
-		Proxy:                   NewProxyClient(cfg),
-		RedeemCode:              NewRedeemCodeClient(cfg),
-		ReferralCommission:      NewReferralCommissionClient(cfg),
-		ReferralPendingBonus:    NewReferralPendingBonusClient(cfg),
-		SecuritySecret:          NewSecuritySecretClient(cfg),
-		Setting:                 NewSettingClient(cfg),
-		SubscriptionPlan:        NewSubscriptionPlanClient(cfg),
-		TLSFingerprintProfile:   NewTLSFingerprintProfileClient(cfg),
-		UsageCleanupTask:        NewUsageCleanupTaskClient(cfg),
-		UsageLog:                NewUsageLogClient(cfg),
-		User:                    NewUserClient(cfg),
-		UserAllowedGroup:        NewUserAllowedGroupClient(cfg),
-		UserAttributeDefinition: NewUserAttributeDefinitionClient(cfg),
-		UserAttributeValue:      NewUserAttributeValueClient(cfg),
-		UserSubscription:        NewUserSubscriptionClient(cfg),
+		ctx:                          ctx,
+		config:                       cfg,
+		APIKey:                       NewAPIKeyClient(cfg),
+		Account:                      NewAccountClient(cfg),
+		AccountGroup:                 NewAccountGroupClient(cfg),
+		Announcement:                 NewAnnouncementClient(cfg),
+		AnnouncementRead:             NewAnnouncementReadClient(cfg),
+		ErrorPassthroughRule:         NewErrorPassthroughRuleClient(cfg),
+		Group:                        NewGroupClient(cfg),
+		IdempotencyRecord:            NewIdempotencyRecordClient(cfg),
+		PaymentAuditLog:              NewPaymentAuditLogClient(cfg),
+		PaymentOrder:                 NewPaymentOrderClient(cfg),
+		PaymentProviderInstance:      NewPaymentProviderInstanceClient(cfg),
+		PromoCode:                    NewPromoCodeClient(cfg),
+		PromoCodeUsage:               NewPromoCodeUsageClient(cfg),
+		Proxy:                        NewProxyClient(cfg),
+		RedeemCode:                   NewRedeemCodeClient(cfg),
+		ReferralCommission:           NewReferralCommissionClient(cfg),
+		ReferralCommissionReleaseLog: NewReferralCommissionReleaseLogClient(cfg),
+		ReferralPendingBonus:         NewReferralPendingBonusClient(cfg),
+		ReferralWithdrawal:           NewReferralWithdrawalClient(cfg),
+		SecuritySecret:               NewSecuritySecretClient(cfg),
+		Setting:                      NewSettingClient(cfg),
+		SubscriptionPlan:             NewSubscriptionPlanClient(cfg),
+		TLSFingerprintProfile:        NewTLSFingerprintProfileClient(cfg),
+		UsageCleanupTask:             NewUsageCleanupTaskClient(cfg),
+		UsageLog:                     NewUsageLogClient(cfg),
+		User:                         NewUserClient(cfg),
+		UserAllowedGroup:             NewUserAllowedGroupClient(cfg),
+		UserAttributeDefinition:      NewUserAttributeDefinitionClient(cfg),
+		UserAttributeValue:           NewUserAttributeValueClient(cfg),
+		UserReferralConfig:           NewUserReferralConfigClient(cfg),
+		UserSubscription:             NewUserSubscriptionClient(cfg),
 	}, nil
 }
 
@@ -284,36 +299,39 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                     ctx,
-		config:                  cfg,
-		APIKey:                  NewAPIKeyClient(cfg),
-		Account:                 NewAccountClient(cfg),
-		AccountGroup:            NewAccountGroupClient(cfg),
-		Announcement:            NewAnnouncementClient(cfg),
-		AnnouncementRead:        NewAnnouncementReadClient(cfg),
-		ErrorPassthroughRule:    NewErrorPassthroughRuleClient(cfg),
-		Group:                   NewGroupClient(cfg),
-		IdempotencyRecord:       NewIdempotencyRecordClient(cfg),
-		PaymentAuditLog:         NewPaymentAuditLogClient(cfg),
-		PaymentOrder:            NewPaymentOrderClient(cfg),
-		PaymentProviderInstance: NewPaymentProviderInstanceClient(cfg),
-		PromoCode:               NewPromoCodeClient(cfg),
-		PromoCodeUsage:          NewPromoCodeUsageClient(cfg),
-		Proxy:                   NewProxyClient(cfg),
-		RedeemCode:              NewRedeemCodeClient(cfg),
-		ReferralCommission:      NewReferralCommissionClient(cfg),
-		ReferralPendingBonus:    NewReferralPendingBonusClient(cfg),
-		SecuritySecret:          NewSecuritySecretClient(cfg),
-		Setting:                 NewSettingClient(cfg),
-		SubscriptionPlan:        NewSubscriptionPlanClient(cfg),
-		TLSFingerprintProfile:   NewTLSFingerprintProfileClient(cfg),
-		UsageCleanupTask:        NewUsageCleanupTaskClient(cfg),
-		UsageLog:                NewUsageLogClient(cfg),
-		User:                    NewUserClient(cfg),
-		UserAllowedGroup:        NewUserAllowedGroupClient(cfg),
-		UserAttributeDefinition: NewUserAttributeDefinitionClient(cfg),
-		UserAttributeValue:      NewUserAttributeValueClient(cfg),
-		UserSubscription:        NewUserSubscriptionClient(cfg),
+		ctx:                          ctx,
+		config:                       cfg,
+		APIKey:                       NewAPIKeyClient(cfg),
+		Account:                      NewAccountClient(cfg),
+		AccountGroup:                 NewAccountGroupClient(cfg),
+		Announcement:                 NewAnnouncementClient(cfg),
+		AnnouncementRead:             NewAnnouncementReadClient(cfg),
+		ErrorPassthroughRule:         NewErrorPassthroughRuleClient(cfg),
+		Group:                        NewGroupClient(cfg),
+		IdempotencyRecord:            NewIdempotencyRecordClient(cfg),
+		PaymentAuditLog:              NewPaymentAuditLogClient(cfg),
+		PaymentOrder:                 NewPaymentOrderClient(cfg),
+		PaymentProviderInstance:      NewPaymentProviderInstanceClient(cfg),
+		PromoCode:                    NewPromoCodeClient(cfg),
+		PromoCodeUsage:               NewPromoCodeUsageClient(cfg),
+		Proxy:                        NewProxyClient(cfg),
+		RedeemCode:                   NewRedeemCodeClient(cfg),
+		ReferralCommission:           NewReferralCommissionClient(cfg),
+		ReferralCommissionReleaseLog: NewReferralCommissionReleaseLogClient(cfg),
+		ReferralPendingBonus:         NewReferralPendingBonusClient(cfg),
+		ReferralWithdrawal:           NewReferralWithdrawalClient(cfg),
+		SecuritySecret:               NewSecuritySecretClient(cfg),
+		Setting:                      NewSettingClient(cfg),
+		SubscriptionPlan:             NewSubscriptionPlanClient(cfg),
+		TLSFingerprintProfile:        NewTLSFingerprintProfileClient(cfg),
+		UsageCleanupTask:             NewUsageCleanupTaskClient(cfg),
+		UsageLog:                     NewUsageLogClient(cfg),
+		User:                         NewUserClient(cfg),
+		UserAllowedGroup:             NewUserAllowedGroupClient(cfg),
+		UserAttributeDefinition:      NewUserAttributeDefinitionClient(cfg),
+		UserAttributeValue:           NewUserAttributeValueClient(cfg),
+		UserReferralConfig:           NewUserReferralConfigClient(cfg),
+		UserSubscription:             NewUserSubscriptionClient(cfg),
 	}, nil
 }
 
@@ -346,10 +364,11 @@ func (c *Client) Use(hooks ...Hook) {
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
 		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RedeemCode, c.ReferralCommission, c.ReferralPendingBonus,
-		c.SecuritySecret, c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile,
-		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
-		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
+		c.Proxy, c.RedeemCode, c.ReferralCommission, c.ReferralCommissionReleaseLog,
+		c.ReferralPendingBonus, c.ReferralWithdrawal, c.SecuritySecret, c.Setting,
+		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.UserReferralConfig, c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -362,10 +381,11 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
 		c.ErrorPassthroughRule, c.Group, c.IdempotencyRecord, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PromoCode, c.PromoCodeUsage,
-		c.Proxy, c.RedeemCode, c.ReferralCommission, c.ReferralPendingBonus,
-		c.SecuritySecret, c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile,
-		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
-		c.UserAttributeDefinition, c.UserAttributeValue, c.UserSubscription,
+		c.Proxy, c.RedeemCode, c.ReferralCommission, c.ReferralCommissionReleaseLog,
+		c.ReferralPendingBonus, c.ReferralWithdrawal, c.SecuritySecret, c.Setting,
+		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
+		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
+		c.UserReferralConfig, c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -406,8 +426,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.RedeemCode.mutate(ctx, m)
 	case *ReferralCommissionMutation:
 		return c.ReferralCommission.mutate(ctx, m)
+	case *ReferralCommissionReleaseLogMutation:
+		return c.ReferralCommissionReleaseLog.mutate(ctx, m)
 	case *ReferralPendingBonusMutation:
 		return c.ReferralPendingBonus.mutate(ctx, m)
+	case *ReferralWithdrawalMutation:
+		return c.ReferralWithdrawal.mutate(ctx, m)
 	case *SecuritySecretMutation:
 		return c.SecuritySecret.mutate(ctx, m)
 	case *SettingMutation:
@@ -428,6 +452,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.UserAttributeDefinition.mutate(ctx, m)
 	case *UserAttributeValueMutation:
 		return c.UserAttributeValue.mutate(ctx, m)
+	case *UserReferralConfigMutation:
+		return c.UserReferralConfig.mutate(ctx, m)
 	case *UserSubscriptionMutation:
 		return c.UserSubscription.mutate(ctx, m)
 	default:
@@ -2954,6 +2980,139 @@ func (c *ReferralCommissionClient) mutate(ctx context.Context, m *ReferralCommis
 	}
 }
 
+// ReferralCommissionReleaseLogClient is a client for the ReferralCommissionReleaseLog schema.
+type ReferralCommissionReleaseLogClient struct {
+	config
+}
+
+// NewReferralCommissionReleaseLogClient returns a client for the ReferralCommissionReleaseLog from the given config.
+func NewReferralCommissionReleaseLogClient(c config) *ReferralCommissionReleaseLogClient {
+	return &ReferralCommissionReleaseLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `referralcommissionreleaselog.Hooks(f(g(h())))`.
+func (c *ReferralCommissionReleaseLogClient) Use(hooks ...Hook) {
+	c.hooks.ReferralCommissionReleaseLog = append(c.hooks.ReferralCommissionReleaseLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `referralcommissionreleaselog.Intercept(f(g(h())))`.
+func (c *ReferralCommissionReleaseLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ReferralCommissionReleaseLog = append(c.inters.ReferralCommissionReleaseLog, interceptors...)
+}
+
+// Create returns a builder for creating a ReferralCommissionReleaseLog entity.
+func (c *ReferralCommissionReleaseLogClient) Create() *ReferralCommissionReleaseLogCreate {
+	mutation := newReferralCommissionReleaseLogMutation(c.config, OpCreate)
+	return &ReferralCommissionReleaseLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ReferralCommissionReleaseLog entities.
+func (c *ReferralCommissionReleaseLogClient) CreateBulk(builders ...*ReferralCommissionReleaseLogCreate) *ReferralCommissionReleaseLogCreateBulk {
+	return &ReferralCommissionReleaseLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ReferralCommissionReleaseLogClient) MapCreateBulk(slice any, setFunc func(*ReferralCommissionReleaseLogCreate, int)) *ReferralCommissionReleaseLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ReferralCommissionReleaseLogCreateBulk{err: fmt.Errorf("calling to ReferralCommissionReleaseLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ReferralCommissionReleaseLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ReferralCommissionReleaseLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ReferralCommissionReleaseLog.
+func (c *ReferralCommissionReleaseLogClient) Update() *ReferralCommissionReleaseLogUpdate {
+	mutation := newReferralCommissionReleaseLogMutation(c.config, OpUpdate)
+	return &ReferralCommissionReleaseLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ReferralCommissionReleaseLogClient) UpdateOne(_m *ReferralCommissionReleaseLog) *ReferralCommissionReleaseLogUpdateOne {
+	mutation := newReferralCommissionReleaseLogMutation(c.config, OpUpdateOne, withReferralCommissionReleaseLog(_m))
+	return &ReferralCommissionReleaseLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ReferralCommissionReleaseLogClient) UpdateOneID(id int64) *ReferralCommissionReleaseLogUpdateOne {
+	mutation := newReferralCommissionReleaseLogMutation(c.config, OpUpdateOne, withReferralCommissionReleaseLogID(id))
+	return &ReferralCommissionReleaseLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ReferralCommissionReleaseLog.
+func (c *ReferralCommissionReleaseLogClient) Delete() *ReferralCommissionReleaseLogDelete {
+	mutation := newReferralCommissionReleaseLogMutation(c.config, OpDelete)
+	return &ReferralCommissionReleaseLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ReferralCommissionReleaseLogClient) DeleteOne(_m *ReferralCommissionReleaseLog) *ReferralCommissionReleaseLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ReferralCommissionReleaseLogClient) DeleteOneID(id int64) *ReferralCommissionReleaseLogDeleteOne {
+	builder := c.Delete().Where(referralcommissionreleaselog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ReferralCommissionReleaseLogDeleteOne{builder}
+}
+
+// Query returns a query builder for ReferralCommissionReleaseLog.
+func (c *ReferralCommissionReleaseLogClient) Query() *ReferralCommissionReleaseLogQuery {
+	return &ReferralCommissionReleaseLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeReferralCommissionReleaseLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ReferralCommissionReleaseLog entity by its id.
+func (c *ReferralCommissionReleaseLogClient) Get(ctx context.Context, id int64) (*ReferralCommissionReleaseLog, error) {
+	return c.Query().Where(referralcommissionreleaselog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ReferralCommissionReleaseLogClient) GetX(ctx context.Context, id int64) *ReferralCommissionReleaseLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ReferralCommissionReleaseLogClient) Hooks() []Hook {
+	return c.hooks.ReferralCommissionReleaseLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *ReferralCommissionReleaseLogClient) Interceptors() []Interceptor {
+	return c.inters.ReferralCommissionReleaseLog
+}
+
+func (c *ReferralCommissionReleaseLogClient) mutate(ctx context.Context, m *ReferralCommissionReleaseLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ReferralCommissionReleaseLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ReferralCommissionReleaseLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ReferralCommissionReleaseLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ReferralCommissionReleaseLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ReferralCommissionReleaseLog mutation op: %q", m.Op())
+	}
+}
+
 // ReferralPendingBonusClient is a client for the ReferralPendingBonus schema.
 type ReferralPendingBonusClient struct {
 	config
@@ -3084,6 +3243,139 @@ func (c *ReferralPendingBonusClient) mutate(ctx context.Context, m *ReferralPend
 		return (&ReferralPendingBonusDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ReferralPendingBonus mutation op: %q", m.Op())
+	}
+}
+
+// ReferralWithdrawalClient is a client for the ReferralWithdrawal schema.
+type ReferralWithdrawalClient struct {
+	config
+}
+
+// NewReferralWithdrawalClient returns a client for the ReferralWithdrawal from the given config.
+func NewReferralWithdrawalClient(c config) *ReferralWithdrawalClient {
+	return &ReferralWithdrawalClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `referralwithdrawal.Hooks(f(g(h())))`.
+func (c *ReferralWithdrawalClient) Use(hooks ...Hook) {
+	c.hooks.ReferralWithdrawal = append(c.hooks.ReferralWithdrawal, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `referralwithdrawal.Intercept(f(g(h())))`.
+func (c *ReferralWithdrawalClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ReferralWithdrawal = append(c.inters.ReferralWithdrawal, interceptors...)
+}
+
+// Create returns a builder for creating a ReferralWithdrawal entity.
+func (c *ReferralWithdrawalClient) Create() *ReferralWithdrawalCreate {
+	mutation := newReferralWithdrawalMutation(c.config, OpCreate)
+	return &ReferralWithdrawalCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ReferralWithdrawal entities.
+func (c *ReferralWithdrawalClient) CreateBulk(builders ...*ReferralWithdrawalCreate) *ReferralWithdrawalCreateBulk {
+	return &ReferralWithdrawalCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ReferralWithdrawalClient) MapCreateBulk(slice any, setFunc func(*ReferralWithdrawalCreate, int)) *ReferralWithdrawalCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ReferralWithdrawalCreateBulk{err: fmt.Errorf("calling to ReferralWithdrawalClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ReferralWithdrawalCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ReferralWithdrawalCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ReferralWithdrawal.
+func (c *ReferralWithdrawalClient) Update() *ReferralWithdrawalUpdate {
+	mutation := newReferralWithdrawalMutation(c.config, OpUpdate)
+	return &ReferralWithdrawalUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ReferralWithdrawalClient) UpdateOne(_m *ReferralWithdrawal) *ReferralWithdrawalUpdateOne {
+	mutation := newReferralWithdrawalMutation(c.config, OpUpdateOne, withReferralWithdrawal(_m))
+	return &ReferralWithdrawalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ReferralWithdrawalClient) UpdateOneID(id int64) *ReferralWithdrawalUpdateOne {
+	mutation := newReferralWithdrawalMutation(c.config, OpUpdateOne, withReferralWithdrawalID(id))
+	return &ReferralWithdrawalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ReferralWithdrawal.
+func (c *ReferralWithdrawalClient) Delete() *ReferralWithdrawalDelete {
+	mutation := newReferralWithdrawalMutation(c.config, OpDelete)
+	return &ReferralWithdrawalDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ReferralWithdrawalClient) DeleteOne(_m *ReferralWithdrawal) *ReferralWithdrawalDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ReferralWithdrawalClient) DeleteOneID(id int64) *ReferralWithdrawalDeleteOne {
+	builder := c.Delete().Where(referralwithdrawal.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ReferralWithdrawalDeleteOne{builder}
+}
+
+// Query returns a query builder for ReferralWithdrawal.
+func (c *ReferralWithdrawalClient) Query() *ReferralWithdrawalQuery {
+	return &ReferralWithdrawalQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeReferralWithdrawal},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ReferralWithdrawal entity by its id.
+func (c *ReferralWithdrawalClient) Get(ctx context.Context, id int64) (*ReferralWithdrawal, error) {
+	return c.Query().Where(referralwithdrawal.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ReferralWithdrawalClient) GetX(ctx context.Context, id int64) *ReferralWithdrawal {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ReferralWithdrawalClient) Hooks() []Hook {
+	return c.hooks.ReferralWithdrawal
+}
+
+// Interceptors returns the client interceptors.
+func (c *ReferralWithdrawalClient) Interceptors() []Interceptor {
+	return c.inters.ReferralWithdrawal
+}
+
+func (c *ReferralWithdrawalClient) mutate(ctx context.Context, m *ReferralWithdrawalMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ReferralWithdrawalCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ReferralWithdrawalUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ReferralWithdrawalUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ReferralWithdrawalDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ReferralWithdrawal mutation op: %q", m.Op())
 	}
 }
 
@@ -4708,6 +5000,139 @@ func (c *UserAttributeValueClient) mutate(ctx context.Context, m *UserAttributeV
 	}
 }
 
+// UserReferralConfigClient is a client for the UserReferralConfig schema.
+type UserReferralConfigClient struct {
+	config
+}
+
+// NewUserReferralConfigClient returns a client for the UserReferralConfig from the given config.
+func NewUserReferralConfigClient(c config) *UserReferralConfigClient {
+	return &UserReferralConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `userreferralconfig.Hooks(f(g(h())))`.
+func (c *UserReferralConfigClient) Use(hooks ...Hook) {
+	c.hooks.UserReferralConfig = append(c.hooks.UserReferralConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `userreferralconfig.Intercept(f(g(h())))`.
+func (c *UserReferralConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserReferralConfig = append(c.inters.UserReferralConfig, interceptors...)
+}
+
+// Create returns a builder for creating a UserReferralConfig entity.
+func (c *UserReferralConfigClient) Create() *UserReferralConfigCreate {
+	mutation := newUserReferralConfigMutation(c.config, OpCreate)
+	return &UserReferralConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserReferralConfig entities.
+func (c *UserReferralConfigClient) CreateBulk(builders ...*UserReferralConfigCreate) *UserReferralConfigCreateBulk {
+	return &UserReferralConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserReferralConfigClient) MapCreateBulk(slice any, setFunc func(*UserReferralConfigCreate, int)) *UserReferralConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserReferralConfigCreateBulk{err: fmt.Errorf("calling to UserReferralConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserReferralConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserReferralConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserReferralConfig.
+func (c *UserReferralConfigClient) Update() *UserReferralConfigUpdate {
+	mutation := newUserReferralConfigMutation(c.config, OpUpdate)
+	return &UserReferralConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserReferralConfigClient) UpdateOne(_m *UserReferralConfig) *UserReferralConfigUpdateOne {
+	mutation := newUserReferralConfigMutation(c.config, OpUpdateOne, withUserReferralConfig(_m))
+	return &UserReferralConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserReferralConfigClient) UpdateOneID(id int64) *UserReferralConfigUpdateOne {
+	mutation := newUserReferralConfigMutation(c.config, OpUpdateOne, withUserReferralConfigID(id))
+	return &UserReferralConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserReferralConfig.
+func (c *UserReferralConfigClient) Delete() *UserReferralConfigDelete {
+	mutation := newUserReferralConfigMutation(c.config, OpDelete)
+	return &UserReferralConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserReferralConfigClient) DeleteOne(_m *UserReferralConfig) *UserReferralConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserReferralConfigClient) DeleteOneID(id int64) *UserReferralConfigDeleteOne {
+	builder := c.Delete().Where(userreferralconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserReferralConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for UserReferralConfig.
+func (c *UserReferralConfigClient) Query() *UserReferralConfigQuery {
+	return &UserReferralConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserReferralConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserReferralConfig entity by its id.
+func (c *UserReferralConfigClient) Get(ctx context.Context, id int64) (*UserReferralConfig, error) {
+	return c.Query().Where(userreferralconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserReferralConfigClient) GetX(ctx context.Context, id int64) *UserReferralConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *UserReferralConfigClient) Hooks() []Hook {
+	return c.hooks.UserReferralConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserReferralConfigClient) Interceptors() []Interceptor {
+	return c.inters.UserReferralConfig
+}
+
+func (c *UserReferralConfigClient) mutate(ctx context.Context, m *UserReferralConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserReferralConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserReferralConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserReferralConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserReferralConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserReferralConfig mutation op: %q", m.Op())
+	}
+}
+
 // UserSubscriptionClient is a client for the UserSubscription schema.
 type UserSubscriptionClient struct {
 	config
@@ -4913,18 +5338,20 @@ type (
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead,
 		ErrorPassthroughRule, Group, IdempotencyRecord, PaymentAuditLog, PaymentOrder,
 		PaymentProviderInstance, PromoCode, PromoCodeUsage, Proxy, RedeemCode,
-		ReferralCommission, ReferralPendingBonus, SecuritySecret, Setting,
-		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
-		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
+		ReferralCommission, ReferralCommissionReleaseLog, ReferralPendingBonus,
+		ReferralWithdrawal, SecuritySecret, Setting, SubscriptionPlan,
+		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserReferralConfig,
 		UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead,
 		ErrorPassthroughRule, Group, IdempotencyRecord, PaymentAuditLog, PaymentOrder,
 		PaymentProviderInstance, PromoCode, PromoCodeUsage, Proxy, RedeemCode,
-		ReferralCommission, ReferralPendingBonus, SecuritySecret, Setting,
-		SubscriptionPlan, TLSFingerprintProfile, UsageCleanupTask, UsageLog, User,
-		UserAllowedGroup, UserAttributeDefinition, UserAttributeValue,
+		ReferralCommission, ReferralCommissionReleaseLog, ReferralPendingBonus,
+		ReferralWithdrawal, SecuritySecret, Setting, SubscriptionPlan,
+		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserReferralConfig,
 		UserSubscription []ent.Interceptor
 	}
 )

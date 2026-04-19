@@ -608,7 +608,7 @@ const userNavItems = computed((): NavItem[] => {
         ]
       : []),
     { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
-    ...(appStore.cachedPublicSettings?.referral_enabled
+    ...(appStore.cachedPublicSettings?.referral_enabled && appStore.referralEligible === true
       ? [
           {
             path: '/referral',
@@ -656,7 +656,7 @@ const personalNavItems = computed((): NavItem[] => {
         ]
       : []),
     { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
-    ...(appStore.cachedPublicSettings?.referral_enabled
+    ...(appStore.cachedPublicSettings?.referral_enabled && appStore.referralEligible === true
       ? [
           {
             path: '/referral',

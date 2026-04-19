@@ -1467,6 +1467,28 @@ export default {
       failedToDeposit: 'Failed to deposit',
       failedToWithdraw: 'Failed to withdraw',
       useDepositWithdrawButtons: 'Please use deposit/withdraw buttons to adjust balance',
+      // Per-user referral config (V2)
+      referralConfig: {
+        menuItem: 'Referral config',
+        title: 'Referral configuration',
+        enabled: 'Enable referral',
+        enabledFollow: 'Follow global',
+        enabledForce: 'Force on',
+        enabledDisable: 'Force off',
+        enabledHint: 'Defaults to the global "Referral → visible to all users" setting; toggling overrides for this user immediately.',
+        rateOverride: 'Commission rate',
+        ratePlaceholder: 'e.g. 10 (means 10%)',
+        rateHint: 'Range 0%–100%. Check "Follow global" to use the default rate.',
+        rateInvalid: 'Commission rate must be between 0% and 100%',
+        bonusOverride: 'Referee first-payment bonus',
+        bonusPlaceholder: 'e.g. 2.00',
+        bonusHint: 'Check "Follow global" to use the default. Only affects future invitees of this user.',
+        bonusInvalid: 'Bonus amount cannot be negative',
+        followGlobal: 'Follow global',
+        withdrawalAllowed: 'Allow withdrawal',
+        withdrawalAllowedHint: 'When on, the user can request to withdraw usable commission from the referral page',
+        notes: 'Notes (admin-only)'
+      },
       // Balance History
       balanceHistory: 'Recharge History',
       balanceHistoryTip: 'Click to open recharge history',
@@ -4275,7 +4297,9 @@ export default {
         commissionRate: 'Commission Rate',
         commissionRateHint: 'Fraction of each invitee recharge / subscription credited to the referrer (0 ~ 100%). Example: 0.10 = 10%.',
         refereeBonus: 'Referee First-Payment Bonus',
-        refereeBonusHint: 'Amount (in ¥) credited to the invitee after their first successful recharge or subscription. Set to 0 to disable the bonus.'
+        refereeBonusHint: 'Amount (in ¥) credited to the invitee after their first successful recharge or subscription. Set to 0 to disable the bonus.',
+        defaultForAllUsers: 'Default Visible to All Users',
+        defaultForAllUsersHint: 'When on, every user sees the Referrals page and accrues commissions by default; when off, only users explicitly enabled by an admin can see it.'
       },
       turnstile: {
         title: 'Cloudflare Turnstile',
@@ -5555,11 +5579,14 @@ export default {
     qrTitle: 'Scan to register',
     downloadQr: 'Download QR',
     statGross: 'Total Commission',
-    statReleased: 'Available',
+    statReleased: 'Total Released',
+    statUsable: 'Usable Commission',
     statPending: 'Locked',
     statInvited: 'Invited',
     statGrossHint: 'Accrued earnings across all invitees',
-    statReleasedHint: 'Already added to your balance',
+    statReleasedHint: 'Lifetime released amount',
+    statUsableHint: 'Transfer to balance or request withdrawal',
+    statUsableTooltip: 'Commission released after the upgrade and not yet transferred to balance or withdrawn. Earlier releases are already in your balance.',
     statPendingHint: 'Releases as your invitees use their balance / subscription',
     statInvitedHint: 'People you have invited',
     commissionRate: 'Commission rate',
@@ -5580,12 +5607,45 @@ export default {
     statusPartialReversed: 'Partially Reversed',
     empty: 'No commissions yet. Share your link to start earning.',
     disabled: 'Referral program is currently disabled. Your link will become active once it is enabled.',
+    disabledForUser: 'Referrals are not enabled for your account. Contact an administrator if you would like to participate.',
     loadFailed: 'Failed to load referral data',
     howItWorksTitle: 'How it works',
     howItWorksLine1: 'Share your invite link — new users who register through it are bound to you forever.',
     howItWorksLine2: 'Every time they recharge or subscribe, you accrue {rate}% gross commission.',
     howItWorksLine3: 'Commission is released as your invitees actually consume: by balance usage for recharges, and by elapsed days for subscriptions.',
-    howItWorksLine4: 'Released commission is added directly to your balance — no manual withdrawal needed.'
+    howItWorksLine4: 'Released commission is added directly to your balance — no manual withdrawal needed.',
+    useUsableTitle: 'Use your usable commission',
+    useUsableHint: 'Transfer to account balance for immediate API spend, or request withdrawal to WeChat / Alipay / bank.',
+    withdrawalComingSoon: 'Withdrawal will be available soon',
+    transfer: {
+      action: 'Transfer to balance',
+      title: 'Transfer to account balance',
+      usableAvailable: 'Usable commission',
+      hint: 'The transferred amount is added to your account balance and can be used for API spend. Minimum ¥0.01 per transfer.',
+      amount: 'Transfer amount',
+      amountPlaceholder: 'Enter amount',
+      all: 'All',
+      belowMin: 'Minimum transfer amount is ¥{min}',
+      insufficient: 'Insufficient usable commission',
+      submit: 'Confirm transfer',
+      invalidAmount: 'Please enter a valid amount',
+      success: 'Successfully transferred ¥{amount} to your balance'
+    },
+    withdraw: {
+      action: 'Request withdrawal'
+    },
+    releaseLog: {
+      toggle: 'View release breakdown',
+      title: 'Release breakdown (by day)',
+      empty: 'No releases yet',
+      loadFailed: 'Failed to load release breakdown',
+      trigger: {
+        recharge_consumed: 'Recharge-consumed release',
+        subscription_daily: 'Subscription daily release',
+        manual_admin: 'Manual admin adjustment',
+        refund_reversal: 'Refund reversal'
+      }
+    }
   }
 
 }

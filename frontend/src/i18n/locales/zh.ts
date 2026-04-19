@@ -1526,6 +1526,28 @@ export default {
       failedToDeposit: '充值失败',
       failedToWithdraw: '退款失败',
       useDepositWithdrawButtons: '请使用充值/退款按钮调整余额',
+      // 单用户返佣配置（V2）
+      referralConfig: {
+        menuItem: '返佣设置',
+        title: '返佣配置',
+        enabled: '启用返佣',
+        enabledFollow: '跟随全局',
+        enabledForce: '强制启用',
+        enabledDisable: '强制禁用',
+        enabledHint: '默认跟随「邀请返佣 → 默认对全员可见」全局设置；打开/关闭后立即覆盖此用户',
+        rateOverride: '佣金比例',
+        ratePlaceholder: '例如 10（表示 10%）',
+        rateHint: '范围 0%–100%，勾选「跟随全局」则使用默认比例',
+        rateInvalid: '佣金比例需在 0~100% 之间',
+        bonusOverride: '新人首次付费赠金',
+        bonusPlaceholder: '例如 2.00',
+        bonusHint: '勾选「跟随全局」则使用默认金额；仅影响此用户后续新邀请',
+        bonusInvalid: '赠金金额不能为负数',
+        followGlobal: '跟随全局',
+        withdrawalAllowed: '允许提现',
+        withdrawalAllowedHint: '开启后该用户可从「我的推广」申请将可使用佣金提现',
+        notes: '备注（仅管理员可见）'
+      },
       // 余额变动记录
       balanceHistory: '充值记录',
       balanceHistoryTip: '点击查看充值记录',
@@ -4440,7 +4462,9 @@ export default {
         commissionRate: '返佣比例',
         commissionRateHint: '被邀请人每次充值/订阅按该比例计入邀请人账面佣金（0 ~ 100%）。示例：0.10 = 10%',
         refereeBonus: '新人首付赠金',
-        refereeBonusHint: '被邀请人首次充值或订阅履约成功后到账的赠金金额（¥）。设置为 0 则不发放'
+        refereeBonusHint: '被邀请人首次充值或订阅履约成功后到账的赠金金额（¥）。设置为 0 则不发放',
+        defaultForAllUsers: '默认对全部用户可见',
+        defaultForAllUsersHint: '开启后所有用户默认可见「我的推广」并自动累积佣金；关闭后仅管理员在用户返佣设置中显式启用的用户可见'
       },
       turnstile: {
         title: 'Cloudflare Turnstile',
@@ -5743,11 +5767,14 @@ export default {
     qrTitle: '扫码注册',
     downloadQr: '下载二维码',
     statGross: '累计佣金',
-    statReleased: '可使用',
+    statReleased: '累计已释放',
+    statUsable: '可使用佣金',
     statPending: '锁定中',
     statInvited: '已邀请',
     statGrossHint: '全部被邀请人累计的账面佣金',
-    statReleasedHint: '已并入您的账户余额',
+    statReleasedHint: '历史累计已释放金额',
+    statUsableHint: '可转入余额或申请提现',
+    statUsableTooltip: '改造上线后新释放、尚未转入余额或提现的佣金。历史已释放部分已在账户余额中',
     statPendingHint: '需等被邀请人消费或订阅生效后逐步释放',
     statInvitedHint: '成功绑定您为邀请人的用户数',
     commissionRate: '当前返佣比例',
@@ -5768,12 +5795,45 @@ export default {
     statusPartialReversed: '部分冲销',
     empty: '暂无返佣记录，去分享您的链接开始赚取吧',
     disabled: '邀请返佣当前未启用，您的链接在开关开启后自动生效',
+    disabledForUser: '推广功能尚未对您开放，如需参与请联系管理员',
     loadFailed: '加载返佣数据失败',
     howItWorksTitle: '规则说明',
     howItWorksLine1: '分享您的邀请链接，新用户通过链接注册即与您终身绑定',
     howItWorksLine2: '他们每次充值或订阅，您可获得 {rate}% 的账面佣金',
     howItWorksLine3: '佣金随被邀请人实际消费逐步释放（充值按余额消费进度，订阅按生效天数）',
-    howItWorksLine4: '可使用佣金将直接并入您的账户余额，无需手动提现'
+    howItWorksLine4: '可使用佣金将直接并入您的账户余额，无需手动提现',
+    useUsableTitle: '使用可使用佣金',
+    useUsableHint: '将可使用佣金转入账户余额，立即用于 API 消费；或申请提现至微信/支付宝/银行卡',
+    withdrawalComingSoon: '提现功能即将开放，敬请期待',
+    transfer: {
+      action: '转入余额',
+      title: '转入账户余额',
+      usableAvailable: '可使用佣金',
+      hint: '转入后将并入账户余额，可用于 API 消费扣费。单次最小 ¥0.01。',
+      amount: '转入金额',
+      amountPlaceholder: '请输入金额',
+      all: '全部',
+      belowMin: '单次转入金额不能少于 ¥{min}',
+      insufficient: '可使用佣金不足',
+      submit: '确认转入',
+      invalidAmount: '请输入有效金额',
+      success: '已成功转入 ¥{amount} 到账户余额'
+    },
+    withdraw: {
+      action: '申请提现'
+    },
+    releaseLog: {
+      toggle: '查看释放明细',
+      title: '释放明细（按天汇总）',
+      empty: '暂无释放记录',
+      loadFailed: '加载释放明细失败',
+      trigger: {
+        recharge_consumed: '充值消费释放',
+        subscription_daily: '订阅每日释放',
+        manual_admin: '管理员手动调整',
+        refund_reversal: '退款反转'
+      }
+    }
   }
 
 }

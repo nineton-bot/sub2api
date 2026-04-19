@@ -54,8 +54,14 @@ type RedeemCode func(*sql.Selector)
 // ReferralCommission is the predicate function for referralcommission builders.
 type ReferralCommission func(*sql.Selector)
 
+// ReferralCommissionReleaseLog is the predicate function for referralcommissionreleaselog builders.
+type ReferralCommissionReleaseLog func(*sql.Selector)
+
 // ReferralPendingBonus is the predicate function for referralpendingbonus builders.
 type ReferralPendingBonus func(*sql.Selector)
+
+// ReferralWithdrawal is the predicate function for referralwithdrawal builders.
+type ReferralWithdrawal func(*sql.Selector)
 
 // SecuritySecret is the predicate function for securitysecret builders.
 type SecuritySecret func(*sql.Selector)
@@ -86,6 +92,9 @@ type UserAttributeDefinition func(*sql.Selector)
 
 // UserAttributeValue is the predicate function for userattributevalue builders.
 type UserAttributeValue func(*sql.Selector)
+
+// UserReferralConfig is the predicate function for userreferralconfig builders.
+type UserReferralConfig func(*sql.Selector)
 
 // UserSubscription is the predicate function for usersubscription builders.
 type UserSubscription func(*sql.Selector)

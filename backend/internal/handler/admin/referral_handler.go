@@ -74,3 +74,66 @@ func (h *ReferralHandler) GetReferrerDrilldown(c *gin.Context) {
 	}
 	response.Paginated(c, rows, total, page, pageSize)
 }
+
+// --- 单用户返佣配置（V2）---
+
+// UpsertUserReferralConfigRequest 管理员写入单用户配置载荷。
+//
+// 字段语义：
+//   - enabled 指针：nil=跟随全局；true/false=强制覆盖
+//   - commission_rate_override 指针：nil=跟随全局，范围 [0,1]
+//   - referee_bonus_override 指针：nil=跟随全局，>=0
+//   - withdrawal_allowed：默认 false
+//   - notes：管理员备注
+type UpsertUserReferralConfigRequest struct {
+	Enabled                *bool    `json:"enabled"`
+	CommissionRateOverride *float64 `json:"commission_rate_override"`
+	RefereeBonusOverride   *float64 `json:"referee_bonus_override"`
+	WithdrawalAllowed      bool     `json:"withdrawal_allowed"`
+	Notes                  string   `json:"notes"`
+}
+
+// GetUserReferralConfig 查单用户返佣配置。
+//
+// GET /api/v1/admin/users/:id/referral-config
+func (h *ReferralHandler) GetUserReferralConfig(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || userID <= 0 {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+	view, err := h.referralService.GetUserReferralConfig(c.Request.Context(), userID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, view)
+}
+
+// UpsertUserReferralConfig 新增/更新单用户返佣配置。
+//
+// PUT /api/v1/admin/users/:id/referral-config
+func (h *ReferralHandler) UpsertUserReferralConfig(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || userID <= 0 {
+		response.BadRequest(c, "Invalid user ID")
+		return
+	}
+	var req UpsertUserReferralConfigRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request body")
+		return
+	}
+	view, err := h.referralService.UpsertUserReferralConfig(c.Request.Context(), userID, service.UserReferralConfigInput{
+		Enabled:                req.Enabled,
+		CommissionRateOverride: req.CommissionRateOverride,
+		RefereeBonusOverride:   req.RefereeBonusOverride,
+		WithdrawalAllowed:      req.WithdrawalAllowed,
+		Notes:                  strings.TrimSpace(req.Notes),
+	})
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, view)
+}
