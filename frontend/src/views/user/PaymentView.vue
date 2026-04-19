@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="mx-auto max-w-4xl space-y-6">
+    <div :class="['mx-auto space-y-6 transition-[max-width] duration-300', containerWidthClass]">
       <div v-if="loading" class="flex items-center justify-center py-20">
         <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
       </div>
@@ -355,11 +355,26 @@ const tabs = computed(() => {
 const enabledMethods = computed(() => Object.keys(checkout.value.methods))
 const validAmount = computed(() => amount.value ?? 0)
 
-// Adaptive grid: center single card, 2-col for 2 plans, 3-col for 3+
+// Adaptive grid scaled by plan count: single centered, 2 side-by-side, 3 up to lg,
+// 4+ climbs to 4 columns on 2xl so wide displays don't waste horizontal space.
 const planGridClass = computed(() => {
   const n = checkout.value.plans.length
-  if (n <= 2) return 'grid grid-cols-1 gap-5 sm:grid-cols-2'
-  return 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3'
+  const base = 'grid gap-5'
+  if (n === 1) return `${base} grid-cols-1 max-w-md mx-auto`
+  if (n === 2) return `${base} grid-cols-1 sm:grid-cols-2`
+  if (n === 3) return `${base} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`
+  return `${base} grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4`
+})
+
+// Widen the page only for the plan browsing view; keep forms (recharge, subscription
+// confirm, Stripe, QR wait) in a narrow column for readability.
+const containerWidthClass = computed(() => {
+  const browsingPlans =
+    activeTab.value === 'subscription' &&
+    !selectedPlan.value &&
+    paymentPhase.value === 'select' &&
+    checkout.value.plans.length >= 3
+  return browsingPlans ? 'max-w-7xl' : 'max-w-4xl'
 })
 
 // Check if an amount fits a method's [min, max]. 0 = no limit.

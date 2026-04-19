@@ -10,31 +10,36 @@
     <!-- Colored top accent bar -->
     <div :class="['h-1.5', accentClass]" />
 
-    <div class="flex flex-1 flex-col p-4">
-      <!-- Header: name + badge + price -->
-      <div class="mb-3 flex items-start justify-between gap-2">
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
-            <h3 class="truncate text-base font-bold text-gray-900 dark:text-white">{{ plan.name }}</h3>
-            <span :class="['shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium', badgeLightClass]">
-              {{ pLabel }}
-            </span>
-          </div>
-          <p v-if="plan.description" class="mt-0.5 text-xs leading-relaxed text-gray-500 dark:text-dark-400 line-clamp-2">
-            {{ plan.description }}
-          </p>
-        </div>
-        <div class="shrink-0 text-right">
-          <div class="flex items-baseline gap-1">
-            <span class="text-xs text-gray-400 dark:text-dark-500">$</span>
-            <span :class="['text-2xl font-extrabold tracking-tight', textClass]">{{ plan.price }}</span>
-          </div>
-          <span class="text-[11px] text-gray-400 dark:text-dark-500">/ {{ validitySuffix }}</span>
-          <div v-if="plan.original_price" class="mt-0.5 flex items-center justify-end gap-1.5">
-            <span class="text-xs text-gray-400 line-through dark:text-dark-500">${{ plan.original_price }}</span>
-            <span :class="['rounded px-1 py-0.5 text-[10px] font-semibold', discountClass]">{{ discountText }}</span>
-          </div>
-        </div>
+    <div class="flex flex-1 flex-col p-5">
+      <!-- Meta row: platform badge + discount chip -->
+      <div class="mb-2 flex flex-wrap items-center gap-1.5">
+        <span :class="['rounded-full px-2 py-0.5 text-[11px] font-medium', badgeLightClass]">
+          {{ pLabel }}
+        </span>
+        <span v-if="discountText" :class="['rounded px-1.5 py-0.5 text-[10px] font-semibold', discountClass]">
+          {{ discountText }}
+        </span>
+      </div>
+
+      <!-- Title: full width, wraps up to 2 lines -->
+      <h3 class="mb-1.5 text-base font-bold leading-snug text-gray-900 line-clamp-2 dark:text-white">
+        {{ plan.name }}
+      </h3>
+
+      <!-- Description -->
+      <p v-if="plan.description" class="mb-3 text-xs leading-relaxed text-gray-500 line-clamp-2 dark:text-dark-400">
+        {{ plan.description }}
+      </p>
+
+      <!-- Price row: prominent, left-aligned with strike-through on the right -->
+      <div class="mb-3 flex items-baseline gap-2">
+        <span :class="['text-3xl font-extrabold tracking-tight leading-none', textClass]">
+          <span class="text-base font-semibold">$</span>{{ plan.price }}
+        </span>
+        <span class="text-xs text-gray-400 dark:text-dark-500">/ {{ validitySuffix }}</span>
+        <span v-if="plan.original_price" class="ml-auto text-xs text-gray-400 line-through dark:text-dark-500">
+          ${{ plan.original_price }}
+        </span>
       </div>
 
       <!-- Group quota info (compact) -->
