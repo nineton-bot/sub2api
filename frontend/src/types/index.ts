@@ -374,6 +374,9 @@ export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity'
 export type SubscriptionType = 'standard' | 'subscription'
 export type SubscriptionMeter = 'cost_quota' | 'request_quota'
 
+// 分组配置模板（仅 anthropic 平台生效，驱动 UseKeyModal 配置文案）
+export type GroupConfigTemplate = 'claude_native' | 'domestic_anthropic'
+
 export interface OpenAIMessagesDispatchModelConfig {
   opus_mapped_model?: string
   sonnet_mapped_model?: string
@@ -411,6 +414,8 @@ export interface Group {
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
   require_oauth_only: boolean
   require_privacy_set: boolean
+  // 配置模板（仅 anthropic 平台生效）
+  config_template?: GroupConfigTemplate
   created_at: string
   updated_at: string
 }

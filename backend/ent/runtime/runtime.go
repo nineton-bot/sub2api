@@ -488,6 +488,12 @@ func init() {
 	groupDescMessagesDispatchModelConfig := groupFields[30].Descriptor()
 	// group.DefaultMessagesDispatchModelConfig holds the default value on creation for the messages_dispatch_model_config field.
 	group.DefaultMessagesDispatchModelConfig = groupDescMessagesDispatchModelConfig.Default.(domain.OpenAIMessagesDispatchModelConfig)
+	// groupDescConfigTemplate is the schema descriptor for config_template field.
+	groupDescConfigTemplate := groupFields[31].Descriptor()
+	// group.DefaultConfigTemplate holds the default value on creation for the config_template field.
+	group.DefaultConfigTemplate = groupDescConfigTemplate.Default.(string)
+	// group.ConfigTemplateValidator is a validator for the "config_template" field. It is called by the builders before save.
+	group.ConfigTemplateValidator = groupDescConfigTemplate.Validators[0].(func(string) error)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()
 	idempotencyrecordMixinFields0 := idempotencyrecordMixin[0].Fields()
 	_ = idempotencyrecordMixinFields0

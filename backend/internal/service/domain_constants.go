@@ -26,6 +26,12 @@ const (
 	PlatformAntigravity = domain.PlatformAntigravity
 )
 
+// Group config template constants
+const (
+	ConfigTemplateClaudeNative      = domain.ConfigTemplateClaudeNative
+	ConfigTemplateDomesticAnthropic = domain.ConfigTemplateDomesticAnthropic
+)
+
 // Account type constants
 const (
 	AccountTypeOAuth      = domain.AccountTypeOAuth      // OAuth类型账号（full scope: profile + inference）

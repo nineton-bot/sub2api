@@ -84,6 +84,8 @@ const (
 	FieldDefaultMappedModel = "default_mapped_model"
 	// FieldMessagesDispatchModelConfig holds the string denoting the messages_dispatch_model_config field in the database.
 	FieldMessagesDispatchModelConfig = "messages_dispatch_model_config"
+	// FieldConfigTemplate holds the string denoting the config_template field in the database.
+	FieldConfigTemplate = "config_template"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -193,6 +195,7 @@ var Columns = []string{
 	FieldRequirePrivacySet,
 	FieldDefaultMappedModel,
 	FieldMessagesDispatchModelConfig,
+	FieldConfigTemplate,
 }
 
 var (
@@ -274,6 +277,10 @@ var (
 	DefaultMappedModelValidator func(string) error
 	// DefaultMessagesDispatchModelConfig holds the default value on creation for the "messages_dispatch_model_config" field.
 	DefaultMessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig
+	// DefaultConfigTemplate holds the default value on creation for the "config_template" field.
+	DefaultConfigTemplate string
+	// ConfigTemplateValidator is a validator for the "config_template" field. It is called by the builders before save.
+	ConfigTemplateValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Group queries.
@@ -437,6 +444,11 @@ func ByRequirePrivacySet(opts ...sql.OrderTermOption) OrderOption {
 // ByDefaultMappedModel orders the results by the default_mapped_model field.
 func ByDefaultMappedModel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDefaultMappedModel, opts...).ToFunc()
+}
+
+// ByConfigTemplate orders the results by the config_template field.
+func ByConfigTemplate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConfigTemplate, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.

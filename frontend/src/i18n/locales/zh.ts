@@ -669,6 +669,11 @@ export default {
           '示例采用 OpenAI Responses 风格配置，适合关联 OpenAI 分组的 API 密钥。你可以将 openai-compatible-model 替换为分组支持的实际模型，例如 gpt-5.4。',
         anthropicHint:
           '示例采用 Anthropic Messages 风格配置，适合关联 Anthropic 分组的 API 密钥。你可以将 anthropic-compatible-model 替换为分组支持的实际模型，例如 qwen3-coder-next 或 qwen3.5-plus。'
+      },
+      anthropic: {
+        availableModelsTitle: '可配置模型列表',
+        availableModelsHint:
+          '将 settings.json 中 ANTHROPIC_MODEL（或终端 export 的同名变量）替换为以下任一模型 ID 即可切换模型。'
       }
     },
     customKeyLabel: '自定义密钥',

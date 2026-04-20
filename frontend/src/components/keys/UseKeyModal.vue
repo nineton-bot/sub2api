@@ -139,7 +139,25 @@ import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { useClipboard } from '@/composables/useClipboard'
-import type { GroupPlatform } from '@/types'
+import type { GroupPlatform, GroupConfigTemplate } from '@/types'
+
+// 国产 Anthropic 协议模型（config_template = domestic_anthropic）
+// 同时用于 openclaw models 列表和 Claude Code 可配置模型说明
+const DOMESTIC_ANTHROPIC_MODELS = [
+  { id: 'qwen3.6-plus', name: 'qwen3.6-plus', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 65536 },
+  { id: 'qwen3.5-plus', name: 'qwen3.5-plus', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 65536 },
+  { id: 'qwen3-max-2026-01-23', name: 'qwen3-max-2026-01-23', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 65536 },
+  { id: 'qwen3-coder-plus', name: 'qwen3-coder-plus', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 65536 },
+  { id: 'qwen3-coder-next', name: 'qwen3-coder-next', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 65536 },
+  { id: 'deepseek-v3.2', name: 'deepseek-v3.2', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 131072, maxTokens: 32768 },
+  { id: 'MiniMax-M2.7', name: 'MiniMax-M2.7', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 131072 },
+  { id: 'MiniMax-M2.7-highspeed', name: 'MiniMax-M2.7-highspeed', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 131072 },
+  { id: 'MiniMax-M2.5', name: 'MiniMax-M2.5', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 131072 },
+  { id: 'glm-5.1', name: 'glm-5.1', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 202752, maxTokens: 16384 },
+  { id: 'glm-5', name: 'glm-5', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 202752, maxTokens: 16384 },
+  { id: 'kimi-k2.6', name: 'kimi-k2.6', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+  { id: 'kimi-k2.5', name: 'kimi-k2.5', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+]
 
 interface Props {
   show: boolean
@@ -147,6 +165,7 @@ interface Props {
   baseUrl: string
   platform: GroupPlatform | null
   allowMessagesDispatch?: boolean
+  configTemplate?: GroupConfigTemplate
 }
 
 interface Emits {
@@ -469,27 +488,36 @@ const currentFiles = computed((): FileConfig[] => {
 })
 
 function generateAnthropicFiles(baseUrl: string, apiKey: string): FileConfig[] {
+  // 仅 anthropic 平台下 domestic_anthropic 模板注入默认模型
+  const isDomestic =
+    props.platform === 'anthropic' && props.configTemplate === 'domestic_anthropic'
+  const domesticModel = 'qwen3.6-plus'
+
   let path: string
   let content: string
+
+  const unixExtraModel = isDomestic ? `\nexport ANTHROPIC_MODEL="${domesticModel}"` : ''
+  const cmdExtraModel = isDomestic ? `\nset ANTHROPIC_MODEL=${domesticModel}` : ''
+  const psExtraModel = isDomestic ? `\n$env:ANTHROPIC_MODEL="${domesticModel}"` : ''
 
   switch (activeTab.value) {
     case 'unix':
       path = 'Terminal'
       content = `export ANTHROPIC_BASE_URL="${baseUrl}"
 export ANTHROPIC_AUTH_TOKEN="${apiKey}"
-export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1${unixExtraModel}`
       break
     case 'cmd':
       path = 'Command Prompt'
       content = `set ANTHROPIC_BASE_URL=${baseUrl}
 set ANTHROPIC_AUTH_TOKEN=${apiKey}
-set CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`
+set CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1${cmdExtraModel}`
       break
     case 'powershell':
       path = 'PowerShell'
       content = `$env:ANTHROPIC_BASE_URL="${baseUrl}"
 $env:ANTHROPIC_AUTH_TOKEN="${apiKey}"
-$env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`
+$env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1${psExtraModel}`
       break
     default:
       path = 'Terminal'
@@ -500,19 +528,36 @@ $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1`
     ? '~/.claude/settings.json'
     : '%userprofile%\\.claude\\settings.json'
 
+  const vscodeEnvLines = [
+    `    "ANTHROPIC_BASE_URL": "${baseUrl}",`,
+    `    "ANTHROPIC_AUTH_TOKEN": "${apiKey}",`,
+    `    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",`,
+    `    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"${isDomestic ? ',' : ''}`,
+  ]
+  if (isDomestic) {
+    vscodeEnvLines.push(`    "ANTHROPIC_MODEL": "${domesticModel}"`)
+  }
   const vscodeContent = `{
   "env": {
-    "ANTHROPIC_BASE_URL": "${baseUrl}",
-    "ANTHROPIC_AUTH_TOKEN": "${apiKey}",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
+${vscodeEnvLines.join('\n')}
   }
 }`
 
-  return [
+  const files: FileConfig[] = [
     { path, content },
-    { path: vscodeSettingsPath, content: vscodeContent, hint: 'VSCode Claude Code' }
+    { path: vscodeSettingsPath, content: vscodeContent, hint: 'VSCode Claude Code' },
   ]
+
+  if (isDomestic) {
+    const modelIds = DOMESTIC_ANTHROPIC_MODELS.map((m) => m.id).join('\n')
+    files.push({
+      path: t('keys.useKeyModal.anthropic.availableModelsTitle'),
+      content: modelIds,
+      hint: t('keys.useKeyModal.anthropic.availableModelsHint'),
+    })
+  }
+
+  return files
 }
 
 function generateGeminiCliContent(baseUrl: string, apiKey: string): FileConfig {
@@ -1158,7 +1203,17 @@ function generateOpenClawConfig(platform: 'openai' | 'anthropic', baseUrl: strin
     ? '%USERPROFILE%\\.openclaw\\openclaw.json'
     : '~/.openclaw/openclaw.json'
 
-  const providerId = platform === 'openai' ? 'my-openai-provider' : 'my-anthropic-provider'
+  // anthropic 平台下根据 config_template 分流 providerId
+  const isDomesticAnthropic =
+    platform === 'anthropic' && props.configTemplate === 'domestic_anthropic'
+  let providerId: string
+  if (platform === 'openai') {
+    providerId = 'my-openai-provider'
+  } else if (isDomesticAnthropic) {
+    providerId = 'my-lmuaicodelocal'
+  } else {
+    providerId = 'my-lmuaicodeapc'
+  }
   const providerApi = platform === 'openai' ? 'openai-responses' : 'anthropic-messages'
   const openAIModels = [
     {
@@ -1205,114 +1260,74 @@ function generateOpenClawConfig(platform: 'openai' | 'anthropic', baseUrl: strin
     },
   ]
 
-  const anthropicModels = [
+  // Claude 原生模型分组（config_template = claude_native）
+  const claudeNativeModels = [
     {
-      id: 'qwen3.5-plus',
-      name: 'qwen3.5-plus',
-      reasoning: false,
+      id: 'claude-opus-4-6',
+      name: 'Claude Opus 4.6',
+      reasoning: true,
       input: ['text', 'image'],
-      cost: {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-      },
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: 200000,
+      maxTokens: 32000,
+    },
+    {
+      id: 'claude-opus-4-5',
+      name: 'Claude Opus 4.5',
+      reasoning: true,
+      input: ['text', 'image'],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: 200000,
+      maxTokens: 32000,
+    },
+    {
+      id: 'claude-sonnet-4-6',
+      name: 'Claude Sonnet 4.6',
+      reasoning: true,
+      input: ['text', 'image'],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       contextWindow: 1000000,
-      maxTokens: 65536,
+      maxTokens: 64000,
     },
     {
-      id: 'qwen3-max-2026-01-23',
-      name: 'qwen3-max-2026-01-23',
-      reasoning: false,
-      input: ['text'],
-      cost: {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-      },
-      contextWindow: 262144,
-      maxTokens: 65536,
-    },
-    {
-      id: 'qwen3-coder-next',
-      name: 'qwen3-coder-next',
-      reasoning: false,
-      input: ['text'],
-      cost: {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-      },
-      contextWindow: 262144,
-      maxTokens: 65536,
-    },
-    {
-      id: 'MiniMax-M2.5',
-      name: 'MiniMax-M2.5',
-      reasoning: false,
-      input: ['text'],
-      cost: {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-      },
-      contextWindow: 204800,
-      maxTokens: 131072,
-    },
-    {
-      id: 'glm-5',
-      name: 'glm-5',
-      reasoning: false,
-      input: ['text'],
-      cost: {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-      },
-      contextWindow: 202752,
-      maxTokens: 16384,
-    },
-    {
-      id: 'glm-4.7',
-      name: 'glm-4.7',
-      reasoning: false,
-      input: ['text'],
-      cost: {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-      },
-      contextWindow: 202752,
-      maxTokens: 16384,
-    },
-    {
-      id: 'kimi-k2.5',
-      name: 'kimi-k2.5',
-      reasoning: false,
+      id: 'claude-sonnet-4-5',
+      name: 'Claude Sonnet 4.5',
+      reasoning: true,
       input: ['text', 'image'],
-      cost: {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-      },
-      contextWindow: 262144,
-      maxTokens: 32768,
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: 1000000,
+      maxTokens: 64000,
+    },
+    {
+      id: 'claude-haiku-4-5',
+      name: 'Claude Haiku 4.5',
+      reasoning: true,
+      input: ['text', 'image'],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: 200000,
+      maxTokens: 16000,
     },
   ]
 
-  const models = platform === 'openai' ? openAIModels : anthropicModels
-  const primaryModel = platform === 'openai' ? 'gpt-5.4' : 'qwen3.5-plus'
+  // 国产 Anthropic 协议模型分组（config_template = domestic_anthropic）
+  // 数据源见模块级常量 DOMESTIC_ANTHROPIC_MODELS
+  const domesticAnthropicModels = DOMESTIC_ANTHROPIC_MODELS
+
+  let models: typeof openAIModels | typeof claudeNativeModels | typeof domesticAnthropicModels
+  let primaryModel: string
+  if (platform === 'openai') {
+    models = openAIModels
+    primaryModel = 'gpt-5.4'
+  } else if (isDomesticAnthropic) {
+    models = domesticAnthropicModels
+    primaryModel = 'qwen3.6-plus'
+  } else {
+    models = claudeNativeModels
+    primaryModel = 'claude-sonnet-4-6'
+  }
   const fallbackModels = platform === 'openai'
     ? ['gpt-5.2', 'gpt-5.3-codex']
-    : anthropicModels
-        .map((model) => model.id)
-        .filter((modelId) => modelId !== primaryModel)
+    : models.map((model) => model.id).filter((modelId) => modelId !== primaryModel)
 
   const content = JSON.stringify(
     {

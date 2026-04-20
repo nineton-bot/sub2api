@@ -662,6 +662,20 @@ func (_u *GroupUpdate) SetNillableMessagesDispatchModelConfig(v *domain.OpenAIMe
 	return _u
 }
 
+// SetConfigTemplate sets the "config_template" field.
+func (_u *GroupUpdate) SetConfigTemplate(v string) *GroupUpdate {
+	_u.mutation.SetConfigTemplate(v)
+	return _u
+}
+
+// SetNillableConfigTemplate sets the "config_template" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableConfigTemplate(v *string) *GroupUpdate {
+	if v != nil {
+		_u.SetConfigTemplate(*v)
+	}
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdate) AddAPIKeyIDs(ids ...int64) *GroupUpdate {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -957,6 +971,11 @@ func (_u *GroupUpdate) check() error {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ConfigTemplate(); ok {
+		if err := group.ConfigTemplateValidator(v); err != nil {
+			return &ValidationError{Name: "config_template", err: fmt.Errorf(`ent: validator failed for field "Group.config_template": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1159,6 +1178,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.MessagesDispatchModelConfig(); ok {
 		_spec.SetField(group.FieldMessagesDispatchModelConfig, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.ConfigTemplate(); ok {
+		_spec.SetField(group.FieldConfigTemplate, field.TypeString, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -2100,6 +2122,20 @@ func (_u *GroupUpdateOne) SetNillableMessagesDispatchModelConfig(v *domain.OpenA
 	return _u
 }
 
+// SetConfigTemplate sets the "config_template" field.
+func (_u *GroupUpdateOne) SetConfigTemplate(v string) *GroupUpdateOne {
+	_u.mutation.SetConfigTemplate(v)
+	return _u
+}
+
+// SetNillableConfigTemplate sets the "config_template" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableConfigTemplate(v *string) *GroupUpdateOne {
+	if v != nil {
+		_u.SetConfigTemplate(*v)
+	}
+	return _u
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_u *GroupUpdateOne) AddAPIKeyIDs(ids ...int64) *GroupUpdateOne {
 	_u.mutation.AddAPIKeyIDs(ids...)
@@ -2408,6 +2444,11 @@ func (_u *GroupUpdateOne) check() error {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ConfigTemplate(); ok {
+		if err := group.ConfigTemplateValidator(v); err != nil {
+			return &ValidationError{Name: "config_template", err: fmt.Errorf(`ent: validator failed for field "Group.config_template": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -2627,6 +2668,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.MessagesDispatchModelConfig(); ok {
 		_spec.SetField(group.FieldMessagesDispatchModelConfig, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.ConfigTemplate(); ok {
+		_spec.SetField(group.FieldConfigTemplate, field.TypeString, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{

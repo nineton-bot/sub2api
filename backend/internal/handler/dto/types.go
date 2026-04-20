@@ -103,6 +103,9 @@ type Group struct {
 	RequireOAuthOnly  bool `json:"require_oauth_only"`
 	RequirePrivacySet bool `json:"require_privacy_set"`
 
+	// 配置模板（仅 anthropic 平台生效，驱动前端 UseKeyModal 的配置文案）
+	ConfigTemplate string `json:"config_template,omitempty"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

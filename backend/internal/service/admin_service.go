@@ -161,6 +161,8 @@ type CreateGroupInput struct {
 	RequireOAuthOnly            bool
 	RequirePrivacySet           bool
 	MessagesDispatchModelConfig OpenAIMessagesDispatchModelConfig
+	// 配置模板（仅 anthropic 平台生效）
+	ConfigTemplate string
 	// 从指定分组复制账号（创建分组后在同一事务内绑定）
 	CopyAccountsFromGroupIDs []int64
 }
@@ -203,6 +205,8 @@ type UpdateGroupInput struct {
 	RequireOAuthOnly            *bool
 	RequirePrivacySet           *bool
 	MessagesDispatchModelConfig *OpenAIMessagesDispatchModelConfig
+	// 配置模板（仅 anthropic 平台生效，nil 表示不修改）
+	ConfigTemplate *string
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
 	CopyAccountsFromGroupIDs []int64
 }
@@ -924,6 +928,8 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		}
 	}
 
+	configTemplate := normalizeGroupConfigTemplate(platform, input.ConfigTemplate)
+
 	group := &Group{
 		Name:                            input.Name,
 		Description:                     input.Description,
@@ -953,6 +959,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		RequirePrivacySet:               input.RequirePrivacySet,
 		DefaultMappedModel:              input.DefaultMappedModel,
 		MessagesDispatchModelConfig:     normalizeOpenAIMessagesDispatchModelConfig(input.MessagesDispatchModelConfig),
+		ConfigTemplate:                  configTemplate,
 	}
 	sanitizeGroupMessagesDispatchFields(group)
 	if err := s.groupRepo.Create(ctx, group); err != nil {
@@ -989,6 +996,20 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	}
 
 	return group, nil
+}
+
+// normalizeGroupConfigTemplate 规范化 config_template：仅 anthropic 平台保留有效值，
+// 其他平台统一为空字符串。未知值回退为 claude_native。
+func normalizeGroupConfigTemplate(platform, template string) string {
+	if platform != PlatformAnthropic {
+		return ""
+	}
+	switch template {
+	case ConfigTemplateClaudeNative, ConfigTemplateDomesticAnthropic:
+		return template
+	default:
+		return ConfigTemplateClaudeNative
+	}
 }
 
 // normalizeLimit 将负数转换为 nil（表示无限制），0 保留（表示限额为零）
@@ -1275,6 +1296,11 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.MessagesDispatchModelConfig != nil {
 		group.MessagesDispatchModelConfig = normalizeOpenAIMessagesDispatchModelConfig(*input.MessagesDispatchModelConfig)
+	}
+	if input.ConfigTemplate != nil {
+		group.ConfigTemplate = normalizeGroupConfigTemplate(group.Platform, *input.ConfigTemplate)
+	} else {
+		group.ConfigTemplate = normalizeGroupConfigTemplate(group.Platform, group.ConfigTemplate)
 	}
 	sanitizeGroupMessagesDispatchFields(group)
 

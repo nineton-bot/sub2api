@@ -157,6 +157,12 @@ func (Group) Fields() []ent.Field {
 			Default(domain.OpenAIMessagesDispatchModelConfig{}).
 			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
 			Comment("OpenAI Messages 调度模型配置：按 Claude 系列/精确模型映射到目标 GPT 模型"),
+
+		// 配置模板（added by migration 106，仅 anthropic 平台生效）
+		field.String("config_template").
+			MaxLen(32).
+			Default(domain.ConfigTemplateClaudeNative).
+			Comment("使用密钥弹窗的配置模板：claude_native(Claude 原生) / domestic_anthropic(国产 Anthropic 协议)"),
 	}
 }
 

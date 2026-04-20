@@ -667,6 +667,11 @@ export default {
         anthropicHint:
           'This example uses the Anthropic Messages style and is intended for API keys bound to an Anthropic group. Replace anthropic-compatible-model with a real model supported by the group, for example qwen3-coder-next or qwen3.5-plus.',
       },
+      anthropic: {
+        availableModelsTitle: 'Configurable Models',
+        availableModelsHint:
+          'Replace ANTHROPIC_MODEL in settings.json (or the exported shell variable) with any of the model IDs below to switch models.',
+      },
     },
     customKeyLabel: 'Custom Key',
     customKeyPlaceholder: 'Enter your custom key (min 16 chars)',

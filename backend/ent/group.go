@@ -87,6 +87,8 @@ type Group struct {
 	DefaultMappedModel string `json:"default_mapped_model,omitempty"`
 	// OpenAI Messages 调度模型配置：按 Claude 系列/精确模型映射到目标 GPT 模型
 	MessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config,omitempty"`
+	// 使用密钥弹窗的配置模板：claude_native(Claude 原生) / domestic_anthropic(国产 Anthropic 协议)
+	ConfigTemplate string `json:"config_template,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -201,7 +203,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case group.FieldID, group.FieldDailyRequestLimit, group.FieldWeeklyRequestLimit, group.FieldMonthlyRequestLimit, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder:
 			values[i] = new(sql.NullInt64)
-		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldSubscriptionMeter, group.FieldDefaultMappedModel:
+		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldSubscriptionMeter, group.FieldDefaultMappedModel, group.FieldConfigTemplate:
 			values[i] = new(sql.NullString)
 		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
@@ -449,6 +451,12 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field messages_dispatch_model_config: %w", err)
 				}
 			}
+		case group.FieldConfigTemplate:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field config_template", values[i])
+			} else if value.Valid {
+				_m.ConfigTemplate = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -652,6 +660,9 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("messages_dispatch_model_config=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MessagesDispatchModelConfig))
+	builder.WriteString(", ")
+	builder.WriteString("config_template=")
+	builder.WriteString(_m.ConfigTemplate)
 	builder.WriteByte(')')
 	return builder.String()
 }

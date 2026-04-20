@@ -481,6 +481,20 @@ func (_c *GroupCreate) SetNillableMessagesDispatchModelConfig(v *domain.OpenAIMe
 	return _c
 }
 
+// SetConfigTemplate sets the "config_template" field.
+func (_c *GroupCreate) SetConfigTemplate(v string) *GroupCreate {
+	_c.mutation.SetConfigTemplate(v)
+	return _c
+}
+
+// SetNillableConfigTemplate sets the "config_template" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableConfigTemplate(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetConfigTemplate(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *GroupCreate) AddAPIKeyIDs(ids ...int64) *GroupCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -690,6 +704,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultMessagesDispatchModelConfig
 		_c.mutation.SetMessagesDispatchModelConfig(v)
 	}
+	if _, ok := _c.mutation.ConfigTemplate(); !ok {
+		v := group.DefaultConfigTemplate
+		_c.mutation.SetConfigTemplate(v)
+	}
 	return nil
 }
 
@@ -784,6 +802,14 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.MessagesDispatchModelConfig(); !ok {
 		return &ValidationError{Name: "messages_dispatch_model_config", err: errors.New(`ent: missing required field "Group.messages_dispatch_model_config"`)}
+	}
+	if _, ok := _c.mutation.ConfigTemplate(); !ok {
+		return &ValidationError{Name: "config_template", err: errors.New(`ent: missing required field "Group.config_template"`)}
+	}
+	if v, ok := _c.mutation.ConfigTemplate(); ok {
+		if err := group.ConfigTemplateValidator(v); err != nil {
+			return &ValidationError{Name: "config_template", err: fmt.Errorf(`ent: validator failed for field "Group.config_template": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -947,6 +973,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.MessagesDispatchModelConfig(); ok {
 		_spec.SetField(group.FieldMessagesDispatchModelConfig, field.TypeJSON, value)
 		_node.MessagesDispatchModelConfig = value
+	}
+	if value, ok := _c.mutation.ConfigTemplate(); ok {
+		_spec.SetField(group.FieldConfigTemplate, field.TypeString, value)
+		_node.ConfigTemplate = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1668,6 +1698,18 @@ func (u *GroupUpsert) UpdateMessagesDispatchModelConfig() *GroupUpsert {
 	return u
 }
 
+// SetConfigTemplate sets the "config_template" field.
+func (u *GroupUpsert) SetConfigTemplate(v string) *GroupUpsert {
+	u.Set(group.FieldConfigTemplate, v)
+	return u
+}
+
+// UpdateConfigTemplate sets the "config_template" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateConfigTemplate() *GroupUpsert {
+	u.SetExcluded(group.FieldConfigTemplate)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -2368,6 +2410,20 @@ func (u *GroupUpsertOne) SetMessagesDispatchModelConfig(v domain.OpenAIMessagesD
 func (u *GroupUpsertOne) UpdateMessagesDispatchModelConfig() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateMessagesDispatchModelConfig()
+	})
+}
+
+// SetConfigTemplate sets the "config_template" field.
+func (u *GroupUpsertOne) SetConfigTemplate(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetConfigTemplate(v)
+	})
+}
+
+// UpdateConfigTemplate sets the "config_template" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateConfigTemplate() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateConfigTemplate()
 	})
 }
 
@@ -3237,6 +3293,20 @@ func (u *GroupUpsertBulk) SetMessagesDispatchModelConfig(v domain.OpenAIMessages
 func (u *GroupUpsertBulk) UpdateMessagesDispatchModelConfig() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateMessagesDispatchModelConfig()
+	})
+}
+
+// SetConfigTemplate sets the "config_template" field.
+func (u *GroupUpsertBulk) SetConfigTemplate(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetConfigTemplate(v)
+	})
+}
+
+// UpdateConfigTemplate sets the "config_template" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateConfigTemplate() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateConfigTemplate()
 	})
 }
 

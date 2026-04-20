@@ -24,6 +24,12 @@ const (
 	PlatformAntigravity = "antigravity"
 )
 
+// Group config template constants (仅 anthropic 平台下用于区分 UseKeyModal 配置模板)
+const (
+	ConfigTemplateClaudeNative      = "claude_native"      // Claude 原生模型分组
+	ConfigTemplateDomesticAnthropic = "domestic_anthropic" // 国产模型（Anthropic 协议）分组
+)
+
 // Account type constants
 const (
 	AccountTypeOAuth      = "oauth"       // OAuth类型账号（full scope: profile + inference）

@@ -810,6 +810,21 @@
           </div>
         </div>
 
+        <!-- 配置模板（仅 anthropic 平台，驱动使用密钥弹窗的配置文案） -->
+        <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
+          <label class="input-label">配置模板</label>
+          <Select
+            v-model="createForm.config_template"
+            :options="[
+              { label: 'Claude 原生（claude-opus / sonnet / haiku）', value: 'claude_native' },
+              { label: '国产模型（Anthropic 协议：qwen / deepseek / glm / kimi / minimax）', value: 'domestic_anthropic' },
+            ]"
+          />
+          <p class="input-hint">
+            控制用户"使用密钥"弹窗生成的 openclaw providers 与 Claude Code settings.json 模板。两者均走 Anthropic 协议。
+          </p>
+        </div>
+
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -1971,6 +1986,21 @@
           </div>
         </div>
 
+        <!-- 配置模板（仅 anthropic 平台） -->
+        <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
+          <label class="input-label">配置模板</label>
+          <Select
+            v-model="editForm.config_template"
+            :options="[
+              { label: 'Claude 原生（claude-opus / sonnet / haiku）', value: 'claude_native' },
+              { label: '国产模型（Anthropic 协议：qwen / deepseek / glm / kimi / minimax）', value: 'domestic_anthropic' },
+            ]"
+          />
+          <p class="input-hint">
+            控制用户"使用密钥"弹窗生成的 openclaw providers 与 Claude Code settings.json 模板。两者均走 Anthropic 协议。
+          </p>
+        </div>
+
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -3032,6 +3062,8 @@ const createForm = reactive({
   supported_model_scopes: ["claude", "gemini_text", "gemini_image"] as string[],
   // MCP XML 协议注入开关（仅 antigravity 平台）
   mcp_xml_inject: true,
+  // 配置模板（仅 anthropic 平台）
+  config_template: "claude_native" as "claude_native" | "domestic_anthropic",
   // 从分组复制账号
   copy_accounts_from_group_ids: [] as number[],
 });
@@ -3316,6 +3348,8 @@ const editForm = reactive({
   supported_model_scopes: ["claude", "gemini_text", "gemini_image"] as string[],
   // MCP XML 协议注入开关（仅 antigravity 平台）
   mcp_xml_inject: true,
+  // 配置模板（仅 anthropic 平台）
+  config_template: "claude_native" as "claude_native" | "domestic_anthropic",
   // 从分组复制账号
   copy_accounts_from_group_ids: [] as number[],
 });
@@ -3523,6 +3557,7 @@ const closeCreateModal = () => {
   createForm.require_privacy_set = false;
   createForm.supported_model_scopes = ["claude", "gemini_text", "gemini_image"];
   createForm.mcp_xml_inject = true;
+  createForm.config_template = "claude_native";
   createForm.copy_accounts_from_group_ids = [];
   createModelRoutingRules.value = [];
 };
@@ -3667,6 +3702,9 @@ const handleEdit = async (group: AdminGroup) => {
     "gemini_image",
   ];
   editForm.mcp_xml_inject = group.mcp_xml_inject ?? true;
+  editForm.config_template = (group.config_template === "domestic_anthropic"
+    ? "domestic_anthropic"
+    : "claude_native");
   editForm.copy_accounts_from_group_ids = []; // 复制账号字段每次编辑时重置为空
   // 加载模型路由规则（异步加载账号名称）
   editModelRoutingRules.value = await convertApiFormatToRoutingRules(

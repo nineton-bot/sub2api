@@ -210,6 +210,11 @@ func DefaultMappedModel(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDefaultMappedModel, v))
 }
 
+// ConfigTemplate applies equality check predicate on the "config_template" field. It's identical to ConfigTemplateEQ.
+func ConfigTemplate(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldConfigTemplate, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCreatedAt, v))
@@ -1553,6 +1558,71 @@ func DefaultMappedModelEqualFold(v string) predicate.Group {
 // DefaultMappedModelContainsFold applies the ContainsFold predicate on the "default_mapped_model" field.
 func DefaultMappedModelContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldDefaultMappedModel, v))
+}
+
+// ConfigTemplateEQ applies the EQ predicate on the "config_template" field.
+func ConfigTemplateEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldConfigTemplate, v))
+}
+
+// ConfigTemplateNEQ applies the NEQ predicate on the "config_template" field.
+func ConfigTemplateNEQ(v string) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldConfigTemplate, v))
+}
+
+// ConfigTemplateIn applies the In predicate on the "config_template" field.
+func ConfigTemplateIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldConfigTemplate, vs...))
+}
+
+// ConfigTemplateNotIn applies the NotIn predicate on the "config_template" field.
+func ConfigTemplateNotIn(vs ...string) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldConfigTemplate, vs...))
+}
+
+// ConfigTemplateGT applies the GT predicate on the "config_template" field.
+func ConfigTemplateGT(v string) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldConfigTemplate, v))
+}
+
+// ConfigTemplateGTE applies the GTE predicate on the "config_template" field.
+func ConfigTemplateGTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldConfigTemplate, v))
+}
+
+// ConfigTemplateLT applies the LT predicate on the "config_template" field.
+func ConfigTemplateLT(v string) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldConfigTemplate, v))
+}
+
+// ConfigTemplateLTE applies the LTE predicate on the "config_template" field.
+func ConfigTemplateLTE(v string) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldConfigTemplate, v))
+}
+
+// ConfigTemplateContains applies the Contains predicate on the "config_template" field.
+func ConfigTemplateContains(v string) predicate.Group {
+	return predicate.Group(sql.FieldContains(FieldConfigTemplate, v))
+}
+
+// ConfigTemplateHasPrefix applies the HasPrefix predicate on the "config_template" field.
+func ConfigTemplateHasPrefix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasPrefix(FieldConfigTemplate, v))
+}
+
+// ConfigTemplateHasSuffix applies the HasSuffix predicate on the "config_template" field.
+func ConfigTemplateHasSuffix(v string) predicate.Group {
+	return predicate.Group(sql.FieldHasSuffix(FieldConfigTemplate, v))
+}
+
+// ConfigTemplateEqualFold applies the EqualFold predicate on the "config_template" field.
+func ConfigTemplateEqualFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldEqualFold(FieldConfigTemplate, v))
+}
+
+// ConfigTemplateContainsFold applies the ContainsFold predicate on the "config_template" field.
+func ConfigTemplateContainsFold(v string) predicate.Group {
+	return predicate.Group(sql.FieldContainsFold(FieldConfigTemplate, v))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.
