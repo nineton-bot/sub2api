@@ -5505,6 +5505,7 @@ export default {
     quickAmounts: '快捷金额',
     customAmount: '自定义金额',
     enterAmount: '输入金额',
+    amountHint: '💡 金额单位为美元额度（$），按 1 元人民币 = $1 额度充值，无汇率差',
     paymentMethod: '支付方式',
     fee: '手续费',
     actualPay: '实付金额',

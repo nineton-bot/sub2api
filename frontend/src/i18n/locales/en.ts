@@ -5317,6 +5317,7 @@ export default {
     quickAmounts: 'Quick Amounts',
     customAmount: 'Custom Amount',
     enterAmount: 'Enter amount',
+    amountHint: '💡 Amount is in USD credits ($). Charged as 1 CNY = $1 credit — no FX spread.',
     paymentMethod: 'Payment Method',
     fee: 'Fee',
     actualPay: 'Actual Payment',

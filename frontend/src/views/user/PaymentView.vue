@@ -58,6 +58,7 @@
                 :min="globalMinAmount"
                 :max="globalMaxAmount"
               />
+              <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ t('payment.amountHint') }}</p>
               <p v-if="amountError" class="mt-2 text-xs text-amber-600 dark:text-amber-300">{{ amountError }}</p>
             </div>
             <div v-if="enabledMethods.length >= 1" class="card p-6">

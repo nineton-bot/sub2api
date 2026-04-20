@@ -125,10 +125,23 @@ func (h *PaymentHandler) GetCheckoutInfo(c *gin.Context) {
 		})
 	}
 
+	// Merge per-instance min/max (limitsResp) with system-level payment config
+	// (cfg.MinAmount / cfg.MaxAmount). Both are enforced at order creation
+	// (see payment_order.go), so the user-facing range must reflect the
+	// tighter of the two. Treat 0 as "no limit" on each side.
+	effectiveMin := limitsResp.GlobalMin
+	if cfg.MinAmount > 0 && cfg.MinAmount > effectiveMin {
+		effectiveMin = cfg.MinAmount
+	}
+	effectiveMax := limitsResp.GlobalMax
+	if cfg.MaxAmount > 0 && (effectiveMax == 0 || cfg.MaxAmount < effectiveMax) {
+		effectiveMax = cfg.MaxAmount
+	}
+
 	response.Success(c, checkoutInfoResponse{
 		Methods:              limitsResp.Methods,
-		GlobalMin:            limitsResp.GlobalMin,
-		GlobalMax:            limitsResp.GlobalMax,
+		GlobalMin:            effectiveMin,
+		GlobalMax:            effectiveMax,
 		Plans:                planList,
 		BalanceDisabled:      cfg.BalanceDisabled,
 		HelpText:             cfg.HelpText,
