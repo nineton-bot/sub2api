@@ -360,8 +360,15 @@ export default {
     paymentDashboard: '支付概览',
     paymentConfig: '支付配置',
     paymentPlans: '订阅套餐',
-    referral: '我的推广',
-    adminReferral: '邀请返佣'
+    referral: '推荐有奖',
+    adminReferral: '邀请返佣',
+    customerService: '客服'
+  },
+
+  customerService: {
+    title: '加入客服Q群',
+    subtitle: '扫描二维码加入我们的交流群',
+    scanTip: '使用 QQ 扫描二维码即可加入',
   },
 
   // Auth
@@ -551,7 +558,16 @@ export default {
 
   // Groups (shared)
   groups: {
-    subscription: '订阅'
+    subscription: '订阅',
+    sectionSubscription: '订阅套餐',
+    sectionStandard: '按量计费',
+    billing: {
+      subscription: '订阅',
+      subscriptionDays: '订阅 · 剩 {days} 天',
+      subscriptionExpired: '订阅 · 已过期',
+      standardRate: '{rate}x 倍率',
+    },
+    pickerHint: '【订阅套餐】按月/周/天额度结算；【按量计费】按实际用量从余额扣费',
   },
 
   // API Keys
@@ -5588,7 +5604,8 @@ export default {
     amountTooHigh: '最高金额为 {max}',
     amountNoMethod: '该金额没有可用的支付方式',
     refundReason: '退款原因',
-    refundReasonPlaceholder: '请描述您的退款原因',
+    refundReasonPlaceholder: '非常抱歉给您造成的不便，希望您向我们提出改进建议和意见',
+    refundPolicyTip: '退款仅退剩余金额：充值订单退剩余余额；订阅订单按未使用天数比例退款（例如 30 天套餐 100 元，使用 15 天后仅可退 50 元）。',
     stripeLoadFailed: '支付组件加载失败，请刷新页面重试',
     stripeMissingParams: '缺少订单ID或支付密钥',
     stripeNotConfigured: 'Stripe 未配置',
@@ -5760,7 +5777,7 @@ export default {
 
   // Referral (邀请返佣) 用户端
   referral: {
-    title: '我的推广',
+    title: '推荐有奖',
     description: '分享链接，来自被邀请人的充值/订阅均可获得持续佣金',
     inviteLink: '我的邀请链接',
     inviteCode: '我的邀请码',

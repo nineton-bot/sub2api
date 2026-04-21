@@ -5,7 +5,7 @@
     width="wide"
     @close="emit('close')"
   >
-    <div class="space-y-4">
+    <div ref="contentRootRef" class="space-y-4">
       <!-- No Group Assigned Warning -->
       <div v-if="!platform" class="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
         <svg class="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -134,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, watch, type Component } from 'vue'
+import { ref, computed, h, watch, nextTick, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -194,6 +194,7 @@ const { copyToClipboard: clipboardCopy } = useClipboard()
 const copiedIndex = ref<number | null>(null)
 const activeTab = ref<string>('unix')
 const activeClientTab = ref<string>('claude')
+const contentRootRef = ref<HTMLElement | null>(null)
 
 // Reset tabs when platform changes
 const defaultClientTab = computed(() => {
@@ -220,6 +221,49 @@ watch(() => props.platform, () => {
 watch(activeClientTab, () => {
   activeTab.value = 'unix'
 })
+
+// For domestic_anthropic + Claude Code tab the third code block (model list) lives
+// below the fold. Nudge the modal-body scroll down briefly so users see there's
+// more content, then snap back to the top.
+function findScrollParent(el: HTMLElement | null): HTMLElement | null {
+  let node: HTMLElement | null = el?.parentElement ?? null
+  while (node) {
+    const style = window.getComputedStyle(node)
+    if (/auto|scroll/.test(style.overflowY) && node.scrollHeight > node.clientHeight) {
+      return node
+    }
+    node = node.parentElement
+  }
+  return null
+}
+
+function runScrollHint() {
+  const root = contentRootRef.value
+  if (!root) return
+  const scroller = findScrollParent(root)
+  if (!scroller) return
+  const maxScroll = scroller.scrollHeight - scroller.clientHeight
+  if (maxScroll <= 8) return
+  const target = Math.min(160, maxScroll)
+  scroller.scrollTo({ top: target, behavior: 'smooth' })
+  window.setTimeout(() => {
+    scroller.scrollTo({ top: 0, behavior: 'smooth' })
+  }, 900)
+}
+
+watch(
+  () => props.show,
+  async (isOpen) => {
+    if (!isOpen) return
+    const shouldHint =
+      props.platform === 'anthropic' &&
+      props.configTemplate === 'domestic_anthropic' &&
+      activeClientTab.value === 'claude'
+    if (!shouldHint) return
+    await nextTick()
+    window.setTimeout(runScrollHint, 350)
+  },
+)
 
 // Icon components
 const AppleIcon = {

@@ -26,6 +26,16 @@
         <!-- Announcement Bell -->
         <AnnouncementBell v-if="user" />
 
+        <!-- Customer Service -->
+        <button
+          type="button"
+          @click="csDialogOpen = true"
+          class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+        >
+          <Icon name="chat" size="sm" />
+          <span class="hidden sm:inline">{{ t('nav.customerService') }}</span>
+        </button>
+
         <!-- Docs Link -->
         <a
           v-if="docUrl"
@@ -206,6 +216,29 @@
       </div>
     </div>
   </header>
+
+  <!-- Customer Service QR Dialog -->
+  <BaseDialog
+    :show="csDialogOpen"
+    :title="t('customerService.title')"
+    width="narrow"
+    @close="csDialogOpen = false"
+  >
+    <div class="flex flex-col items-center space-y-3 py-1">
+      <p class="text-sm text-gray-600 dark:text-gray-300">
+        {{ t('customerService.subtitle') }}
+      </p>
+      <img
+        src="/customer-service-qr.png"
+        :alt="t('customerService.title')"
+        class="h-56 w-56 rounded-xl border border-gray-200 object-contain dark:border-dark-700"
+      />
+      <p class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+        <Icon name="infoCircle" size="sm" />
+        {{ t('customerService.scanTip') }}
+      </p>
+    </div>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
@@ -217,6 +250,7 @@ import { useAdminSettingsStore } from '@/stores/adminSettings'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import SubscriptionProgressMini from '@/components/common/SubscriptionProgressMini.vue'
 import AnnouncementBell from '@/components/common/AnnouncementBell.vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 const router = useRouter()
@@ -230,6 +264,7 @@ const onboardingStore = useOnboardingStore()
 const user = computed(() => authStore.user)
 const dropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
+const csDialogOpen = ref(false)
 const contactInfo = computed(() => appStore.contactInfo)
 const docUrl = computed(() => appStore.docUrl)
 

@@ -22,7 +22,7 @@
               <Icon name="x" size="sm" />
               <span>{{ t('payment.orders.cancel') }}</span>
             </button>
-            <button v-if="row.status === 'COMPLETED'" @click="openRefundDialog(row)" class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/20">
+            <button v-if="row.status === 'COMPLETED'" @click="openRefundDialog(row)" class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700">
               <Icon name="dollar" size="sm" />
               <span>{{ t('payment.orders.requestRefund') }}</span>
             </button>
@@ -68,6 +68,10 @@
         <div>
           <label class="input-label">{{ t('payment.refundReason') }}</label>
           <textarea v-model="refundReason" rows="3" class="input mt-1 w-full" :placeholder="t('payment.refundReasonPlaceholder')" />
+        </div>
+        <div class="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+          <Icon name="infoCircle" size="sm" class="mt-0.5 flex-shrink-0" />
+          <p class="leading-relaxed">{{ t('payment.refundPolicyTip') }}</p>
         </div>
       </div>
       <template #footer>

@@ -426,17 +426,49 @@
               <span v-else class="text-gray-400">{{ t('keys.selectGroup') }}</span>
             </template>
             <template #option="{ option, selected }">
+              <!-- Section header (neutral grayscale — leaves color to platform badges) -->
+              <div
+                v-if="isHeaderOption(option)"
+                class="flex w-full items-center gap-2"
+              >
+                <span class="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:bg-dark-700 dark:text-gray-300">
+                  <svg
+                    v-if="headerKey(option) === 'sub'"
+                    class="h-3 w-3 text-gray-500 dark:text-gray-400" viewBox="0 0 24 24" fill="none"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M12 14l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg
+                    v-else
+                    class="h-3 w-3 text-gray-500 dark:text-gray-400" viewBox="0 0 24 24" fill="none"
+                    aria-hidden="true"
+                  >
+                    <path d="M12 6v12M16 9.5c0-1.38-1.79-2.5-4-2.5s-4 1.12-4 2.5S9.79 12 12 12s4 1.12 4 2.5-1.79 2.5-4 2.5-4-1.12-4-2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  {{ headerLabel(option) }}
+                </span>
+                <span class="h-px flex-1 bg-gray-200 dark:bg-dark-600"></span>
+              </div>
+              <!-- Product row -->
               <GroupOptionItem
+                v-else
                 :name="(option as unknown as GroupOption).label"
                 :platform="(option as unknown as GroupOption).platform"
                 :subscription-type="(option as unknown as GroupOption).subscriptionType"
                 :rate-multiplier="(option as unknown as GroupOption).rate"
                 :user-rate-multiplier="(option as unknown as GroupOption).userRate"
                 :description="(option as unknown as GroupOption).description"
+                :days-remaining="(option as unknown as GroupOption).daysRemaining"
                 :selected="selected"
               />
             </template>
           </Select>
+          <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+            {{ t('groups.pickerHint') }}
+          </p>
         </div>
 
         <!-- Custom Key Section (only for create) -->
@@ -1008,33 +1040,56 @@
         </div>
         <!-- Group list -->
         <div class="max-h-80 overflow-y-auto p-1.5">
-          <button
-            v-for="option in filteredGroupOptions"
-            :key="option.value ?? 'null'"
-            @click="changeGroup(selectedKeyForGroup!, option.value)"
-            :class="[
-              'flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors',
-              'border-b border-gray-100 last:border-0 dark:border-dark-700',
-              selectedKeyForGroup?.group_id === option.value ||
-              (!selectedKeyForGroup?.group_id && option.value === null)
-                ? 'bg-primary-50 dark:bg-primary-900/20'
-                : 'hover:bg-gray-100 dark:hover:bg-dark-700'
-            ]"
-            :title="option.description || undefined"
-          >
-            <GroupOptionItem
-              :name="option.label"
-              :platform="option.platform"
-              :subscription-type="option.subscriptionType"
-              :rate-multiplier="option.rate"
-              :user-rate-multiplier="option.userRate"
-              :description="option.description"
-              :selected="
+          <template v-for="(section, sIdx) in teleportSections" :key="section.key">
+            <!-- Section header (neutral grayscale, hidden during search) -->
+            <div
+              v-if="!groupSearchQuery.trim() && section.showHeader"
+              :class="[
+                'flex items-center gap-2 px-2 py-1.5',
+                sIdx > 0 && 'mt-1.5 border-t border-gray-100 dark:border-dark-700 pt-2'
+              ]"
+            >
+              <span class="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:bg-dark-700 dark:text-gray-300">
+                <svg v-if="section.key === 'sub'" class="h-3 w-3 text-gray-500 dark:text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M12 14l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg v-else class="h-3 w-3 text-gray-500 dark:text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 6v12M16 9.5c0-1.38-1.79-2.5-4-2.5s-4 1.12-4 2.5S9.79 12 12 12s4 1.12 4 2.5-1.79 2.5-4 2.5-4-1.12-4-2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                {{ section.label }}
+              </span>
+              <span class="h-px flex-1 bg-gray-200 dark:bg-dark-600"></span>
+            </div>
+            <button
+              v-for="option in section.items"
+              :key="option.value ?? 'null'"
+              @click="changeGroup(selectedKeyForGroup!, option.value)"
+              :class="[
+                'flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors',
                 selectedKeyForGroup?.group_id === option.value ||
                 (!selectedKeyForGroup?.group_id && option.value === null)
-              "
-            />
-          </button>
+                  ? 'bg-primary-50 dark:bg-primary-900/20'
+                  : 'hover:bg-gray-100 dark:hover:bg-dark-700'
+              ]"
+              :title="option.description || undefined"
+            >
+              <GroupOptionItem
+                :name="option.label"
+                :platform="option.platform"
+                :subscription-type="option.subscriptionType"
+                :rate-multiplier="option.rate"
+                :user-rate-multiplier="option.userRate"
+                :description="option.description"
+                :days-remaining="option.daysRemaining"
+                :selected="
+                  selectedKeyForGroup?.group_id === option.value ||
+                  (!selectedKeyForGroup?.group_id && option.value === null)
+                "
+              />
+            </button>
+          </template>
           <!-- Empty state when search has no results -->
           <div v-if="filteredGroupOptions.length === 0" class="py-4 text-center text-sm text-gray-400 dark:text-gray-500">
             {{ t('keys.noGroupFound') }}
@@ -1050,6 +1105,7 @@
 	import { useI18n } from 'vue-i18n'
 	import { useAppStore } from '@/stores/app'
 	import { useOnboardingStore } from '@/stores/onboarding'
+	import { useSubscriptionStore } from '@/stores/subscriptions'
 	import { useClipboard } from '@/composables/useClipboard'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 
@@ -1089,10 +1145,21 @@ interface GroupOption {
   userRate: number | null
   subscriptionType: SubscriptionType
   platform: GroupPlatform
+  daysRemaining?: number | null
+  [key: string]: unknown
+}
+
+interface GroupHeaderOption {
+  kind: 'group'
+  value: string
+  label: string
+  disabled: true
+  [key: string]: unknown
 }
 
 const appStore = useAppStore()
 const onboardingStore = useOnboardingStore()
+const subscriptionStore = useSubscriptionStore()
 const { copyToClipboard: clipboardCopy } = useClipboard()
 
 const columns = computed<Column[]>(() => [
@@ -1237,28 +1304,115 @@ const onStatusFilterChange = (value: string | number | boolean | null) => {
   onFilterChange()
 }
 
-// Convert groups to Select options format with rate multiplier and subscription type
-const groupOptions = computed(() =>
-  groups.value.map((group) => ({
-    value: group.id,
-    label: group.name,
-    description: group.description,
-    rate: group.rate_multiplier,
-    userRate: userGroupRates.value[group.id] ?? null,
-    subscriptionType: group.subscription_type,
-    platform: group.platform
-  }))
-)
+// Map group_id -> days remaining (null = no expiry / unknown)
+const subscriptionDaysMap = computed<Record<number, number | null>>(() => {
+  const map: Record<number, number | null> = {}
+  const nowMs = now.value.getTime()
+  for (const sub of subscriptionStore.activeSubscriptions) {
+    if (!sub.expires_at) {
+      map[sub.group_id] = null
+      continue
+    }
+    const diffMs = new Date(sub.expires_at).getTime() - nowMs
+    map[sub.group_id] = Math.ceil(diffMs / 86400000)
+  }
+  return map
+})
 
-// Group dropdown search
+// Raw group -> GroupOption
+const mapGroup = (group: Group): GroupOption => ({
+  value: group.id,
+  label: group.name,
+  description: group.description,
+  rate: group.rate_multiplier,
+  userRate: userGroupRates.value[group.id] ?? null,
+  subscriptionType: group.subscription_type,
+  platform: group.platform,
+  daysRemaining: group.subscription_type === 'subscription'
+    ? (subscriptionDaysMap.value[group.id] ?? null)
+    : null
+})
+
+// Convert groups to Select options with section headers grouping by billing type
+const groupOptions = computed<Array<GroupOption | GroupHeaderOption>>(() => {
+  const subs: GroupOption[] = []
+  const stds: GroupOption[] = []
+  for (const g of groups.value) {
+    const opt = mapGroup(g)
+    if (g.subscription_type === 'subscription') subs.push(opt)
+    else stds.push(opt)
+  }
+  const out: Array<GroupOption | GroupHeaderOption> = []
+  const hasBoth = subs.length > 0 && stds.length > 0
+  if (subs.length > 0) {
+    if (hasBoth) {
+      out.push({ kind: 'group', value: '__hdr_sub__', label: t('groups.sectionSubscription'), disabled: true })
+    }
+    out.push(...subs)
+  }
+  if (stds.length > 0) {
+    if (hasBoth) {
+      out.push({ kind: 'group', value: '__hdr_std__', label: t('groups.sectionStandard'), disabled: true })
+    }
+    out.push(...stds)
+  }
+  return out
+})
+
+// Helpers for #option slot rendering (Vue template doesn't parse complex `as` casts)
+const isHeaderOption = (o: unknown): boolean =>
+  !!o && typeof o === 'object' && (o as { kind?: string }).kind === 'group'
+const headerKey = (o: unknown): 'sub' | 'std' =>
+  (o as { value?: string })?.value === '__hdr_sub__' ? 'sub' : 'std'
+const headerLabel = (o: unknown): string => (o as { label?: string })?.label ?? ''
+
+// Flat group options (no section headers) — used by the "change group" teleport dropdown
+const flatGroupOptions = computed<GroupOption[]>(() => {
+  const subs: GroupOption[] = []
+  const stds: GroupOption[] = []
+  for (const g of groups.value) {
+    const opt = mapGroup(g)
+    if (g.subscription_type === 'subscription') subs.push(opt)
+    else stds.push(opt)
+  }
+  return [...subs, ...stds]
+})
+
+// Group dropdown search (teleport dropdown — flat list)
 const groupSearchQuery = ref('')
 const filteredGroupOptions = computed(() => {
   const query = groupSearchQuery.value.trim().toLowerCase()
-  if (!query) return groupOptions.value
-  return groupOptions.value.filter((opt) => {
+  if (!query) return flatGroupOptions.value
+  return flatGroupOptions.value.filter((opt) => {
     return opt.label.toLowerCase().includes(query) ||
       (opt.description && opt.description.toLowerCase().includes(query))
   })
+})
+
+// Grouped sections for teleport "change group" dropdown
+interface TeleportSection {
+  key: 'sub' | 'std'
+  label: string
+  showHeader: boolean
+  items: GroupOption[]
+}
+
+const teleportSections = computed<TeleportSection[]>(() => {
+  const subs: GroupOption[] = []
+  const stds: GroupOption[] = []
+  for (const opt of filteredGroupOptions.value) {
+    if (opt.subscriptionType === 'subscription') subs.push(opt)
+    else stds.push(opt)
+  }
+  const both = subs.length > 0 && stds.length > 0
+  const sections: TeleportSection[] = []
+  if (subs.length > 0) {
+    sections.push({ key: 'sub', label: t('groups.sectionSubscription'), showHeader: both, items: subs })
+  }
+  if (stds.length > 0) {
+    sections.push({ key: 'std', label: t('groups.sectionStandard'), showHeader: both, items: stds })
+  }
+  return sections
 })
 
 const maskKey = (key: string): string => {
@@ -1810,6 +1964,7 @@ onMounted(() => {
   loadGroups()
   loadUserGroupRates()
   loadPublicSettings()
+  subscriptionStore.fetchActiveSubscriptions().catch(() => { /* non-critical */ })
   document.addEventListener('click', closeGroupSelector)
   resetTimer = setInterval(() => { now.value = new Date() }, 60000)
 })

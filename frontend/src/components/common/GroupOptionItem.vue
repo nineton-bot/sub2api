@@ -22,16 +22,23 @@
       </span>
     </div>
 
-    <!-- Right: rate pill + checkmark (vertically centered to first row) -->
+    <!-- Right: billing-type pill + checkmark (vertically centered to first row) -->
     <div class="flex shrink-0 items-center gap-2 pt-0.5">
-      <!-- Rate pill (platform color) -->
-      <span v-if="rateMultiplier !== undefined" :class="['inline-flex items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold', ratePillClass]">
+      <!-- Subscription: 订阅·剩 N 天 / 订阅·已过期 / 订阅套餐 -->
+      <span
+        v-if="isSubscription"
+        :class="['inline-flex items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold', subscriptionPillClass]"
+      >
+        {{ subscriptionPillText }}
+      </span>
+      <!-- Standard: Nx 倍率（保持原逻辑） -->
+      <span v-else-if="rateMultiplier !== undefined" :class="['inline-flex items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold', ratePillClass]">
         <template v-if="hasCustomRate">
           <span class="mr-1 line-through opacity-50">{{ rateMultiplier }}x</span>
           <span class="font-bold">{{ userRateMultiplier }}x</span>
         </template>
         <template v-else>
-          {{ rateMultiplier }}x 倍率
+          {{ t('groups.billing.standardRate', { rate: rateMultiplier }) }}
         </template>
       </span>
       <!-- Checkmark -->
@@ -51,6 +58,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import GroupBadge from './GroupBadge.vue'
 import type { SubscriptionType, GroupPlatform } from '@/types'
 
@@ -63,13 +71,39 @@ interface Props {
   description?: string | null
   selected?: boolean
   showCheckmark?: boolean
+  daysRemaining?: number | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   subscriptionType: 'standard',
   selected: false,
   showCheckmark: true,
-  userRateMultiplier: null
+  userRateMultiplier: null,
+  daysRemaining: null,
+})
+
+const { t } = useI18n()
+
+const isSubscription = computed(() => props.subscriptionType === 'subscription')
+
+const subscriptionPillText = computed(() => {
+  const d = props.daysRemaining
+  if (d === null || d === undefined) return t('groups.billing.subscription')
+  if (d <= 0) return t('groups.billing.subscriptionExpired')
+  return t('groups.billing.subscriptionDays', { days: d })
+})
+
+const subscriptionPillClass = computed(() => {
+  const d = props.daysRemaining
+  if (d !== null && d !== undefined) {
+    if (d <= 0 || d <= 3) {
+      return 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+    }
+    if (d <= 7) {
+      return 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
+    }
+  }
+  return 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400'
 })
 
 // Whether user has a custom rate different from default

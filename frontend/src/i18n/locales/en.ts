@@ -360,8 +360,15 @@ export default {
     paymentDashboard: 'Payment Dashboard',
     paymentConfig: 'Payment Config',
     paymentPlans: 'Plans',
-    referral: 'My Referral',
-    adminReferral: 'Referral'
+    referral: 'Referral Rewards',
+    adminReferral: 'Referral',
+    customerService: 'Support'
+  },
+
+  customerService: {
+    title: 'Join Our QQ Group',
+    subtitle: 'Scan the QR code to join our community chat',
+    scanTip: 'Scan with QQ to join the group',
   },
 
   // Auth
@@ -552,7 +559,16 @@ export default {
 
   // Groups (shared)
   groups: {
-    subscription: 'Sub'
+    subscription: 'Sub',
+    sectionSubscription: 'Subscription Plans',
+    sectionStandard: 'Pay As You Go',
+    billing: {
+      subscription: 'Subscription',
+      subscriptionDays: 'Sub · {days}d left',
+      subscriptionExpired: 'Sub · Expired',
+      standardRate: '{rate}x rate',
+    },
+    pickerHint: 'Subscription groups use plan quotas; pay-as-you-go groups charge your balance by usage.',
   },
 
   // API Keys
@@ -5400,7 +5416,8 @@ export default {
     amountTooHigh: 'Maximum amount is {max}',
     amountNoMethod: 'No payment method available for this amount',
     refundReason: 'Refund Reason',
-    refundReasonPlaceholder: 'Please describe your refund reason',
+    refundReasonPlaceholder: 'We apologize for any inconvenience. Please share your suggestions so we can improve.',
+    refundPolicyTip: 'Refunds cover remaining value only: top-up orders refund remaining balance; subscriptions refund a prorated amount based on unused days (e.g. a 30-day $100 plan with 15 days used refunds $50).',
     stripeLoadFailed: 'Failed to load payment component. Please refresh and try again.',
     stripeMissingParams: 'Missing order ID or client secret',
     stripeNotConfigured: 'Stripe is not configured',
@@ -5572,7 +5589,7 @@ export default {
 
   // Referral (邀请返佣) user page
   referral: {
-    title: 'My Referral',
+    title: 'Referral Rewards',
     description: 'Share and earn lifetime commission from your invitees',
     inviteLink: 'Your Invite Link',
     inviteCode: 'Your Invite Code',

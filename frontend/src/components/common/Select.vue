@@ -509,13 +509,36 @@ onUnmounted(() => {
 
 .select-dropdown-portal .select-option-group {
   @apply cursor-default select-none;
-  @apply bg-gray-50 dark:bg-dark-900;
+  @apply !px-3 !py-1.5;
+  @apply bg-transparent dark:bg-transparent;
   @apply text-[11px] font-bold uppercase tracking-wider;
   @apply text-gray-500 dark:text-gray-400;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: rgb(255 255 255 / 0.92);
+  backdrop-filter: blur(4px);
+}
+
+.dark .select-dropdown-portal .select-option-group {
+  background-color: rgb(30 41 59 / 0.92);
+}
+
+.select-dropdown-portal .select-option-group + .select-option {
+  @apply !rounded-none;
+}
+
+.select-dropdown-portal .select-option-group:not(:first-child) {
+  @apply mt-2 border-t border-gray-200 dark:border-dark-700;
+  padding-top: 10px !important;
 }
 
 .select-dropdown-portal .select-option-group:hover {
-  @apply bg-gray-50 dark:bg-dark-900;
+  background-color: rgb(255 255 255 / 0.92);
+}
+
+.dark .select-dropdown-portal .select-option-group:hover {
+  background-color: rgb(30 41 59 / 0.92);
 }
 
 .select-dropdown-portal .select-option-label {
