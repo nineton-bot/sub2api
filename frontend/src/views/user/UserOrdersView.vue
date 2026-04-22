@@ -71,7 +71,7 @@
         </div>
         <div class="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
           <Icon name="infoCircle" size="sm" class="mt-0.5 flex-shrink-0" />
-          <p class="leading-relaxed">{{ t('payment.refundPolicyTip') }}</p>
+          <p class="whitespace-pre-line leading-relaxed">{{ t('payment.refundPolicyTip') }}</p>
         </div>
       </div>
       <template #footer>

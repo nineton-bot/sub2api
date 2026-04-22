@@ -5417,7 +5417,7 @@ export default {
     amountNoMethod: 'No payment method available for this amount',
     refundReason: 'Refund Reason',
     refundReasonPlaceholder: 'We apologize for any inconvenience. Please share your suggestions so we can improve.',
-    refundPolicyTip: 'Refunds cover remaining value only: top-up orders refund remaining balance; subscriptions refund a prorated amount based on unused days (e.g. a 30-day $100 plan with 15 days used refunds $50).',
+    refundPolicyTip: 'Refunds cover unused portions only:\n• Top-up → refund current remaining balance\n• Subscription → refund full unused cycles (daily-cap plans by day, weekly-cap plans by week); the current cycle is non-refundable',
     stripeLoadFailed: 'Failed to load payment component. Please refresh and try again.',
     stripeMissingParams: 'Missing order ID or client secret',
     stripeNotConfigured: 'Stripe is not configured',

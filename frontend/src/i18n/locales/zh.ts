@@ -5605,7 +5605,7 @@ export default {
     amountNoMethod: '该金额没有可用的支付方式',
     refundReason: '退款原因',
     refundReasonPlaceholder: '非常抱歉给您造成的不便，希望您向我们提出改进建议和意见',
-    refundPolicyTip: '退款仅退剩余金额：充值订单退剩余余额；订阅订单按未使用天数比例退款（例如 30 天套餐 100 元，使用 15 天后仅可退 50 元）。',
+    refundPolicyTip: '退款仅退未消耗部分：\n• 充值订单 → 退实时剩余余额\n• 订阅套餐 → 按剩余的完整周期退款（日限额按天、周限额按周），当前周期不退',
     stripeLoadFailed: '支付组件加载失败，请刷新页面重试',
     stripeMissingParams: '缺少订单ID或支付密钥',
     stripeNotConfigured: 'Stripe 未配置',

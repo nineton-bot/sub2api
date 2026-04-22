@@ -217,11 +217,6 @@ watch(() => props.platform, () => {
   activeClientTab.value = defaultClientTab.value
 }, { immediate: true })
 
-// Reset shell tab when client changes
-watch(activeClientTab, () => {
-  activeTab.value = 'unix'
-})
-
 // For domestic_anthropic + Claude Code tab the third code block (model list) lives
 // below the fold. Nudge the modal-body scroll down briefly so users see there's
 // more content, then snap back to the top.
@@ -251,19 +246,21 @@ function runScrollHint() {
   }, 900)
 }
 
-watch(
-  () => props.show,
-  async (isOpen) => {
-    if (!isOpen) return
-    const shouldHint =
-      props.platform === 'anthropic' &&
-      props.configTemplate === 'domestic_anthropic' &&
-      activeClientTab.value === 'claude'
-    if (!shouldHint) return
-    await nextTick()
-    window.setTimeout(runScrollHint, 350)
-  },
-)
+// Reset shell tab when client changes, and fire the scroll hint only when the
+// user switches INTO the Claude Code tab (the Claude tab layout reads as if
+// the content ends above the fold, so we nudge-and-restore to reveal the
+// third code block listing domestic models).
+watch(activeClientTab, async (tab) => {
+  activeTab.value = 'unix'
+  if (!props.show) return
+  const shouldHint =
+    props.platform === 'anthropic' &&
+    props.configTemplate === 'domestic_anthropic' &&
+    tab === 'claude'
+  if (!shouldHint) return
+  await nextTick()
+  window.setTimeout(runScrollHint, 350)
+})
 
 // Icon components
 const AppleIcon = {
