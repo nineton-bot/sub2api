@@ -7502,7 +7502,8 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 		if p.IsRequestQuotaSubscription {
 			cmd.SubscriptionRequestCount = 1
 		} else if p.Cost.TotalCost > 0 {
-			cmd.SubscriptionCost = p.Cost.TotalCost
+			// 订阅额度按分组倍率累加,ActualCost = TotalCost × apiKey.Group.RateMultiplier
+			cmd.SubscriptionCost = p.Cost.ActualCost
 		}
 	} else if p.Cost.ActualCost > 0 {
 		cmd.BalanceCost = p.Cost.ActualCost
