@@ -149,19 +149,6 @@ type SystemSettings struct {
 	BackendModeEnabled bool
 
 	// Gateway forwarding behavior
-<<<<<<< HEAD
-	EnableFingerprintUnification bool // 是否统一 OAuth 账号的指纹头（默认 true）
-	EnableMetadataPassthrough    bool // 是否透传客户端原始 metadata（默认 false）
-	EnableCCHSigning             bool // 是否对 billing header cch 进行签名（默认 false）
-
-	// 邀请返佣（默认关闭）
-	ReferralEnabled            bool    // 主开关
-	ReferralCommissionRate     float64 // 佣金比例 0~1
-	ReferralRefereeBonusAmount float64 // 被邀请人首次付费后到账赠金金额
-	// V2：推广页默认可见性（仅在 ReferralEnabled 为 true 时才生效）。
-	// true = 全员默认可见；false = 仅 admin 在单用户 override 中显式启用才可见。
-	ReferralDefaultForAllUsers bool
-=======
 	EnableFingerprintUnification       bool // 是否统一 OAuth 账号的指纹头（默认 true）
 	EnableMetadataPassthrough          bool // 是否透传客户端原始 metadata（默认 false）
 	EnableCCHSigning                   bool // 是否对 billing header cch 进行签名（默认 false）
@@ -187,7 +174,14 @@ type SystemSettings struct {
 	// Account quota notification
 	AccountQuotaNotifyEnabled bool
 	AccountQuotaNotifyEmails  []NotifyEmailEntry
->>>>>>> upstream/main
+
+	// 邀请返佣（默认关闭）
+	ReferralEnabled            bool    // 主开关
+	ReferralCommissionRate     float64 // 佣金比例 0~1
+	ReferralRefereeBonusAmount float64 // 被邀请人首次付费后到账赠金金额
+	// V2：推广页默认可见性（仅在 ReferralEnabled 为 true 时才生效）。
+	// true = 全员默认可见；false = 仅 admin 在单用户 override 中显式启用才可见。
+	ReferralDefaultForAllUsers bool
 }
 
 type DefaultSubscriptionSetting struct {
@@ -222,22 +216,6 @@ type PublicSettings struct {
 	CustomMenuItems             string // JSON array of custom menu items
 	CustomEndpoints             string // JSON array of custom endpoints
 
-<<<<<<< HEAD
-	LinuxDoOAuthEnabled   bool
-	BackendModeEnabled    bool
-	OIDCOAuthEnabled      bool
-	OIDCOAuthProviderName string
-	PaymentEnabled        bool
-
-	// 邀请返佣（公开字段：仅用于注册页是否显示推荐码输入及赠金金额）
-	ReferralEnabled            bool
-	ReferralRefereeBonusAmount float64
-	// ReferralDefaultForAllUsers V2：推广页默认可见性。管理员面板上的单用户 override
-	// modal 需要读此字段作为默认勾选状态。
-	ReferralDefaultForAllUsers bool
-
-	Version string
-=======
 	LinuxDoOAuthEnabled      bool
 	WeChatOAuthEnabled       bool
 	WeChatOAuthOpenEnabled   bool
@@ -261,8 +239,12 @@ type PublicSettings struct {
 	// Available Channels feature (user-facing aggregate view)
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
 
-	// Affiliate (邀请返利) feature toggle
-	AffiliateEnabled bool `json:"affiliate_enabled"`
+	// 邀请返佣（公开字段：仅用于注册页是否显示推荐码输入及赠金金额）
+	ReferralEnabled            bool
+	ReferralRefereeBonusAmount float64
+	// ReferralDefaultForAllUsers V2：推广页默认可见性。管理员面板上的单用户 override
+	// modal 需要读此字段作为默认勾选状态。
+	ReferralDefaultForAllUsers bool
 }
 
 type WeChatConnectOAuthConfig struct {
@@ -323,7 +305,6 @@ func (cfg WeChatConnectOAuthConfig) AppSecretForMode(mode string) string {
 		return strings.TrimSpace(firstNonEmpty(cfg.MobileAppSecret, cfg.LegacyAppSecret))
 	}
 	return strings.TrimSpace(firstNonEmpty(cfg.OpenAppSecret, cfg.LegacyAppSecret))
->>>>>>> upstream/main
 }
 
 // StreamTimeoutSettings 流超时处理配置（仅控制超时后的处理方式，超时判定由网关配置控制）

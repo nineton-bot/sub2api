@@ -107,112 +107,6 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		paymentCfg = &service.PaymentConfig{}
 	}
 
-<<<<<<< HEAD
-	response.Success(c, dto.SystemSettings{
-		RegistrationEnabled:                  settings.RegistrationEnabled,
-		EmailVerifyEnabled:                   settings.EmailVerifyEnabled,
-		RegistrationEmailSuffixWhitelist:     settings.RegistrationEmailSuffixWhitelist,
-		PromoCodeEnabled:                     settings.PromoCodeEnabled,
-		PasswordResetEnabled:                 settings.PasswordResetEnabled,
-		FrontendURL:                          settings.FrontendURL,
-		InvitationCodeEnabled:                settings.InvitationCodeEnabled,
-		TotpEnabled:                          settings.TotpEnabled,
-		TotpEncryptionKeyConfigured:          h.settingService.IsTotpEncryptionKeyConfigured(),
-		SMTPHost:                             settings.SMTPHost,
-		SMTPPort:                             settings.SMTPPort,
-		SMTPUsername:                         settings.SMTPUsername,
-		SMTPPasswordConfigured:               settings.SMTPPasswordConfigured,
-		SMTPFrom:                             settings.SMTPFrom,
-		SMTPFromName:                         settings.SMTPFromName,
-		SMTPUseTLS:                           settings.SMTPUseTLS,
-		TurnstileEnabled:                     settings.TurnstileEnabled,
-		TurnstileSiteKey:                     settings.TurnstileSiteKey,
-		TurnstileSecretKeyConfigured:         settings.TurnstileSecretKeyConfigured,
-		LinuxDoConnectEnabled:                settings.LinuxDoConnectEnabled,
-		LinuxDoConnectClientID:               settings.LinuxDoConnectClientID,
-		LinuxDoConnectClientSecretConfigured: settings.LinuxDoConnectClientSecretConfigured,
-		LinuxDoConnectRedirectURL:            settings.LinuxDoConnectRedirectURL,
-		OIDCConnectEnabled:                   settings.OIDCConnectEnabled,
-		OIDCConnectProviderName:              settings.OIDCConnectProviderName,
-		OIDCConnectClientID:                  settings.OIDCConnectClientID,
-		OIDCConnectClientSecretConfigured:    settings.OIDCConnectClientSecretConfigured,
-		OIDCConnectIssuerURL:                 settings.OIDCConnectIssuerURL,
-		OIDCConnectDiscoveryURL:              settings.OIDCConnectDiscoveryURL,
-		OIDCConnectAuthorizeURL:              settings.OIDCConnectAuthorizeURL,
-		OIDCConnectTokenURL:                  settings.OIDCConnectTokenURL,
-		OIDCConnectUserInfoURL:               settings.OIDCConnectUserInfoURL,
-		OIDCConnectJWKSURL:                   settings.OIDCConnectJWKSURL,
-		OIDCConnectScopes:                    settings.OIDCConnectScopes,
-		OIDCConnectRedirectURL:               settings.OIDCConnectRedirectURL,
-		OIDCConnectFrontendRedirectURL:       settings.OIDCConnectFrontendRedirectURL,
-		OIDCConnectTokenAuthMethod:           settings.OIDCConnectTokenAuthMethod,
-		OIDCConnectUsePKCE:                   settings.OIDCConnectUsePKCE,
-		OIDCConnectValidateIDToken:           settings.OIDCConnectValidateIDToken,
-		OIDCConnectAllowedSigningAlgs:        settings.OIDCConnectAllowedSigningAlgs,
-		OIDCConnectClockSkewSeconds:          settings.OIDCConnectClockSkewSeconds,
-		OIDCConnectRequireEmailVerified:      settings.OIDCConnectRequireEmailVerified,
-		OIDCConnectUserInfoEmailPath:         settings.OIDCConnectUserInfoEmailPath,
-		OIDCConnectUserInfoIDPath:            settings.OIDCConnectUserInfoIDPath,
-		OIDCConnectUserInfoUsernamePath:      settings.OIDCConnectUserInfoUsernamePath,
-		SiteName:                             settings.SiteName,
-		SiteLogo:                             settings.SiteLogo,
-		SiteSubtitle:                         settings.SiteSubtitle,
-		APIBaseURL:                           settings.APIBaseURL,
-		ContactInfo:                          settings.ContactInfo,
-		DocURL:                               settings.DocURL,
-		HomeContent:                          settings.HomeContent,
-		HideCcsImportButton:                  settings.HideCcsImportButton,
-		PurchaseSubscriptionEnabled:          settings.PurchaseSubscriptionEnabled,
-		PurchaseSubscriptionURL:              settings.PurchaseSubscriptionURL,
-		TableDefaultPageSize:                 settings.TableDefaultPageSize,
-		TablePageSizeOptions:                 settings.TablePageSizeOptions,
-		CustomMenuItems:                      dto.ParseCustomMenuItems(settings.CustomMenuItems),
-		CustomEndpoints:                      dto.ParseCustomEndpoints(settings.CustomEndpoints),
-		DefaultConcurrency:                   settings.DefaultConcurrency,
-		DefaultBalance:                       settings.DefaultBalance,
-		DefaultSubscriptions:                 defaultSubscriptions,
-		EnableModelFallback:                  settings.EnableModelFallback,
-		FallbackModelAnthropic:               settings.FallbackModelAnthropic,
-		FallbackModelOpenAI:                  settings.FallbackModelOpenAI,
-		FallbackModelGemini:                  settings.FallbackModelGemini,
-		FallbackModelAntigravity:             settings.FallbackModelAntigravity,
-		EnableIdentityPatch:                  settings.EnableIdentityPatch,
-		IdentityPatchPrompt:                  settings.IdentityPatchPrompt,
-		OpsMonitoringEnabled:                 opsEnabled && settings.OpsMonitoringEnabled,
-		OpsRealtimeMonitoringEnabled:         settings.OpsRealtimeMonitoringEnabled,
-		OpsQueryModeDefault:                  settings.OpsQueryModeDefault,
-		OpsMetricsIntervalSeconds:            settings.OpsMetricsIntervalSeconds,
-		MinClaudeCodeVersion:                 settings.MinClaudeCodeVersion,
-		MaxClaudeCodeVersion:                 settings.MaxClaudeCodeVersion,
-		AllowUngroupedKeyScheduling:          settings.AllowUngroupedKeyScheduling,
-		BackendModeEnabled:                   settings.BackendModeEnabled,
-		EnableFingerprintUnification:         settings.EnableFingerprintUnification,
-		EnableMetadataPassthrough:            settings.EnableMetadataPassthrough,
-		EnableCCHSigning:                     settings.EnableCCHSigning,
-		PaymentEnabled:                       paymentCfg.Enabled,
-		PaymentMinAmount:                     paymentCfg.MinAmount,
-		PaymentMaxAmount:                     paymentCfg.MaxAmount,
-		PaymentDailyLimit:                    paymentCfg.DailyLimit,
-		PaymentOrderTimeoutMin:               paymentCfg.OrderTimeoutMin,
-		PaymentMaxPendingOrders:              paymentCfg.MaxPendingOrders,
-		PaymentEnabledTypes:                  paymentCfg.EnabledTypes,
-		PaymentBalanceDisabled:               paymentCfg.BalanceDisabled,
-		PaymentLoadBalanceStrat:              paymentCfg.LoadBalanceStrategy,
-		PaymentProductNamePrefix:             paymentCfg.ProductNamePrefix,
-		PaymentProductNameSuffix:             paymentCfg.ProductNameSuffix,
-		PaymentHelpImageURL:                  paymentCfg.HelpImageURL,
-		PaymentHelpText:                      paymentCfg.HelpText,
-		PaymentCancelRateLimitEnabled:        paymentCfg.CancelRateLimitEnabled,
-		PaymentCancelRateLimitMax:            paymentCfg.CancelRateLimitMax,
-		PaymentCancelRateLimitWindow:         paymentCfg.CancelRateLimitWindow,
-		PaymentCancelRateLimitUnit:           paymentCfg.CancelRateLimitUnit,
-		PaymentCancelRateLimitMode:           paymentCfg.CancelRateLimitMode,
-		ReferralEnabled:                      settings.ReferralEnabled,
-		ReferralCommissionRate:               settings.ReferralCommissionRate,
-		ReferralRefereeBonusAmount:           settings.ReferralRefereeBonusAmount,
-		ReferralDefaultForAllUsers:           settings.ReferralDefaultForAllUsers,
-	})
-=======
 	payload := dto.SystemSettings{
 		RegistrationEnabled:                    settings.RegistrationEnabled,
 		EmailVerifyEnabled:                     settings.EmailVerifyEnabled,
@@ -291,10 +185,6 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		CustomEndpoints:                        dto.ParseCustomEndpoints(settings.CustomEndpoints),
 		DefaultConcurrency:                     settings.DefaultConcurrency,
 		DefaultBalance:                         settings.DefaultBalance,
-		AffiliateRebateRate:                    settings.AffiliateRebateRate,
-		AffiliateRebateFreezeHours:             settings.AffiliateRebateFreezeHours,
-		AffiliateRebateDurationDays:            settings.AffiliateRebateDurationDays,
-		AffiliateRebatePerInviteeCap:           settings.AffiliateRebatePerInviteeCap,
 		DefaultUserRPMLimit:                    settings.DefaultUserRPMLimit,
 		DefaultSubscriptions:                   defaultSubscriptions,
 		EnableModelFallback:                    settings.EnableModelFallback,
@@ -353,7 +243,10 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 
 		AvailableChannelsEnabled: settings.AvailableChannelsEnabled,
 
-		AffiliateEnabled: settings.AffiliateEnabled,
+		ReferralEnabled:            settings.ReferralEnabled,
+		ReferralCommissionRate:     settings.ReferralCommissionRate,
+		ReferralRefereeBonusAmount: settings.ReferralRefereeBonusAmount,
+		ReferralDefaultForAllUsers: settings.ReferralDefaultForAllUsers,
 	}
 
 	// OpenAI fast policy (stored under a dedicated setting key)
@@ -398,7 +291,6 @@ func openaiFastPolicySettingsFromDTO(s *dto.OpenAIFastPolicySettings) *service.O
 		rules[i].ServiceTier = tier
 	}
 	return &service.OpenAIFastPolicySettings{Rules: rules}
->>>>>>> upstream/main
 }
 
 // UpdateSettingsRequest 更新设置请求
@@ -594,13 +486,6 @@ type UpdateSettingsRequest struct {
 	PaymentCancelRateLimitUnit    *string `json:"payment_cancel_rate_limit_unit"`
 	PaymentCancelRateLimitMode    *string `json:"payment_cancel_rate_limit_window_mode"`
 
-<<<<<<< HEAD
-	// 邀请返佣（指针类型 → 允许部分更新）
-	ReferralEnabled            *bool    `json:"referral_enabled"`
-	ReferralCommissionRate     *float64 `json:"referral_commission_rate"`
-	ReferralRefereeBonusAmount *float64 `json:"referral_referee_bonus_amount"`
-	ReferralDefaultForAllUsers *bool    `json:"referral_default_for_all_users"`
-=======
 	// Channel Monitor feature switch
 	ChannelMonitorEnabled                *bool `json:"channel_monitor_enabled"`
 	ChannelMonitorDefaultIntervalSeconds *int  `json:"channel_monitor_default_interval_seconds"`
@@ -608,12 +493,14 @@ type UpdateSettingsRequest struct {
 	// Available Channels feature switch (user-facing)
 	AvailableChannelsEnabled *bool `json:"available_channels_enabled"`
 
-	// Affiliate (邀请返利) feature switch
-	AffiliateEnabled *bool `json:"affiliate_enabled"`
+	// 邀请返佣（指针类型 → 允许部分更新）
+	ReferralEnabled            *bool    `json:"referral_enabled"`
+	ReferralCommissionRate     *float64 `json:"referral_commission_rate"`
+	ReferralRefereeBonusAmount *float64 `json:"referral_referee_bonus_amount"`
+	ReferralDefaultForAllUsers *bool    `json:"referral_default_for_all_users"`
 
 	// OpenAI fast/flex policy (optional, only updated when provided)
 	OpenAIFastPolicySettings *dto.OpenAIFastPolicySettings `json:"openai_fast_policy_settings,omitempty"`
->>>>>>> upstream/main
 }
 
 // UpdateSettings 更新系统设置
@@ -1390,31 +1277,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.EnableCCHSigning
 		}(),
-<<<<<<< HEAD
-		ReferralEnabled: func() bool {
-			if req.ReferralEnabled != nil {
-				return *req.ReferralEnabled
-			}
-			return previousSettings.ReferralEnabled
-		}(),
-		ReferralCommissionRate: func() float64 {
-			if req.ReferralCommissionRate != nil {
-				return *req.ReferralCommissionRate
-			}
-			return previousSettings.ReferralCommissionRate
-		}(),
-		ReferralRefereeBonusAmount: func() float64 {
-			if req.ReferralRefereeBonusAmount != nil {
-				return *req.ReferralRefereeBonusAmount
-			}
-			return previousSettings.ReferralRefereeBonusAmount
-		}(),
-		ReferralDefaultForAllUsers: func() bool {
-			if req.ReferralDefaultForAllUsers != nil {
-				return *req.ReferralDefaultForAllUsers
-			}
-			return previousSettings.ReferralDefaultForAllUsers
-=======
 		EnableAnthropicCacheTTL1hInjection: func() bool {
 			if req.EnableAnthropicCacheTTL1hInjection != nil {
 				return *req.EnableAnthropicCacheTTL1hInjection
@@ -1499,12 +1361,29 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.AvailableChannelsEnabled
 		}(),
-		AffiliateEnabled: func() bool {
-			if req.AffiliateEnabled != nil {
-				return *req.AffiliateEnabled
+		ReferralEnabled: func() bool {
+			if req.ReferralEnabled != nil {
+				return *req.ReferralEnabled
 			}
-			return previousSettings.AffiliateEnabled
->>>>>>> upstream/main
+			return previousSettings.ReferralEnabled
+		}(),
+		ReferralCommissionRate: func() float64 {
+			if req.ReferralCommissionRate != nil {
+				return *req.ReferralCommissionRate
+			}
+			return previousSettings.ReferralCommissionRate
+		}(),
+		ReferralRefereeBonusAmount: func() float64 {
+			if req.ReferralRefereeBonusAmount != nil {
+				return *req.ReferralRefereeBonusAmount
+			}
+			return previousSettings.ReferralRefereeBonusAmount
+		}(),
+		ReferralDefaultForAllUsers: func() bool {
+			if req.ReferralDefaultForAllUsers != nil {
+				return *req.ReferralDefaultForAllUsers
+			}
+			return previousSettings.ReferralDefaultForAllUsers
 		}(),
 	}
 
@@ -1617,112 +1496,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		updatedPaymentCfg = &service.PaymentConfig{}
 	}
 
-<<<<<<< HEAD
-	response.Success(c, dto.SystemSettings{
-		RegistrationEnabled:                  updatedSettings.RegistrationEnabled,
-		EmailVerifyEnabled:                   updatedSettings.EmailVerifyEnabled,
-		RegistrationEmailSuffixWhitelist:     updatedSettings.RegistrationEmailSuffixWhitelist,
-		PromoCodeEnabled:                     updatedSettings.PromoCodeEnabled,
-		PasswordResetEnabled:                 updatedSettings.PasswordResetEnabled,
-		FrontendURL:                          updatedSettings.FrontendURL,
-		InvitationCodeEnabled:                updatedSettings.InvitationCodeEnabled,
-		TotpEnabled:                          updatedSettings.TotpEnabled,
-		TotpEncryptionKeyConfigured:          h.settingService.IsTotpEncryptionKeyConfigured(),
-		SMTPHost:                             updatedSettings.SMTPHost,
-		SMTPPort:                             updatedSettings.SMTPPort,
-		SMTPUsername:                         updatedSettings.SMTPUsername,
-		SMTPPasswordConfigured:               updatedSettings.SMTPPasswordConfigured,
-		SMTPFrom:                             updatedSettings.SMTPFrom,
-		SMTPFromName:                         updatedSettings.SMTPFromName,
-		SMTPUseTLS:                           updatedSettings.SMTPUseTLS,
-		TurnstileEnabled:                     updatedSettings.TurnstileEnabled,
-		TurnstileSiteKey:                     updatedSettings.TurnstileSiteKey,
-		TurnstileSecretKeyConfigured:         updatedSettings.TurnstileSecretKeyConfigured,
-		LinuxDoConnectEnabled:                updatedSettings.LinuxDoConnectEnabled,
-		LinuxDoConnectClientID:               updatedSettings.LinuxDoConnectClientID,
-		LinuxDoConnectClientSecretConfigured: updatedSettings.LinuxDoConnectClientSecretConfigured,
-		LinuxDoConnectRedirectURL:            updatedSettings.LinuxDoConnectRedirectURL,
-		OIDCConnectEnabled:                   updatedSettings.OIDCConnectEnabled,
-		OIDCConnectProviderName:              updatedSettings.OIDCConnectProviderName,
-		OIDCConnectClientID:                  updatedSettings.OIDCConnectClientID,
-		OIDCConnectClientSecretConfigured:    updatedSettings.OIDCConnectClientSecretConfigured,
-		OIDCConnectIssuerURL:                 updatedSettings.OIDCConnectIssuerURL,
-		OIDCConnectDiscoveryURL:              updatedSettings.OIDCConnectDiscoveryURL,
-		OIDCConnectAuthorizeURL:              updatedSettings.OIDCConnectAuthorizeURL,
-		OIDCConnectTokenURL:                  updatedSettings.OIDCConnectTokenURL,
-		OIDCConnectUserInfoURL:               updatedSettings.OIDCConnectUserInfoURL,
-		OIDCConnectJWKSURL:                   updatedSettings.OIDCConnectJWKSURL,
-		OIDCConnectScopes:                    updatedSettings.OIDCConnectScopes,
-		OIDCConnectRedirectURL:               updatedSettings.OIDCConnectRedirectURL,
-		OIDCConnectFrontendRedirectURL:       updatedSettings.OIDCConnectFrontendRedirectURL,
-		OIDCConnectTokenAuthMethod:           updatedSettings.OIDCConnectTokenAuthMethod,
-		OIDCConnectUsePKCE:                   updatedSettings.OIDCConnectUsePKCE,
-		OIDCConnectValidateIDToken:           updatedSettings.OIDCConnectValidateIDToken,
-		OIDCConnectAllowedSigningAlgs:        updatedSettings.OIDCConnectAllowedSigningAlgs,
-		OIDCConnectClockSkewSeconds:          updatedSettings.OIDCConnectClockSkewSeconds,
-		OIDCConnectRequireEmailVerified:      updatedSettings.OIDCConnectRequireEmailVerified,
-		OIDCConnectUserInfoEmailPath:         updatedSettings.OIDCConnectUserInfoEmailPath,
-		OIDCConnectUserInfoIDPath:            updatedSettings.OIDCConnectUserInfoIDPath,
-		OIDCConnectUserInfoUsernamePath:      updatedSettings.OIDCConnectUserInfoUsernamePath,
-		SiteName:                             updatedSettings.SiteName,
-		SiteLogo:                             updatedSettings.SiteLogo,
-		SiteSubtitle:                         updatedSettings.SiteSubtitle,
-		APIBaseURL:                           updatedSettings.APIBaseURL,
-		ContactInfo:                          updatedSettings.ContactInfo,
-		DocURL:                               updatedSettings.DocURL,
-		HomeContent:                          updatedSettings.HomeContent,
-		HideCcsImportButton:                  updatedSettings.HideCcsImportButton,
-		PurchaseSubscriptionEnabled:          updatedSettings.PurchaseSubscriptionEnabled,
-		PurchaseSubscriptionURL:              updatedSettings.PurchaseSubscriptionURL,
-		TableDefaultPageSize:                 updatedSettings.TableDefaultPageSize,
-		TablePageSizeOptions:                 updatedSettings.TablePageSizeOptions,
-		CustomMenuItems:                      dto.ParseCustomMenuItems(updatedSettings.CustomMenuItems),
-		CustomEndpoints:                      dto.ParseCustomEndpoints(updatedSettings.CustomEndpoints),
-		DefaultConcurrency:                   updatedSettings.DefaultConcurrency,
-		DefaultBalance:                       updatedSettings.DefaultBalance,
-		DefaultSubscriptions:                 updatedDefaultSubscriptions,
-		EnableModelFallback:                  updatedSettings.EnableModelFallback,
-		FallbackModelAnthropic:               updatedSettings.FallbackModelAnthropic,
-		FallbackModelOpenAI:                  updatedSettings.FallbackModelOpenAI,
-		FallbackModelGemini:                  updatedSettings.FallbackModelGemini,
-		FallbackModelAntigravity:             updatedSettings.FallbackModelAntigravity,
-		EnableIdentityPatch:                  updatedSettings.EnableIdentityPatch,
-		IdentityPatchPrompt:                  updatedSettings.IdentityPatchPrompt,
-		OpsMonitoringEnabled:                 updatedSettings.OpsMonitoringEnabled,
-		OpsRealtimeMonitoringEnabled:         updatedSettings.OpsRealtimeMonitoringEnabled,
-		OpsQueryModeDefault:                  updatedSettings.OpsQueryModeDefault,
-		OpsMetricsIntervalSeconds:            updatedSettings.OpsMetricsIntervalSeconds,
-		MinClaudeCodeVersion:                 updatedSettings.MinClaudeCodeVersion,
-		MaxClaudeCodeVersion:                 updatedSettings.MaxClaudeCodeVersion,
-		AllowUngroupedKeyScheduling:          updatedSettings.AllowUngroupedKeyScheduling,
-		BackendModeEnabled:                   updatedSettings.BackendModeEnabled,
-		EnableFingerprintUnification:         updatedSettings.EnableFingerprintUnification,
-		EnableMetadataPassthrough:            updatedSettings.EnableMetadataPassthrough,
-		EnableCCHSigning:                     updatedSettings.EnableCCHSigning,
-		PaymentEnabled:                       updatedPaymentCfg.Enabled,
-		PaymentMinAmount:                     updatedPaymentCfg.MinAmount,
-		PaymentMaxAmount:                     updatedPaymentCfg.MaxAmount,
-		PaymentDailyLimit:                    updatedPaymentCfg.DailyLimit,
-		PaymentOrderTimeoutMin:               updatedPaymentCfg.OrderTimeoutMin,
-		PaymentMaxPendingOrders:              updatedPaymentCfg.MaxPendingOrders,
-		PaymentEnabledTypes:                  updatedPaymentCfg.EnabledTypes,
-		PaymentBalanceDisabled:               updatedPaymentCfg.BalanceDisabled,
-		PaymentLoadBalanceStrat:              updatedPaymentCfg.LoadBalanceStrategy,
-		PaymentProductNamePrefix:             updatedPaymentCfg.ProductNamePrefix,
-		PaymentProductNameSuffix:             updatedPaymentCfg.ProductNameSuffix,
-		PaymentHelpImageURL:                  updatedPaymentCfg.HelpImageURL,
-		PaymentHelpText:                      updatedPaymentCfg.HelpText,
-		PaymentCancelRateLimitEnabled:        updatedPaymentCfg.CancelRateLimitEnabled,
-		PaymentCancelRateLimitMax:            updatedPaymentCfg.CancelRateLimitMax,
-		PaymentCancelRateLimitWindow:         updatedPaymentCfg.CancelRateLimitWindow,
-		PaymentCancelRateLimitUnit:           updatedPaymentCfg.CancelRateLimitUnit,
-		PaymentCancelRateLimitMode:           updatedPaymentCfg.CancelRateLimitMode,
-		ReferralEnabled:                      updatedSettings.ReferralEnabled,
-		ReferralCommissionRate:               updatedSettings.ReferralCommissionRate,
-		ReferralRefereeBonusAmount:           updatedSettings.ReferralRefereeBonusAmount,
-		ReferralDefaultForAllUsers:           updatedSettings.ReferralDefaultForAllUsers,
-	})
-=======
 	payload := dto.SystemSettings{
 		RegistrationEnabled:                    updatedSettings.RegistrationEnabled,
 		EmailVerifyEnabled:                     updatedSettings.EmailVerifyEnabled,
@@ -1801,10 +1574,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		CustomEndpoints:                        dto.ParseCustomEndpoints(updatedSettings.CustomEndpoints),
 		DefaultConcurrency:                     updatedSettings.DefaultConcurrency,
 		DefaultBalance:                         updatedSettings.DefaultBalance,
-		AffiliateRebateRate:                    updatedSettings.AffiliateRebateRate,
-		AffiliateRebateFreezeHours:             updatedSettings.AffiliateRebateFreezeHours,
-		AffiliateRebateDurationDays:            updatedSettings.AffiliateRebateDurationDays,
-		AffiliateRebatePerInviteeCap:           updatedSettings.AffiliateRebatePerInviteeCap,
 		DefaultUserRPMLimit:                    updatedSettings.DefaultUserRPMLimit,
 		DefaultSubscriptions:                   updatedDefaultSubscriptions,
 		EnableModelFallback:                    updatedSettings.EnableModelFallback,
@@ -1862,7 +1631,10 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 
 		AvailableChannelsEnabled: updatedSettings.AvailableChannelsEnabled,
 
-		AffiliateEnabled: updatedSettings.AffiliateEnabled,
+		ReferralEnabled:            updatedSettings.ReferralEnabled,
+		ReferralCommissionRate:     updatedSettings.ReferralCommissionRate,
+		ReferralRefereeBonusAmount: updatedSettings.ReferralRefereeBonusAmount,
+		ReferralDefaultForAllUsers: updatedSettings.ReferralDefaultForAllUsers,
 	}
 	if fastPolicy, err := h.settingService.GetOpenAIFastPolicySettings(c.Request.Context()); err != nil {
 		slog.Error("openai_fast_policy_settings_get_failed", "error", err)
@@ -1870,7 +1642,6 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		payload.OpenAIFastPolicySettings = openaiFastPolicySettingsToDTO(fastPolicy)
 	}
 	response.Success(c, systemSettingsResponseData(payload, updatedAuthSourceDefaults))
->>>>>>> upstream/main
 }
 
 // hasPaymentFields returns true if any payment-related field was explicitly provided.

@@ -11,7 +11,6 @@
         </p>
       </div>
 
-<<<<<<< HEAD
       <!-- Referrer Welcome Banner -->
       <transition name="fade">
         <div
@@ -39,27 +38,21 @@
         </div>
       </transition>
 
-      <div v-if="linuxdoOAuthEnabled || oidcOAuthEnabled" class="space-y-4">
-=======
       <div v-if="linuxdoOAuthEnabled || wechatOAuthEnabled || oidcOAuthEnabled" class="space-y-4">
->>>>>>> upstream/main
         <LinuxDoOAuthSection
           v-if="linuxdoOAuthEnabled"
           :disabled="isLoading"
-          :aff-code="formData.aff_code"
           :show-divider="false"
         />
         <WechatOAuthSection
           v-if="wechatOAuthEnabled"
           :disabled="isLoading"
-          :aff-code="formData.aff_code"
           :show-divider="false"
         />
         <OidcOAuthSection
           v-if="oidcOAuthEnabled"
           :disabled="isLoading"
           :provider-name="oidcOAuthProviderName"
-          :aff-code="formData.aff_code"
           :show-divider="false"
         />
         <div class="flex items-center gap-3">
@@ -318,15 +311,10 @@ import TurnstileWidget from '@/components/TurnstileWidget.vue'
 import { useAuthStore, useAppStore } from '@/stores'
 import {
   getPublicSettings,
-<<<<<<< HEAD
+  isWeChatWebOAuthEnabled,
   validatePromoCode,
   validateInvitationCode,
   validateReferrerCode
-=======
-  isWeChatWebOAuthEnabled,
-  validatePromoCode,
-  validateInvitationCode
->>>>>>> upstream/main
 } from '@/api/auth'
 import { buildAuthErrorMessage } from '@/utils/authError'
 import {
@@ -334,17 +322,10 @@ import {
   normalizeRegistrationEmailSuffixWhitelist
 } from '@/utils/registrationEmailPolicy'
 import {
-<<<<<<< HEAD
   getReferralCodeFromCookie,
   isStealthMode,
   clearReferralCookies
 } from '@/utils/referralCookie'
-=======
-  clearAffiliateReferralCode,
-  loadAffiliateReferralCode,
-  resolveAffiliateReferralCode
-} from '@/utils/oauthAffiliate'
->>>>>>> upstream/main
 
 const { t, locale } = useI18n()
 
@@ -411,11 +392,7 @@ const formData = reactive({
   password: '',
   promo_code: '',
   invitation_code: '',
-<<<<<<< HEAD
   referrer_code: ''
-=======
-  aff_code: ''
->>>>>>> upstream/main
 })
 
 const errors = reactive({
@@ -441,19 +418,9 @@ watch(validationToastMessage, (value, previousValue) => {
   }
 })
 
-function syncAffiliateReferralCode(): string {
-  const code = resolveAffiliateReferralCode(route.query.aff, route.query.aff_code)
-  if (code) {
-    formData.aff_code = code
-  }
-  return code
-}
-
 // ==================== Lifecycle ====================
 
 onMounted(async () => {
-  syncAffiliateReferralCode()
-
   try {
     const settings = await getPublicSettings()
     registrationEnabled.value = settings.registration_enabled
@@ -482,7 +449,6 @@ onMounted(async () => {
         await validatePromoCodeDebounced(promoParam)
       }
     }
-<<<<<<< HEAD
 
     // Read referrer code from URL parameter only if referral program is enabled
     if (referralEnabled.value) {
@@ -518,22 +484,12 @@ onMounted(async () => {
         }
       }
     }
-=======
-    syncAffiliateReferralCode()
->>>>>>> upstream/main
   } catch (error) {
     console.error('Failed to load public settings:', error)
   } finally {
     settingsLoaded.value = true
   }
 })
-
-watch(
-  () => [route.query.aff, route.query.aff_code],
-  () => {
-    syncAffiliateReferralCode()
-  }
-)
 
 onUnmounted(() => {
   if (promoValidateTimeout) {
@@ -819,11 +775,6 @@ async function handleRegister(): Promise<void> {
   isLoading.value = true
 
   try {
-    const affCode = formData.aff_code.trim() || loadAffiliateReferralCode()
-    if (affCode) {
-      formData.aff_code = affCode
-    }
-
     // If email verification is enabled, redirect to verification page
     if (emailVerifyEnabled.value) {
       // Store registration data in sessionStorage
@@ -835,11 +786,7 @@ async function handleRegister(): Promise<void> {
           turnstile_token: turnstileToken.value,
           promo_code: formData.promo_code || undefined,
           invitation_code: formData.invitation_code || undefined,
-<<<<<<< HEAD
           referrer_code: formData.referrer_code || undefined
-=======
-          ...(affCode ? { aff_code: affCode } : {})
->>>>>>> upstream/main
         })
       )
 
@@ -855,13 +802,8 @@ async function handleRegister(): Promise<void> {
       turnstile_token: turnstileEnabled.value ? turnstileToken.value : undefined,
       promo_code: formData.promo_code || undefined,
       invitation_code: formData.invitation_code || undefined,
-<<<<<<< HEAD
       referrer_code: formData.referrer_code || undefined
-=======
-      ...(affCode ? { aff_code: affCode } : {})
->>>>>>> upstream/main
     })
-    clearAffiliateReferralCode()
 
     // 注册完成后清理隐藏模式 cookie，避免下次访问继续命中
     clearReferralCookies()

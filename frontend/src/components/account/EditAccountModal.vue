@@ -1462,9 +1462,7 @@
           :weeklyResetDay="editWeeklyResetDay"
           :weeklyResetHour="editWeeklyResetHour"
           :resetTimezone="editResetTimezone"
-<<<<<<< HEAD
           @update:meter="editQuotaMeter = $event"
-=======
           :quotaNotifyGlobalEnabled="quotaNotifyGlobalEnabled"
           :quotaNotifyDailyEnabled="quotaNotifyState.daily.enabled"
           :quotaNotifyDailyThreshold="quotaNotifyState.daily.threshold"
@@ -1475,7 +1473,6 @@
           :quotaNotifyTotalEnabled="quotaNotifyState.total.enabled"
           :quotaNotifyTotalThreshold="quotaNotifyState.total.threshold"
           :quotaNotifyTotalThresholdType="quotaNotifyState.total.thresholdType"
->>>>>>> upstream/main
           @update:totalLimit="editQuotaLimit = $event"
           @update:dailyLimit="editQuotaDailyLimit = $event"
           @update:weeklyLimit="editQuotaWeeklyLimit = $event"
@@ -3638,11 +3635,8 @@ const handleSubmit = async () => {
       const currentExtra = (updatePayload.extra as Record<string, unknown>) ||
         (props.account.extra as Record<string, unknown>) || {}
       const newExtra: Record<string, unknown> = { ...currentExtra }
-<<<<<<< HEAD
       newExtra.quota_meter = editQuotaMeter.value || 'cost'
-=======
       // Total quota
->>>>>>> upstream/main
       if (editQuotaLimit.value != null && editQuotaLimit.value > 0) {
         newExtra.quota_limit = editQuotaLimit.value
       } else {

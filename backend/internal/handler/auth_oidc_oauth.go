@@ -33,28 +33,17 @@ import (
 )
 
 const (
-<<<<<<< HEAD
-	oidcOAuthCookiePath        = "/api/v1/auth/oauth/oidc"
-	oidcOAuthStateCookieName   = "oidc_oauth_state"
-	oidcOAuthVerifierCookie    = "oidc_oauth_verifier"
-	oidcOAuthRedirectCookie    = "oidc_oauth_redirect"
-	oidcOAuthNonceCookie       = "oidc_oauth_nonce"
-	oidcOAuthReferrerCookie    = "oidc_oauth_ref"
-	oidcOAuthCookieMaxAgeSec   = 10 * 60 // 10 minutes
-	oidcOAuthDefaultRedirectTo = "/dashboard"
-	oidcOAuthDefaultFrontendCB = "/auth/oidc/callback"
-=======
 	oidcOAuthCookiePath         = "/api/v1/auth/oauth/oidc"
 	oidcOAuthStateCookieName    = "oidc_oauth_state"
 	oidcOAuthVerifierCookie     = "oidc_oauth_verifier"
 	oidcOAuthRedirectCookie     = "oidc_oauth_redirect"
 	oidcOAuthNonceCookie        = "oidc_oauth_nonce"
+	oidcOAuthReferrerCookie     = "oidc_oauth_ref"
 	oidcOAuthIntentCookieName   = "oidc_oauth_intent"
 	oidcOAuthBindUserCookieName = "oidc_oauth_bind_user"
 	oidcOAuthCookieMaxAgeSec    = 10 * 60 // 10 minutes
 	oidcOAuthDefaultRedirectTo  = "/dashboard"
 	oidcOAuthDefaultFrontendCB  = "/auth/oidc/callback"
->>>>>>> upstream/main
 )
 
 type oidcTokenResponse struct {
@@ -241,12 +230,9 @@ func (h *AuthHandler) OIDCOAuthCallback(c *gin.Context) {
 		oidcClearCookie(c, oidcOAuthVerifierCookie, secureCookie)
 		oidcClearCookie(c, oidcOAuthRedirectCookie, secureCookie)
 		oidcClearCookie(c, oidcOAuthNonceCookie, secureCookie)
-<<<<<<< HEAD
 		oidcClearCookie(c, oidcOAuthReferrerCookie, secureCookie)
-=======
 		oidcClearCookie(c, oidcOAuthIntentCookieName, secureCookie)
 		oidcClearCookie(c, oidcOAuthBindUserCookieName, secureCookie)
->>>>>>> upstream/main
 	}()
 
 	expectedState, err := readCookieDecoded(c, oidcOAuthStateCookieName)
@@ -475,33 +461,10 @@ func (h *AuthHandler) OIDCOAuthCallback(c *gin.Context) {
 		}
 	}
 
-<<<<<<< HEAD
-	identityKey := oidcIdentityKey(issuer, subject)
-	email := oidcSelectLoginEmail(userInfoClaims.Email, idClaims.Email, identityKey)
-	username := firstNonEmpty(
-		userInfoClaims.Username,
-		idClaims.PreferredUsername,
-		idClaims.Name,
-		oidcFallbackUsername(subject),
-	)
-
-	// 邀请返佣：从 cookie 读回 ref（仅对新注册用户生效）
-	referrerCode, _ := readCookieDecoded(c, oidcOAuthReferrerCookie)
-	// 传入空邀请码；如果需要邀请码，服务层返回 ErrOAuthInvitationRequired
-	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, "", referrerCode)
-	if err != nil {
-		if errors.Is(err, service.ErrOAuthInvitationRequired) {
-			pendingToken, tokenErr := h.authService.CreatePendingOAuthToken(email, username)
-			if tokenErr != nil {
-				redirectOAuthError(c, frontendCallback, "login_failed", "service_error", "")
-				return
-			}
-			fragment := url.Values{}
-			fragment.Set("error", "invitation_required")
-			fragment.Set("pending_oauth_token", pendingToken)
-			fragment.Set("redirect", redirectTo)
-			redirectWithFragment(c, frontendCallback, fragment)
-=======
+	// 邀请返佣：从 cookie 读回 ref（仅对新注册用户生效），透传到 pending session
+	if referrerCode, _ := readCookieDecoded(c, oidcOAuthReferrerCookie); referrerCode != "" {
+		upstreamClaims["referrer_code"] = referrerCode
+	}
 	if h.isForceEmailOnThirdPartySignup(c.Request.Context()) {
 		if err := h.createOIDCOAuthChoicePendingSession(
 			c,
@@ -516,7 +479,6 @@ func (h *AuthHandler) OIDCOAuthCallback(c *gin.Context) {
 			true,
 		); err != nil {
 			redirectOAuthError(c, frontendCallback, "session_error", "failed to continue oauth login", "")
->>>>>>> upstream/main
 			return
 		}
 		redirectToFrontendCallback(c, frontendCallback)
@@ -630,16 +592,10 @@ func (h *AuthHandler) createOIDCOAuthChoicePendingSession(
 }
 
 type completeOIDCOAuthRequest struct {
-<<<<<<< HEAD
-	PendingOAuthToken string `json:"pending_oauth_token" binding:"required"`
-	InvitationCode    string `json:"invitation_code"     binding:"required"`
-	ReferrerCode      string `json:"referrer_code"`
-=======
 	InvitationCode   string `json:"invitation_code" binding:"required"`
-	AffCode          string `json:"aff_code,omitempty"`
+	ReferrerCode     string `json:"referrer_code,omitempty"`
 	AdoptDisplayName *bool  `json:"adopt_display_name,omitempty"`
 	AdoptAvatar      *bool  `json:"adopt_avatar,omitempty"`
->>>>>>> upstream/main
 }
 
 // CompleteOIDCOAuthRegistration completes a pending OAuth registration by validating
@@ -660,19 +616,6 @@ func (h *AuthHandler) CompleteOIDCOAuthRegistration(c *gin.Context) {
 		response.ErrorFrom(c, service.ErrPendingAuthSessionNotFound)
 		return
 	}
-<<<<<<< HEAD
-
-	// 邀请返佣：优先取 request body 中的 referrer_code；若为空，从 OAuth start 阶段
-	// 落的 oidc_oauth_ref cookie 兜底（隐藏短链模式 + 老版本前端不传 body 的情况）。
-	referrerCode := sanitizeReferrerCode(req.ReferrerCode)
-	if referrerCode == "" {
-		if cookieCode, cErr := readCookieDecoded(c, oidcOAuthReferrerCookie); cErr == nil {
-			referrerCode = sanitizeReferrerCode(cookieCode)
-		}
-	}
-
-	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, req.InvitationCode, referrerCode)
-=======
 	browserSessionKey, err := readOAuthPendingBrowserCookie(c)
 	if err != nil {
 		clearOAuthPendingSessionCookie(c, secureCookie)
@@ -681,7 +624,6 @@ func (h *AuthHandler) CompleteOIDCOAuthRegistration(c *gin.Context) {
 		return
 	}
 	pendingSvc, err := h.pendingIdentityService()
->>>>>>> upstream/main
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -735,7 +677,15 @@ func (h *AuthHandler) CompleteOIDCOAuthRegistration(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	tokenPair, user, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, req.InvitationCode, req.AffCode)
+	// 邀请返佣：优先 request body 中的 referrer_code；为空再从 OAuth start 阶段
+	// 落的 oidc_oauth_ref cookie 兜底（隐藏短链模式 + 老前端不传 body）。
+	referrerCode := sanitizeReferrerCode(req.ReferrerCode)
+	if referrerCode == "" {
+		if cookieCode, cErr := readCookieDecoded(c, oidcOAuthReferrerCookie); cErr == nil {
+			referrerCode = sanitizeReferrerCode(cookieCode)
+		}
+	}
+	tokenPair, user, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, req.InvitationCode, referrerCode)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

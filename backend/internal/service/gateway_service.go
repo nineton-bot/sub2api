@@ -569,7 +569,7 @@ type GatewayService struct {
 	resolver              *ModelPricingResolver
 	debugGatewayBodyFile  atomic.Pointer[os.File] // non-nil when SUB2API_DEBUG_GATEWAY_BODY is set
 	tlsFPProfileService   *TLSFingerprintProfileService
-<<<<<<< HEAD
+	balanceNotifyService  *BalanceNotifyService
 	referralService       *ReferralService // 可选：用于消费扣费后异步释放充值型佣金
 }
 
@@ -581,9 +581,6 @@ func (s *GatewayService) SetReferralService(rs *ReferralService) {
 		return
 	}
 	s.referralService = rs
-=======
-	balanceNotifyService  *BalanceNotifyService
->>>>>>> upstream/main
 }
 
 // NewGatewayService creates a new GatewayService
@@ -7921,21 +7918,16 @@ func (p *postUsageBillingParams) shouldUpdateRateLimits() bool {
 	return p.Cost.ActualCost > 0 && p.APIKey.HasRateLimits() && p.APIKeyService != nil
 }
 
-<<<<<<< HEAD
-// postUsageBilling 统一处理使用量记录后的扣费逻辑：
-//   - 订阅/余额扣费
-//   - API Key 配额更新
-//   - API Key 限速用量更新
-//   - 账号配额用量更新（账号口径：TotalCost × 账号计费倍率）
-=======
 func (p *postUsageBillingParams) shouldUpdateAccountQuota() bool {
 	return p.Cost.TotalCost > 0 && p.Account.IsAPIKeyOrBedrock() && p.Account.HasAnyQuotaLimit()
 }
 
-// postUsageBilling is the legacy fallback billing path used when the unified
-// billing repo is unavailable (nil). Production uses applyUsageBilling → repo.Apply
-// for atomic billing. This path only runs in tests or degraded mode.
->>>>>>> upstream/main
+// postUsageBilling 统一处理使用量记录后的扣费逻辑（legacy fallback path used when the unified
+// billing repo is unavailable）：
+//   - 订阅/余额扣费
+//   - API Key 配额更新
+//   - API Key 限速用量更新
+//   - 账号配额用量更新（账号口径：TotalCost × 账号计费倍率）
 func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *billingDeps) {
 	billingCtx, cancel := detachedBillingContext(ctx)
 	defer cancel()
@@ -7943,20 +7935,14 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 	cost := p.Cost
 
 	if p.IsSubscriptionBill {
-<<<<<<< HEAD
 		if p.IsRequestQuotaSubscription {
 			if err := deps.userSubRepo.IncrementUsage(billingCtx, p.Subscription.ID, 0); err != nil {
 				slog.Error("increment subscription request count failed", "subscription_id", p.Subscription.ID, "error", err)
 			}
 			deps.billingCacheService.QueueUpdateSubscriptionRequestCount(p.User.ID, *p.APIKey.GroupID, 1)
-		} else if cost.TotalCost > 0 {
-			if err := deps.userSubRepo.IncrementUsage(billingCtx, p.Subscription.ID, cost.TotalCost); err != nil {
-=======
-		// Subscription usage tracked by ActualCost so group rate multiplier
-		// consumes the quota at the expected speed.
-		if cost.ActualCost > 0 {
+		} else if cost.ActualCost > 0 {
+			// 订阅使用量按 ActualCost 计：分组倍率会以预期速度消耗配额（070f0774）。
 			if err := deps.userSubRepo.IncrementUsage(billingCtx, p.Subscription.ID, cost.ActualCost); err != nil {
->>>>>>> upstream/main
 				slog.Error("increment subscription usage failed", "subscription_id", p.Subscription.ID, "error", err)
 			}
 		}
@@ -7965,7 +7951,6 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 			if err := deps.userRepo.DeductBalance(billingCtx, p.User.ID, cost.ActualCost); err != nil {
 				slog.Error("deduct balance failed", "user_id", p.User.ID, "error", err)
 			}
-<<<<<<< HEAD
 			deps.billingCacheService.QueueDeductBalance(p.User.ID, cost.ActualCost)
 			// 异步释放充值型返佣：按 FIFO 把本次扣费金额归因到被邀请人最早未充分归因
 			// 的充值型 commission 上。失败仅记日志，不影响扣费主流程。
@@ -7991,8 +7976,6 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 					}
 				}()
 			}
-=======
->>>>>>> upstream/main
 		}
 	}
 
@@ -8008,17 +7991,10 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 		}
 	}
 
-<<<<<<< HEAD
-	// 4. 账号配额用量（金额模式按成本、请求模式按次数）
+	// 4. 账号配额用量（金额模式按成本、请求模式按次数；走 accountQuotaDelta 兼容次数订阅）
 	if delta := accountQuotaDelta(p.Account, cost, p.AccountRateMultiplier); delta > 0 {
 		if err := deps.accountRepo.IncrementQuotaUsed(billingCtx, p.Account.ID, delta); err != nil {
 			slog.Error("increment account quota used failed", "account_id", p.Account.ID, "delta", delta, "error", err)
-=======
-	if p.shouldUpdateAccountQuota() {
-		accountCost := cost.TotalCost * p.AccountRateMultiplier
-		if err := deps.accountRepo.IncrementQuotaUsed(billingCtx, p.Account.ID, accountCost); err != nil {
-			slog.Error("increment account quota used failed", "account_id", p.Account.ID, "cost", accountCost, "error", err)
->>>>>>> upstream/main
 		}
 	}
 
@@ -8090,24 +8066,15 @@ func buildUsageBillingCommand(requestID string, usageLog *UsageLog, p *postUsage
 		}
 	}
 
-<<<<<<< HEAD
+	// 订阅扣费：金额型按 ActualCost (= TotalCost × group rate × user rate)，次数型按请求计数 1。
+	// TotalCost 保留原始值；下游 "> 0" 守卫仍能正确跳过免费订阅（RateMultiplier == 0）。
 	if p.IsSubscriptionBill && p.Subscription != nil {
 		cmd.SubscriptionID = &p.Subscription.ID
 		if p.IsRequestQuotaSubscription {
 			cmd.SubscriptionRequestCount = 1
 		} else if p.Cost.TotalCost > 0 {
-			// 订阅额度按分组倍率累加,ActualCost = TotalCost × apiKey.Group.RateMultiplier
 			cmd.SubscriptionCost = p.Cost.ActualCost
 		}
-=======
-	// Record subscription / balance cost using ActualCost so the group (and any
-	// user-specific) rate multiplier consumes subscription quota at the expected
-	// speed. TotalCost remains the raw (pre-multiplier) value; downstream guards
-	// on "> 0" still correctly skip free subscriptions (RateMultiplier == 0).
-	if p.IsSubscriptionBill && p.Subscription != nil && p.Cost.TotalCost > 0 {
-		cmd.SubscriptionID = &p.Subscription.ID
-		cmd.SubscriptionCost = p.Cost.ActualCost
->>>>>>> upstream/main
 	} else if p.Cost.ActualCost > 0 {
 		cmd.BalanceCost = p.Cost.ActualCost
 	}
@@ -8166,15 +8133,10 @@ func finalizePostUsageBilling(p *postUsageBillingParams, deps *billingDeps, resu
 	}
 
 	if p.IsSubscriptionBill {
-<<<<<<< HEAD
 		if p.IsRequestQuotaSubscription && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
 			deps.billingCacheService.QueueUpdateSubscriptionRequestCount(p.User.ID, *p.APIKey.GroupID, 1)
-		} else if p.Cost.TotalCost > 0 && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
-			deps.billingCacheService.QueueUpdateSubscriptionUsage(p.User.ID, *p.APIKey.GroupID, p.Cost.TotalCost)
-=======
-		if p.Cost.ActualCost > 0 && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
+		} else if p.Cost.ActualCost > 0 && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
 			deps.billingCacheService.QueueUpdateSubscriptionUsage(p.User.ID, *p.APIKey.GroupID, p.Cost.ActualCost)
->>>>>>> upstream/main
 		}
 	} else if p.Cost.ActualCost > 0 && p.User != nil {
 		deps.billingCacheService.QueueDeductBalance(p.User.ID, p.Cost.ActualCost)
@@ -8284,40 +8246,24 @@ func detachStreamUpstreamContext(ctx context.Context, stream bool) (context.Cont
 
 // billingDeps 扣费逻辑依赖的服务（由各 gateway service 提供）
 type billingDeps struct {
-<<<<<<< HEAD
-	accountRepo         AccountRepository
-	userRepo            UserRepository
-	userSubRepo         UserSubscriptionRepository
-	billingCacheService *BillingCacheService
-	deferredService     *DeferredService
-	referralService     *ReferralService
-=======
 	accountRepo          AccountRepository
 	userRepo             UserRepository
 	userSubRepo          UserSubscriptionRepository
 	billingCacheService  *BillingCacheService
 	deferredService      *DeferredService
 	balanceNotifyService *BalanceNotifyService
->>>>>>> upstream/main
+	referralService      *ReferralService
 }
 
 func (s *GatewayService) billingDeps() *billingDeps {
 	return &billingDeps{
-<<<<<<< HEAD
-		accountRepo:         s.accountRepo,
-		userRepo:            s.userRepo,
-		userSubRepo:         s.userSubRepo,
-		billingCacheService: s.billingCacheService,
-		deferredService:     s.deferredService,
-		referralService:     s.referralService,
-=======
 		accountRepo:          s.accountRepo,
 		userRepo:             s.userRepo,
 		userSubRepo:          s.userSubRepo,
 		billingCacheService:  s.billingCacheService,
 		deferredService:      s.deferredService,
 		balanceNotifyService: s.balanceNotifyService,
->>>>>>> upstream/main
+		referralService:      s.referralService,
 	}
 }
 

@@ -30,39 +30,26 @@ import (
 )
 
 const (
-<<<<<<< HEAD
-	linuxDoOAuthCookiePath        = "/api/v1/auth/oauth/linuxdo"
-	linuxDoOAuthStateCookieName   = "linuxdo_oauth_state"
-	linuxDoOAuthVerifierCookie    = "linuxdo_oauth_verifier"
-	linuxDoOAuthRedirectCookie    = "linuxdo_oauth_redirect"
-	linuxDoOAuthReferrerCookie    = "linuxdo_oauth_ref"
-	linuxDoOAuthCookieMaxAgeSec   = 10 * 60 // 10 minutes
-	linuxDoOAuthDefaultRedirectTo = "/dashboard"
-	linuxDoOAuthDefaultFrontendCB = "/auth/linuxdo/callback"
-=======
 	linuxDoOAuthCookiePath         = "/api/v1/auth/oauth/linuxdo"
 	oauthBindAccessTokenCookiePath = "/api/v1/auth/oauth"
 	linuxDoOAuthStateCookieName    = "linuxdo_oauth_state"
 	linuxDoOAuthVerifierCookie     = "linuxdo_oauth_verifier"
 	linuxDoOAuthRedirectCookie     = "linuxdo_oauth_redirect"
+	linuxDoOAuthReferrerCookie     = "linuxdo_oauth_ref"
 	linuxDoOAuthIntentCookieName   = "linuxdo_oauth_intent"
 	linuxDoOAuthBindUserCookieName = "linuxdo_oauth_bind_user"
 	oauthBindAccessTokenCookieName = "oauth_bind_access_token"
 	linuxDoOAuthCookieMaxAgeSec    = 10 * 60 // 10 minutes
 	linuxDoOAuthDefaultRedirectTo  = "/dashboard"
 	linuxDoOAuthDefaultFrontendCB  = "/auth/linuxdo/callback"
->>>>>>> upstream/main
 
 	linuxDoOAuthMaxRedirectLen      = 2048
 	linuxDoOAuthMaxFragmentValueLen = 512
 	linuxDoOAuthMaxSubjectLen       = 64 - len("linuxdo-")
-<<<<<<< HEAD
 	linuxDoOAuthMaxReferrerLen      = 32
-=======
 
 	oauthIntentLogin           = "login"
 	oauthIntentBindCurrentUser = "bind_current_user"
->>>>>>> upstream/main
 )
 
 type linuxDoTokenResponse struct {
@@ -200,12 +187,9 @@ func (h *AuthHandler) LinuxDoOAuthCallback(c *gin.Context) {
 		clearCookie(c, linuxDoOAuthStateCookieName, secureCookie)
 		clearCookie(c, linuxDoOAuthVerifierCookie, secureCookie)
 		clearCookie(c, linuxDoOAuthRedirectCookie, secureCookie)
-<<<<<<< HEAD
 		clearCookie(c, linuxDoOAuthReferrerCookie, secureCookie)
-=======
 		clearCookie(c, linuxDoOAuthIntentCookieName, secureCookie)
 		clearCookie(c, linuxDoOAuthBindUserCookieName, secureCookie)
->>>>>>> upstream/main
 	}()
 
 	expectedState, err := readCookieDecoded(c, linuxDoOAuthStateCookieName)
@@ -276,25 +260,6 @@ func (h *AuthHandler) LinuxDoOAuthCallback(c *gin.Context) {
 	if subject != "" {
 		email = linuxDoSyntheticEmail(subject)
 	}
-<<<<<<< HEAD
-
-	// 邀请返佣：从 cookie 读回 ref（仅对新注册用户生效）
-	referrerCode, _ := readCookieDecoded(c, linuxDoOAuthReferrerCookie)
-	// 传入空邀请码；如果需要邀请码，服务层返回 ErrOAuthInvitationRequired
-	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, "", referrerCode)
-	if err != nil {
-		if errors.Is(err, service.ErrOAuthInvitationRequired) {
-			pendingToken, tokenErr := h.authService.CreatePendingOAuthToken(email, username)
-			if tokenErr != nil {
-				redirectOAuthError(c, frontendCallback, "login_failed", "service_error", "")
-				return
-			}
-			fragment := url.Values{}
-			fragment.Set("error", "invitation_required")
-			fragment.Set("pending_oauth_token", pendingToken)
-			fragment.Set("redirect", redirectTo)
-			redirectWithFragment(c, frontendCallback, fragment)
-=======
 	identityKey := service.PendingAuthIdentityKey{
 		ProviderType:    "linuxdo",
 		ProviderKey:     "linuxdo",
@@ -310,11 +275,14 @@ func (h *AuthHandler) LinuxDoOAuthCallback(c *gin.Context) {
 	if compatEmail != "" && !strings.EqualFold(strings.TrimSpace(compatEmail), strings.TrimSpace(email)) {
 		upstreamClaims["compat_email"] = compatEmail
 	}
+	// 邀请返佣：从 cookie 读回 ref（仅对新注册用户生效），透传到 pending session
+	if referrerCode, _ := readCookieDecoded(c, linuxDoOAuthReferrerCookie); referrerCode != "" {
+		upstreamClaims["referrer_code"] = referrerCode
+	}
 	if intent == oauthIntentBindCurrentUser {
 		targetUserID, err := h.readOAuthBindUserIDFromCookie(c, linuxDoOAuthBindUserCookieName)
 		if err != nil {
 			redirectOAuthError(c, frontendCallback, "invalid_state", "invalid oauth bind target", "")
->>>>>>> upstream/main
 			return
 		}
 		if err := h.createOAuthPendingSession(c, oauthPendingSessionPayload{
@@ -478,16 +446,10 @@ func (h *AuthHandler) createLinuxDoOAuthChoicePendingSession(
 }
 
 type completeLinuxDoOAuthRequest struct {
-<<<<<<< HEAD
-	PendingOAuthToken string `json:"pending_oauth_token" binding:"required"`
-	InvitationCode    string `json:"invitation_code"     binding:"required"`
-	ReferrerCode      string `json:"referrer_code"`
-=======
 	InvitationCode   string `json:"invitation_code" binding:"required"`
-	AffCode          string `json:"aff_code,omitempty"`
+	ReferrerCode     string `json:"referrer_code,omitempty"`
 	AdoptDisplayName *bool  `json:"adopt_display_name,omitempty"`
 	AdoptAvatar      *bool  `json:"adopt_avatar,omitempty"`
->>>>>>> upstream/main
 }
 
 // CompleteLinuxDoOAuthRegistration completes a pending OAuth registration by validating
@@ -508,19 +470,6 @@ func (h *AuthHandler) CompleteLinuxDoOAuthRegistration(c *gin.Context) {
 		response.ErrorFrom(c, service.ErrPendingAuthSessionNotFound)
 		return
 	}
-<<<<<<< HEAD
-
-	// 邀请返佣：优先取 request body 中的 referrer_code；若为空，从 OAuth start 阶段
-	// 落的 linuxdo_oauth_ref cookie 兜底（隐藏短链模式 + 老版本前端不传 body 的情况）。
-	referrerCode := sanitizeReferrerCode(req.ReferrerCode)
-	if referrerCode == "" {
-		if cookieCode, cErr := readCookieDecoded(c, linuxDoOAuthReferrerCookie); cErr == nil {
-			referrerCode = sanitizeReferrerCode(cookieCode)
-		}
-	}
-
-	tokenPair, _, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, req.InvitationCode, referrerCode)
-=======
 	browserSessionKey, err := readOAuthPendingBrowserCookie(c)
 	if err != nil {
 		clearOAuthPendingSessionCookie(c, secureCookie)
@@ -529,7 +478,6 @@ func (h *AuthHandler) CompleteLinuxDoOAuthRegistration(c *gin.Context) {
 		return
 	}
 	pendingSvc, err := h.pendingIdentityService()
->>>>>>> upstream/main
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -583,7 +531,15 @@ func (h *AuthHandler) CompleteLinuxDoOAuthRegistration(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	tokenPair, user, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, req.InvitationCode, req.AffCode)
+	// 邀请返佣：优先 request body 中的 referrer_code；为空再从 OAuth start 阶段
+	// 落的 linuxdo_oauth_ref cookie 兜底（隐藏短链模式 + 老前端不传 body）。
+	referrerCode := sanitizeReferrerCode(req.ReferrerCode)
+	if referrerCode == "" {
+		if cookieCode, cErr := readCookieDecoded(c, linuxDoOAuthReferrerCookie); cErr == nil {
+			referrerCode = sanitizeReferrerCode(cookieCode)
+		}
+	}
+	tokenPair, user, err := h.authService.LoginOrRegisterOAuthWithTokenPair(c.Request.Context(), email, username, req.InvitationCode, referrerCode)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

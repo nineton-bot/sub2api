@@ -655,25 +655,6 @@ func userEntityToService(u *dbent.User) *service.User {
 	if u == nil {
 		return nil
 	}
-<<<<<<< HEAD
-	return &service.User{
-		ID:                  u.ID,
-		Email:               u.Email,
-		Username:            u.Username,
-		Notes:               u.Notes,
-		PasswordHash:        u.PasswordHash,
-		Role:                u.Role,
-		Balance:             u.Balance,
-		Concurrency:         u.Concurrency,
-		Status:              u.Status,
-		TotpSecretEncrypted: u.TotpSecretEncrypted,
-		TotpEnabled:         u.TotpEnabled,
-		TotpEnabledAt:       u.TotpEnabledAt,
-		InvitedByUserID:     u.InvitedByUserID,
-		InviteCode:          u.InviteCode,
-		CreatedAt:           u.CreatedAt,
-		UpdatedAt:           u.UpdatedAt,
-=======
 	out := &service.User{
 		ID:                         u.ID,
 		Email:                      u.Email,
@@ -690,6 +671,8 @@ func userEntityToService(u *dbent.User) *service.User {
 		TotpSecretEncrypted:        u.TotpSecretEncrypted,
 		TotpEnabled:                u.TotpEnabled,
 		TotpEnabledAt:              u.TotpEnabledAt,
+		InvitedByUserID:            u.InvitedByUserID,
+		InviteCode:                 u.InviteCode,
 		BalanceNotifyEnabled:       u.BalanceNotifyEnabled,
 		BalanceNotifyThresholdType: u.BalanceNotifyThresholdType,
 		BalanceNotifyThreshold:     u.BalanceNotifyThreshold,
@@ -697,7 +680,6 @@ func userEntityToService(u *dbent.User) *service.User {
 		RPMLimit:                   u.RpmLimit,
 		CreatedAt:                  u.CreatedAt,
 		UpdatedAt:                  u.UpdatedAt,
->>>>>>> upstream/main
 	}
 	// Parse extra emails JSON (supports both old []string and new []NotifyEmailEntry format)
 	if u.BalanceNotifyExtraEmails != "" && u.BalanceNotifyExtraEmails != "[]" {
@@ -748,11 +730,8 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		RequirePrivacySet:               g.RequirePrivacySet,
 		DefaultMappedModel:              g.DefaultMappedModel,
 		MessagesDispatchModelConfig:     g.MessagesDispatchModelConfig,
-<<<<<<< HEAD
 		ConfigTemplate:                  g.ConfigTemplate,
-=======
 		RPMLimit:                        g.RpmLimit,
->>>>>>> upstream/main
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}

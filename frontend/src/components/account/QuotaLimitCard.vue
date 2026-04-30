@@ -7,11 +7,8 @@ import type { QuotaThresholdType, QuotaResetMode } from '@/constants/account'
 const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
-<<<<<<< HEAD
   meter: 'cost' | 'requests' | null
   meterEditable?: boolean
-=======
->>>>>>> upstream/main
   totalLimit: number | null
   dailyLimit: number | null
   weeklyLimit: number | null
@@ -21,10 +18,6 @@ const props = withDefaults(defineProps<{
   weeklyResetDay: number | null
   weeklyResetHour: number | null
   resetTimezone: string | null
-<<<<<<< HEAD
-}>(), {
-  meterEditable: true,
-=======
   quotaNotifyGlobalEnabled?: boolean
   quotaNotifyDailyEnabled?: boolean | null
   quotaNotifyDailyThreshold?: number | null
@@ -36,6 +29,7 @@ const props = withDefaults(defineProps<{
   quotaNotifyTotalThreshold?: number | null
   quotaNotifyTotalThresholdType?: QuotaThresholdType | null
 }>(), {
+  meterEditable: true,
   quotaNotifyGlobalEnabled: false,
   quotaNotifyDailyEnabled: null,
   quotaNotifyDailyThreshold: null,
@@ -46,7 +40,6 @@ const props = withDefaults(defineProps<{
   quotaNotifyTotalEnabled: null,
   quotaNotifyTotalThreshold: null,
   quotaNotifyTotalThresholdType: null,
->>>>>>> upstream/main
 })
 
 const emit = defineEmits<{
@@ -138,7 +131,6 @@ const weeklyFixedHint = computed(() => {
   })
 })
 
-<<<<<<< HEAD
 const onDailyModeChange = (e: Event) => {
   const val = (e.target as HTMLSelectElement).value as 'rolling' | 'fixed'
   emit('update:dailyResetMode', val)
@@ -159,14 +151,13 @@ const onWeeklyModeChange = (e: Event) => {
 }
 
 const isRequestMeter = computed(() => meterValue.value === 'requests')
-=======
+
 const dailyFixedHint = computed(() =>
   t('admin.accounts.quotaDailyLimitHintFixed', {
     hour: String(props.dailyResetHour ?? 0).padStart(2, '0'),
     timezone: props.resetTimezone || 'UTC',
   })
 )
->>>>>>> upstream/main
 </script>
 
 <template>
@@ -201,8 +192,9 @@ const dailyFixedHint = computed(() =>
         </button>
       </div>
 
-<<<<<<< HEAD
-      <div v-if="localEnabled" class="space-y-3">
+      <!-- Collapsible content -->
+      <div v-if="localEnabled && !collapsed" class="space-y-2 p-4 pt-3">
+        <!-- Meter selector (cost vs request count) -->
         <div>
           <label class="input-label">{{ t('admin.accounts.quotaMeter') }}</label>
           <select
@@ -216,149 +208,12 @@ const dailyFixedHint = computed(() =>
           </select>
         </div>
 
-        <!-- 日配额 -->
-        <div>
-          <label class="input-label">{{ t('admin.accounts.quotaDailyLimit') }}</label>
-          <div class="relative">
-            <span v-if="!isRequestMeter" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
-            <input
-              :value="dailyLimit"
-              @input="onDailyInput"
-              type="number"
-              min="0"
-              :step="isRequestMeter ? '1' : '0.01'"
-              :class="['input', isRequestMeter ? '' : 'pl-7']"
-              :placeholder="t('admin.accounts.quotaLimitPlaceholder')"
-            />
-          </div>
-          <!-- 日配额重置模式 -->
-          <div class="mt-2 flex items-center gap-2">
-            <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ t('admin.accounts.quotaResetMode') }}</label>
-            <select
-              :value="dailyResetMode || 'rolling'"
-              @change="onDailyModeChange"
-              class="input py-1 text-xs"
-            >
-              <option value="rolling">{{ t('admin.accounts.quotaResetModeRolling') }}</option>
-              <option value="fixed">{{ t('admin.accounts.quotaResetModeFixed') }}</option>
-            </select>
-          </div>
-          <!-- 固定模式：小时选择 -->
-          <div v-if="dailyResetMode === 'fixed'" class="mt-2 flex items-center gap-2">
-            <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ t('admin.accounts.quotaResetHour') }}</label>
-            <select
-              :value="dailyResetHour ?? 0"
-              @change="emit('update:dailyResetHour', Number(($event.target as HTMLSelectElement).value))"
-              class="input py-1 text-xs w-24"
-            >
-              <option v-for="h in hourOptions" :key="h" :value="h">{{ String(h).padStart(2, '0') }}:00</option>
-            </select>
-          </div>
-          <p class="input-hint">
-            <template v-if="dailyResetMode === 'fixed'">
-              {{ t('admin.accounts.quotaDailyLimitHintFixed', { hour: String(dailyResetHour ?? 0).padStart(2, '0'), timezone: resetTimezone || 'UTC' }) }}
-            </template>
-            <template v-else>
-              {{ isRequestMeter ? t('admin.accounts.quotaDailyLimitHintRequests') : t('admin.accounts.quotaDailyLimitHint') }}
-            </template>
-          </p>
-        </div>
-
-        <!-- 周配额 -->
-        <div>
-          <label class="input-label">{{ t('admin.accounts.quotaWeeklyLimit') }}</label>
-          <div class="relative">
-            <span v-if="!isRequestMeter" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
-            <input
-              :value="weeklyLimit"
-              @input="onWeeklyInput"
-              type="number"
-              min="0"
-              :step="isRequestMeter ? '1' : '0.01'"
-              :class="['input', isRequestMeter ? '' : 'pl-7']"
-              :placeholder="t('admin.accounts.quotaLimitPlaceholder')"
-            />
-          </div>
-          <!-- 周配额重置模式 -->
-          <div class="mt-2 flex items-center gap-2">
-            <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ t('admin.accounts.quotaResetMode') }}</label>
-            <select
-              :value="weeklyResetMode || 'rolling'"
-              @change="onWeeklyModeChange"
-              class="input py-1 text-xs"
-            >
-              <option value="rolling">{{ t('admin.accounts.quotaResetModeRolling') }}</option>
-              <option value="fixed">{{ t('admin.accounts.quotaResetModeFixed') }}</option>
-            </select>
-          </div>
-          <!-- 固定模式：星期几 + 小时 -->
-          <div v-if="weeklyResetMode === 'fixed'" class="mt-2 flex items-center gap-2 flex-wrap">
-            <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ t('admin.accounts.quotaWeeklyResetDay') }}</label>
-            <select
-              :value="weeklyResetDay ?? 1"
-              @change="emit('update:weeklyResetDay', Number(($event.target as HTMLSelectElement).value))"
-              class="input py-1 text-xs w-28"
-            >
-              <option v-for="d in dayOptions" :key="d.value" :value="d.value">{{ t('admin.accounts.dayOfWeek.' + d.key) }}</option>
-            </select>
-            <label class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ t('admin.accounts.quotaResetHour') }}</label>
-            <select
-              :value="weeklyResetHour ?? 0"
-              @change="emit('update:weeklyResetHour', Number(($event.target as HTMLSelectElement).value))"
-              class="input py-1 text-xs w-24"
-            >
-              <option v-for="h in hourOptions" :key="h" :value="h">{{ String(h).padStart(2, '0') }}:00</option>
-            </select>
-          </div>
-          <p class="input-hint">
-            <template v-if="weeklyResetMode === 'fixed'">
-              {{ t('admin.accounts.quotaWeeklyLimitHintFixed', { day: t('admin.accounts.dayOfWeek.' + (dayOptions.find(d => d.value === (weeklyResetDay ?? 1))?.key || 'monday')), hour: String(weeklyResetHour ?? 0).padStart(2, '0'), timezone: resetTimezone || 'UTC' }) }}
-            </template>
-            <template v-else>
-              {{ isRequestMeter ? t('admin.accounts.quotaWeeklyLimitHintRequests') : t('admin.accounts.quotaWeeklyLimitHint') }}
-            </template>
-          </p>
-        </div>
-
-        <!-- 时区选择（当任一维度使用固定模式时显示） -->
-        <div v-if="hasFixedMode">
-          <label class="input-label">{{ t('admin.accounts.quotaResetTimezone') }}</label>
-          <select
-            :value="resetTimezone || 'UTC'"
-            @change="emit('update:resetTimezone', ($event.target as HTMLSelectElement).value)"
-            class="input text-sm"
-          >
-            <option v-for="tz in timezoneOptions" :key="tz" :value="tz">{{ tz }}</option>
-          </select>
-        </div>
-
-        <!-- 总配额 -->
-        <div>
-          <label class="input-label">{{ t('admin.accounts.quotaTotalLimit') }}</label>
-          <div class="relative">
-            <span v-if="!isRequestMeter" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
-            <input
-              :value="totalLimit"
-              @input="onTotalInput"
-              type="number"
-              min="0"
-              :step="isRequestMeter ? '1' : '0.01'"
-              :class="['input', isRequestMeter ? '' : 'pl-7']"
-              :placeholder="t('admin.accounts.quotaLimitPlaceholder')"
-            />
-          </div>
-          <p class="input-hint">
-            {{ isRequestMeter ? t('admin.accounts.quotaTotalLimitHintRequests') : t('admin.accounts.quotaTotalLimitHint') }}
-          </p>
-        </div>
-=======
-      <!-- Collapsible content -->
-      <div v-if="localEnabled && !collapsed" class="space-y-2 p-4 pt-3">
         <!-- Daily quota -->
         <QuotaDimensionRow
           dim="daily"
           :label="t('admin.accounts.quotaDailyLimit')"
           :limit="dailyLimit"
+          :is-request-meter="isRequestMeter"
           :quota-notify-global-enabled="quotaNotifyGlobalEnabled"
           :notify-enabled="props.quotaNotifyDailyEnabled"
           :notify-threshold="props.quotaNotifyDailyThreshold"
@@ -367,7 +222,7 @@ const dailyFixedHint = computed(() =>
           :reset-hour="dailyResetHour"
           :reset-day="null"
           :reset-timezone="resetTimezone"
-          :hint-rolling="t('admin.accounts.quotaDailyLimitHint')"
+          :hint-rolling="isRequestMeter ? t('admin.accounts.quotaDailyLimitHintRequests') : t('admin.accounts.quotaDailyLimitHint')"
           :hint-fixed="dailyFixedHint"
           :hour-options="hourOptions"
           :day-options="dayOptions"
@@ -386,6 +241,7 @@ const dailyFixedHint = computed(() =>
           dim="weekly"
           :label="t('admin.accounts.quotaWeeklyLimit')"
           :limit="weeklyLimit"
+          :is-request-meter="isRequestMeter"
           :quota-notify-global-enabled="quotaNotifyGlobalEnabled"
           :notify-enabled="props.quotaNotifyWeeklyEnabled"
           :notify-threshold="props.quotaNotifyWeeklyThreshold"
@@ -394,7 +250,7 @@ const dailyFixedHint = computed(() =>
           :reset-hour="weeklyResetHour"
           :reset-day="weeklyResetDay"
           :reset-timezone="resetTimezone"
-          :hint-rolling="t('admin.accounts.quotaWeeklyLimitHint')"
+          :hint-rolling="isRequestMeter ? t('admin.accounts.quotaWeeklyLimitHintRequests') : t('admin.accounts.quotaWeeklyLimitHint')"
           :hint-fixed="weeklyFixedHint"
           :hour-options="hourOptions"
           :day-options="dayOptions"
@@ -414,6 +270,7 @@ const dailyFixedHint = computed(() =>
           dim="total"
           :label="t('admin.accounts.quotaTotalLimit')"
           :limit="totalLimit"
+          :is-request-meter="isRequestMeter"
           :quota-notify-global-enabled="quotaNotifyGlobalEnabled"
           :notify-enabled="props.quotaNotifyTotalEnabled"
           :notify-threshold="props.quotaNotifyTotalThreshold"
@@ -422,7 +279,7 @@ const dailyFixedHint = computed(() =>
           :reset-hour="null"
           :reset-day="null"
           :reset-timezone="null"
-          :hint-rolling="t('admin.accounts.quotaTotalLimitHint')"
+          :hint-rolling="isRequestMeter ? t('admin.accounts.quotaTotalLimitHintRequests') : t('admin.accounts.quotaTotalLimitHint')"
           hint-fixed=""
           :hour-options="hourOptions"
           :day-options="dayOptions"
@@ -431,7 +288,6 @@ const dailyFixedHint = computed(() =>
           @update:notify-threshold="emit('update:quotaNotifyTotalThreshold', $event)"
           @update:notify-threshold-type="emit('update:quotaNotifyTotalThresholdType', $event)"
         />
->>>>>>> upstream/main
       </div>
   </div>
 </template>

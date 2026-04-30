@@ -9,6 +9,7 @@ const props = defineProps<{
   dim: 'daily' | 'weekly' | 'total'
   label: string
   limit: number | null
+  isRequestMeter?: boolean
   quotaNotifyGlobalEnabled: boolean
   notifyEnabled: boolean | null
   notifyThreshold: number | null
@@ -78,8 +79,8 @@ function getTimezoneOffsetLabel(tz: string): string {
     <!-- Input row -->
     <div class="flex items-center gap-2">
       <div :class="['relative', quotaNotifyGlobalEnabled ? 'flex-1 min-w-0' : 'flex-1']">
-        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">$</span>
-        <input :value="limit" @input="onLimitInput" type="number" min="0" step="0.01" class="input pl-6 py-1.5 text-sm" :placeholder="t('admin.accounts.quotaLimitPlaceholder')" />
+        <span v-if="!isRequestMeter" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">$</span>
+        <input :value="limit" @input="onLimitInput" type="number" min="0" :step="isRequestMeter ? '1' : '0.01'" :class="['input py-1.5 text-sm', isRequestMeter ? '' : 'pl-6']" :placeholder="t('admin.accounts.quotaLimitPlaceholder')" />
       </div>
       <QuotaNotifyToggle
         v-if="quotaNotifyGlobalEnabled && limit && limit > 0"
