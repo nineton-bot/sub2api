@@ -39,20 +39,12 @@ type Group struct {
 	Platform string `json:"platform,omitempty"`
 	// SubscriptionType holds the value of the "subscription_type" field.
 	SubscriptionType string `json:"subscription_type,omitempty"`
-	// SubscriptionMeter holds the value of the "subscription_meter" field.
-	SubscriptionMeter string `json:"subscription_meter,omitempty"`
 	// DailyLimitUsd holds the value of the "daily_limit_usd" field.
 	DailyLimitUsd *float64 `json:"daily_limit_usd,omitempty"`
 	// WeeklyLimitUsd holds the value of the "weekly_limit_usd" field.
 	WeeklyLimitUsd *float64 `json:"weekly_limit_usd,omitempty"`
 	// MonthlyLimitUsd holds the value of the "monthly_limit_usd" field.
 	MonthlyLimitUsd *float64 `json:"monthly_limit_usd,omitempty"`
-	// DailyRequestLimit holds the value of the "daily_request_limit" field.
-	DailyRequestLimit *int `json:"daily_request_limit,omitempty"`
-	// WeeklyRequestLimit holds the value of the "weekly_request_limit" field.
-	WeeklyRequestLimit *int `json:"weekly_request_limit,omitempty"`
-	// MonthlyRequestLimit holds the value of the "monthly_request_limit" field.
-	MonthlyRequestLimit *int `json:"monthly_request_limit,omitempty"`
 	// DefaultValidityDays holds the value of the "default_validity_days" field.
 	DefaultValidityDays int `json:"default_validity_days,omitempty"`
 	// ImagePrice1k holds the value of the "image_price_1k" field.
@@ -87,8 +79,8 @@ type Group struct {
 	DefaultMappedModel string `json:"default_mapped_model,omitempty"`
 	// OpenAI Messages 调度模型配置：按 Claude 系列/精确模型映射到目标 GPT 模型
 	MessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config,omitempty"`
-	// 使用密钥弹窗的配置模板：claude_native(Claude 原生) / domestic_anthropic(国产 Anthropic 协议)
-	ConfigTemplate string `json:"config_template,omitempty"`
+	// 分组 RPM 上限，0 表示不限制；设置后接管该分组用户的限流
+	RpmLimit int `json:"rpm_limit,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GroupQuery when eager-loading is set.
 	Edges        GroupEdges `json:"edges"`
@@ -201,9 +193,9 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case group.FieldRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k:
 			values[i] = new(sql.NullFloat64)
-		case group.FieldID, group.FieldDailyRequestLimit, group.FieldWeeklyRequestLimit, group.FieldMonthlyRequestLimit, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder:
+		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldRpmLimit:
 			values[i] = new(sql.NullInt64)
-		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldSubscriptionMeter, group.FieldDefaultMappedModel, group.FieldConfigTemplate:
+		case group.FieldName, group.FieldDescription, group.FieldStatus, group.FieldPlatform, group.FieldSubscriptionType, group.FieldDefaultMappedModel:
 			values[i] = new(sql.NullString)
 		case group.FieldCreatedAt, group.FieldUpdatedAt, group.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
@@ -290,12 +282,6 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SubscriptionType = value.String
 			}
-		case group.FieldSubscriptionMeter:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field subscription_meter", values[i])
-			} else if value.Valid {
-				_m.SubscriptionMeter = value.String
-			}
 		case group.FieldDailyLimitUsd:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field daily_limit_usd", values[i])
@@ -316,27 +302,6 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.MonthlyLimitUsd = new(float64)
 				*_m.MonthlyLimitUsd = value.Float64
-			}
-		case group.FieldDailyRequestLimit:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field daily_request_limit", values[i])
-			} else if value.Valid {
-				_m.DailyRequestLimit = new(int)
-				*_m.DailyRequestLimit = int(value.Int64)
-			}
-		case group.FieldWeeklyRequestLimit:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field weekly_request_limit", values[i])
-			} else if value.Valid {
-				_m.WeeklyRequestLimit = new(int)
-				*_m.WeeklyRequestLimit = int(value.Int64)
-			}
-		case group.FieldMonthlyRequestLimit:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field monthly_request_limit", values[i])
-			} else if value.Valid {
-				_m.MonthlyRequestLimit = new(int)
-				*_m.MonthlyRequestLimit = int(value.Int64)
 			}
 		case group.FieldDefaultValidityDays:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -451,11 +416,11 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field messages_dispatch_model_config: %w", err)
 				}
 			}
-		case group.FieldConfigTemplate:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field config_template", values[i])
+		case group.FieldRpmLimit:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field rpm_limit", values[i])
 			} else if value.Valid {
-				_m.ConfigTemplate = value.String
+				_m.RpmLimit = int(value.Int64)
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -567,9 +532,6 @@ func (_m *Group) String() string {
 	builder.WriteString("subscription_type=")
 	builder.WriteString(_m.SubscriptionType)
 	builder.WriteString(", ")
-	builder.WriteString("subscription_meter=")
-	builder.WriteString(_m.SubscriptionMeter)
-	builder.WriteString(", ")
 	if v := _m.DailyLimitUsd; v != nil {
 		builder.WriteString("daily_limit_usd=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
@@ -582,21 +544,6 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	if v := _m.MonthlyLimitUsd; v != nil {
 		builder.WriteString("monthly_limit_usd=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.DailyRequestLimit; v != nil {
-		builder.WriteString("daily_request_limit=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.WeeklyRequestLimit; v != nil {
-		builder.WriteString("weekly_request_limit=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.MonthlyRequestLimit; v != nil {
-		builder.WriteString("monthly_request_limit=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
@@ -661,8 +608,8 @@ func (_m *Group) String() string {
 	builder.WriteString("messages_dispatch_model_config=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MessagesDispatchModelConfig))
 	builder.WriteString(", ")
-	builder.WriteString("config_template=")
-	builder.WriteString(_m.ConfigTemplate)
+	builder.WriteString("rpm_limit=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RpmLimit))
 	builder.WriteByte(')')
 	return builder.String()
 }

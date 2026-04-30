@@ -163,6 +163,11 @@ func (Group) Fields() []ent.Field {
 			MaxLen(32).
 			Default(domain.ConfigTemplateClaudeNative).
 			Comment("使用密钥弹窗的配置模板：claude_native(Claude 原生) / domestic_anthropic(国产 Anthropic 协议)"),
+
+		// 分组级每分钟请求数上限（0 = 不限制）。设置后优先于用户级兜底生效。
+		field.Int("rpm_limit").
+			Default(0).
+			Comment("分组 RPM 上限，0 表示不限制；设置后接管该分组用户的限流"),
 	}
 }
 

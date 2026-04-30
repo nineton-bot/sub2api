@@ -138,10 +138,21 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 		WithUser(func(q *dbent.UserQuery) {
 			q.Select(
 				user.FieldID,
+				user.FieldEmail,
+				user.FieldUsername,
 				user.FieldStatus,
 				user.FieldRole,
 				user.FieldBalance,
 				user.FieldConcurrency,
+				user.FieldBalanceNotifyEnabled,
+				user.FieldBalanceNotifyThresholdType,
+				user.FieldBalanceNotifyThreshold,
+				user.FieldBalanceNotifyExtraEmails,
+				user.FieldTotalRecharged,
+				user.FieldSignupSource,
+				user.FieldLastLoginAt,
+				user.FieldLastActiveAt,
+				user.FieldRpmLimit,
 			)
 		}).
 		WithGroup(func(q *dbent.GroupQuery) {
@@ -172,6 +183,7 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 				group.FieldAllowMessagesDispatch,
 				group.FieldDefaultMappedModel,
 				group.FieldMessagesDispatchModelConfig,
+				group.FieldRpmLimit,
 			)
 		}).
 		Only(ctx)
@@ -643,6 +655,7 @@ func userEntityToService(u *dbent.User) *service.User {
 	if u == nil {
 		return nil
 	}
+<<<<<<< HEAD
 	return &service.User{
 		ID:                  u.ID,
 		Email:               u.Email,
@@ -660,7 +673,37 @@ func userEntityToService(u *dbent.User) *service.User {
 		InviteCode:          u.InviteCode,
 		CreatedAt:           u.CreatedAt,
 		UpdatedAt:           u.UpdatedAt,
+=======
+	out := &service.User{
+		ID:                         u.ID,
+		Email:                      u.Email,
+		Username:                   u.Username,
+		Notes:                      u.Notes,
+		PasswordHash:               u.PasswordHash,
+		Role:                       u.Role,
+		Balance:                    u.Balance,
+		Concurrency:                u.Concurrency,
+		Status:                     u.Status,
+		SignupSource:               u.SignupSource,
+		LastLoginAt:                u.LastLoginAt,
+		LastActiveAt:               u.LastActiveAt,
+		TotpSecretEncrypted:        u.TotpSecretEncrypted,
+		TotpEnabled:                u.TotpEnabled,
+		TotpEnabledAt:              u.TotpEnabledAt,
+		BalanceNotifyEnabled:       u.BalanceNotifyEnabled,
+		BalanceNotifyThresholdType: u.BalanceNotifyThresholdType,
+		BalanceNotifyThreshold:     u.BalanceNotifyThreshold,
+		TotalRecharged:             u.TotalRecharged,
+		RPMLimit:                   u.RpmLimit,
+		CreatedAt:                  u.CreatedAt,
+		UpdatedAt:                  u.UpdatedAt,
+>>>>>>> upstream/main
 	}
+	// Parse extra emails JSON (supports both old []string and new []NotifyEmailEntry format)
+	if u.BalanceNotifyExtraEmails != "" && u.BalanceNotifyExtraEmails != "[]" {
+		out.BalanceNotifyExtraEmails = service.ParseNotifyEmails(u.BalanceNotifyExtraEmails)
+	}
+	return out
 }
 
 func groupEntityToService(g *dbent.Group) *service.Group {
@@ -705,7 +748,11 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		RequirePrivacySet:               g.RequirePrivacySet,
 		DefaultMappedModel:              g.DefaultMappedModel,
 		MessagesDispatchModelConfig:     g.MessagesDispatchModelConfig,
+<<<<<<< HEAD
 		ConfigTemplate:                  g.ConfigTemplate,
+=======
+		RPMLimit:                        g.RpmLimit,
+>>>>>>> upstream/main
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}

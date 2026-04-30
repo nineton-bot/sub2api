@@ -173,20 +173,6 @@ func (_u *GroupUpdate) SetNillableSubscriptionType(v *string) *GroupUpdate {
 	return _u
 }
 
-// SetSubscriptionMeter sets the "subscription_meter" field.
-func (_u *GroupUpdate) SetSubscriptionMeter(v string) *GroupUpdate {
-	_u.mutation.SetSubscriptionMeter(v)
-	return _u
-}
-
-// SetNillableSubscriptionMeter sets the "subscription_meter" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableSubscriptionMeter(v *string) *GroupUpdate {
-	if v != nil {
-		_u.SetSubscriptionMeter(*v)
-	}
-	return _u
-}
-
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (_u *GroupUpdate) SetDailyLimitUsd(v float64) *GroupUpdate {
 	_u.mutation.ResetDailyLimitUsd()
@@ -265,87 +251,6 @@ func (_u *GroupUpdate) AddMonthlyLimitUsd(v float64) *GroupUpdate {
 // ClearMonthlyLimitUsd clears the value of the "monthly_limit_usd" field.
 func (_u *GroupUpdate) ClearMonthlyLimitUsd() *GroupUpdate {
 	_u.mutation.ClearMonthlyLimitUsd()
-	return _u
-}
-
-// SetDailyRequestLimit sets the "daily_request_limit" field.
-func (_u *GroupUpdate) SetDailyRequestLimit(v int) *GroupUpdate {
-	_u.mutation.ResetDailyRequestLimit()
-	_u.mutation.SetDailyRequestLimit(v)
-	return _u
-}
-
-// SetNillableDailyRequestLimit sets the "daily_request_limit" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableDailyRequestLimit(v *int) *GroupUpdate {
-	if v != nil {
-		_u.SetDailyRequestLimit(*v)
-	}
-	return _u
-}
-
-// AddDailyRequestLimit adds value to the "daily_request_limit" field.
-func (_u *GroupUpdate) AddDailyRequestLimit(v int) *GroupUpdate {
-	_u.mutation.AddDailyRequestLimit(v)
-	return _u
-}
-
-// ClearDailyRequestLimit clears the value of the "daily_request_limit" field.
-func (_u *GroupUpdate) ClearDailyRequestLimit() *GroupUpdate {
-	_u.mutation.ClearDailyRequestLimit()
-	return _u
-}
-
-// SetWeeklyRequestLimit sets the "weekly_request_limit" field.
-func (_u *GroupUpdate) SetWeeklyRequestLimit(v int) *GroupUpdate {
-	_u.mutation.ResetWeeklyRequestLimit()
-	_u.mutation.SetWeeklyRequestLimit(v)
-	return _u
-}
-
-// SetNillableWeeklyRequestLimit sets the "weekly_request_limit" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableWeeklyRequestLimit(v *int) *GroupUpdate {
-	if v != nil {
-		_u.SetWeeklyRequestLimit(*v)
-	}
-	return _u
-}
-
-// AddWeeklyRequestLimit adds value to the "weekly_request_limit" field.
-func (_u *GroupUpdate) AddWeeklyRequestLimit(v int) *GroupUpdate {
-	_u.mutation.AddWeeklyRequestLimit(v)
-	return _u
-}
-
-// ClearWeeklyRequestLimit clears the value of the "weekly_request_limit" field.
-func (_u *GroupUpdate) ClearWeeklyRequestLimit() *GroupUpdate {
-	_u.mutation.ClearWeeklyRequestLimit()
-	return _u
-}
-
-// SetMonthlyRequestLimit sets the "monthly_request_limit" field.
-func (_u *GroupUpdate) SetMonthlyRequestLimit(v int) *GroupUpdate {
-	_u.mutation.ResetMonthlyRequestLimit()
-	_u.mutation.SetMonthlyRequestLimit(v)
-	return _u
-}
-
-// SetNillableMonthlyRequestLimit sets the "monthly_request_limit" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableMonthlyRequestLimit(v *int) *GroupUpdate {
-	if v != nil {
-		_u.SetMonthlyRequestLimit(*v)
-	}
-	return _u
-}
-
-// AddMonthlyRequestLimit adds value to the "monthly_request_limit" field.
-func (_u *GroupUpdate) AddMonthlyRequestLimit(v int) *GroupUpdate {
-	_u.mutation.AddMonthlyRequestLimit(v)
-	return _u
-}
-
-// ClearMonthlyRequestLimit clears the value of the "monthly_request_limit" field.
-func (_u *GroupUpdate) ClearMonthlyRequestLimit() *GroupUpdate {
-	_u.mutation.ClearMonthlyRequestLimit()
 	return _u
 }
 
@@ -662,17 +567,24 @@ func (_u *GroupUpdate) SetNillableMessagesDispatchModelConfig(v *domain.OpenAIMe
 	return _u
 }
 
-// SetConfigTemplate sets the "config_template" field.
-func (_u *GroupUpdate) SetConfigTemplate(v string) *GroupUpdate {
-	_u.mutation.SetConfigTemplate(v)
+// SetRpmLimit sets the "rpm_limit" field.
+func (_u *GroupUpdate) SetRpmLimit(v int) *GroupUpdate {
+	_u.mutation.ResetRpmLimit()
+	_u.mutation.SetRpmLimit(v)
 	return _u
 }
 
-// SetNillableConfigTemplate sets the "config_template" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableConfigTemplate(v *string) *GroupUpdate {
+// SetNillableRpmLimit sets the "rpm_limit" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableRpmLimit(v *int) *GroupUpdate {
 	if v != nil {
-		_u.SetConfigTemplate(*v)
+		_u.SetRpmLimit(*v)
 	}
+	return _u
+}
+
+// AddRpmLimit adds value to the "rpm_limit" field.
+func (_u *GroupUpdate) AddRpmLimit(v int) *GroupUpdate {
+	_u.mutation.AddRpmLimit(v)
 	return _u
 }
 
@@ -961,19 +873,9 @@ func (_u *GroupUpdate) check() error {
 			return &ValidationError{Name: "subscription_type", err: fmt.Errorf(`ent: validator failed for field "Group.subscription_type": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.SubscriptionMeter(); ok {
-		if err := group.SubscriptionMeterValidator(v); err != nil {
-			return &ValidationError{Name: "subscription_meter", err: fmt.Errorf(`ent: validator failed for field "Group.subscription_meter": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.DefaultMappedModel(); ok {
 		if err := group.DefaultMappedModelValidator(v); err != nil {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.ConfigTemplate(); ok {
-		if err := group.ConfigTemplateValidator(v); err != nil {
-			return &ValidationError{Name: "config_template", err: fmt.Errorf(`ent: validator failed for field "Group.config_template": %w`, err)}
 		}
 	}
 	return nil
@@ -1027,9 +929,6 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.SubscriptionType(); ok {
 		_spec.SetField(group.FieldSubscriptionType, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.SubscriptionMeter(); ok {
-		_spec.SetField(group.FieldSubscriptionMeter, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.DailyLimitUsd(); ok {
 		_spec.SetField(group.FieldDailyLimitUsd, field.TypeFloat64, value)
 	}
@@ -1056,33 +955,6 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.MonthlyLimitUsdCleared() {
 		_spec.ClearField(group.FieldMonthlyLimitUsd, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.DailyRequestLimit(); ok {
-		_spec.SetField(group.FieldDailyRequestLimit, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedDailyRequestLimit(); ok {
-		_spec.AddField(group.FieldDailyRequestLimit, field.TypeInt, value)
-	}
-	if _u.mutation.DailyRequestLimitCleared() {
-		_spec.ClearField(group.FieldDailyRequestLimit, field.TypeInt)
-	}
-	if value, ok := _u.mutation.WeeklyRequestLimit(); ok {
-		_spec.SetField(group.FieldWeeklyRequestLimit, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedWeeklyRequestLimit(); ok {
-		_spec.AddField(group.FieldWeeklyRequestLimit, field.TypeInt, value)
-	}
-	if _u.mutation.WeeklyRequestLimitCleared() {
-		_spec.ClearField(group.FieldWeeklyRequestLimit, field.TypeInt)
-	}
-	if value, ok := _u.mutation.MonthlyRequestLimit(); ok {
-		_spec.SetField(group.FieldMonthlyRequestLimit, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedMonthlyRequestLimit(); ok {
-		_spec.AddField(group.FieldMonthlyRequestLimit, field.TypeInt, value)
-	}
-	if _u.mutation.MonthlyRequestLimitCleared() {
-		_spec.ClearField(group.FieldMonthlyRequestLimit, field.TypeInt)
 	}
 	if value, ok := _u.mutation.DefaultValidityDays(); ok {
 		_spec.SetField(group.FieldDefaultValidityDays, field.TypeInt, value)
@@ -1179,8 +1051,11 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.MessagesDispatchModelConfig(); ok {
 		_spec.SetField(group.FieldMessagesDispatchModelConfig, field.TypeJSON, value)
 	}
-	if value, ok := _u.mutation.ConfigTemplate(); ok {
-		_spec.SetField(group.FieldConfigTemplate, field.TypeString, value)
+	if value, ok := _u.mutation.RpmLimit(); ok {
+		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRpmLimit(); ok {
+		_spec.AddField(group.FieldRpmLimit, field.TypeInt, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1633,20 +1508,6 @@ func (_u *GroupUpdateOne) SetNillableSubscriptionType(v *string) *GroupUpdateOne
 	return _u
 }
 
-// SetSubscriptionMeter sets the "subscription_meter" field.
-func (_u *GroupUpdateOne) SetSubscriptionMeter(v string) *GroupUpdateOne {
-	_u.mutation.SetSubscriptionMeter(v)
-	return _u
-}
-
-// SetNillableSubscriptionMeter sets the "subscription_meter" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableSubscriptionMeter(v *string) *GroupUpdateOne {
-	if v != nil {
-		_u.SetSubscriptionMeter(*v)
-	}
-	return _u
-}
-
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (_u *GroupUpdateOne) SetDailyLimitUsd(v float64) *GroupUpdateOne {
 	_u.mutation.ResetDailyLimitUsd()
@@ -1725,87 +1586,6 @@ func (_u *GroupUpdateOne) AddMonthlyLimitUsd(v float64) *GroupUpdateOne {
 // ClearMonthlyLimitUsd clears the value of the "monthly_limit_usd" field.
 func (_u *GroupUpdateOne) ClearMonthlyLimitUsd() *GroupUpdateOne {
 	_u.mutation.ClearMonthlyLimitUsd()
-	return _u
-}
-
-// SetDailyRequestLimit sets the "daily_request_limit" field.
-func (_u *GroupUpdateOne) SetDailyRequestLimit(v int) *GroupUpdateOne {
-	_u.mutation.ResetDailyRequestLimit()
-	_u.mutation.SetDailyRequestLimit(v)
-	return _u
-}
-
-// SetNillableDailyRequestLimit sets the "daily_request_limit" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableDailyRequestLimit(v *int) *GroupUpdateOne {
-	if v != nil {
-		_u.SetDailyRequestLimit(*v)
-	}
-	return _u
-}
-
-// AddDailyRequestLimit adds value to the "daily_request_limit" field.
-func (_u *GroupUpdateOne) AddDailyRequestLimit(v int) *GroupUpdateOne {
-	_u.mutation.AddDailyRequestLimit(v)
-	return _u
-}
-
-// ClearDailyRequestLimit clears the value of the "daily_request_limit" field.
-func (_u *GroupUpdateOne) ClearDailyRequestLimit() *GroupUpdateOne {
-	_u.mutation.ClearDailyRequestLimit()
-	return _u
-}
-
-// SetWeeklyRequestLimit sets the "weekly_request_limit" field.
-func (_u *GroupUpdateOne) SetWeeklyRequestLimit(v int) *GroupUpdateOne {
-	_u.mutation.ResetWeeklyRequestLimit()
-	_u.mutation.SetWeeklyRequestLimit(v)
-	return _u
-}
-
-// SetNillableWeeklyRequestLimit sets the "weekly_request_limit" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableWeeklyRequestLimit(v *int) *GroupUpdateOne {
-	if v != nil {
-		_u.SetWeeklyRequestLimit(*v)
-	}
-	return _u
-}
-
-// AddWeeklyRequestLimit adds value to the "weekly_request_limit" field.
-func (_u *GroupUpdateOne) AddWeeklyRequestLimit(v int) *GroupUpdateOne {
-	_u.mutation.AddWeeklyRequestLimit(v)
-	return _u
-}
-
-// ClearWeeklyRequestLimit clears the value of the "weekly_request_limit" field.
-func (_u *GroupUpdateOne) ClearWeeklyRequestLimit() *GroupUpdateOne {
-	_u.mutation.ClearWeeklyRequestLimit()
-	return _u
-}
-
-// SetMonthlyRequestLimit sets the "monthly_request_limit" field.
-func (_u *GroupUpdateOne) SetMonthlyRequestLimit(v int) *GroupUpdateOne {
-	_u.mutation.ResetMonthlyRequestLimit()
-	_u.mutation.SetMonthlyRequestLimit(v)
-	return _u
-}
-
-// SetNillableMonthlyRequestLimit sets the "monthly_request_limit" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableMonthlyRequestLimit(v *int) *GroupUpdateOne {
-	if v != nil {
-		_u.SetMonthlyRequestLimit(*v)
-	}
-	return _u
-}
-
-// AddMonthlyRequestLimit adds value to the "monthly_request_limit" field.
-func (_u *GroupUpdateOne) AddMonthlyRequestLimit(v int) *GroupUpdateOne {
-	_u.mutation.AddMonthlyRequestLimit(v)
-	return _u
-}
-
-// ClearMonthlyRequestLimit clears the value of the "monthly_request_limit" field.
-func (_u *GroupUpdateOne) ClearMonthlyRequestLimit() *GroupUpdateOne {
-	_u.mutation.ClearMonthlyRequestLimit()
 	return _u
 }
 
@@ -2122,17 +1902,24 @@ func (_u *GroupUpdateOne) SetNillableMessagesDispatchModelConfig(v *domain.OpenA
 	return _u
 }
 
-// SetConfigTemplate sets the "config_template" field.
-func (_u *GroupUpdateOne) SetConfigTemplate(v string) *GroupUpdateOne {
-	_u.mutation.SetConfigTemplate(v)
+// SetRpmLimit sets the "rpm_limit" field.
+func (_u *GroupUpdateOne) SetRpmLimit(v int) *GroupUpdateOne {
+	_u.mutation.ResetRpmLimit()
+	_u.mutation.SetRpmLimit(v)
 	return _u
 }
 
-// SetNillableConfigTemplate sets the "config_template" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableConfigTemplate(v *string) *GroupUpdateOne {
+// SetNillableRpmLimit sets the "rpm_limit" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableRpmLimit(v *int) *GroupUpdateOne {
 	if v != nil {
-		_u.SetConfigTemplate(*v)
+		_u.SetRpmLimit(*v)
 	}
+	return _u
+}
+
+// AddRpmLimit adds value to the "rpm_limit" field.
+func (_u *GroupUpdateOne) AddRpmLimit(v int) *GroupUpdateOne {
+	_u.mutation.AddRpmLimit(v)
 	return _u
 }
 
@@ -2434,19 +2221,9 @@ func (_u *GroupUpdateOne) check() error {
 			return &ValidationError{Name: "subscription_type", err: fmt.Errorf(`ent: validator failed for field "Group.subscription_type": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.SubscriptionMeter(); ok {
-		if err := group.SubscriptionMeterValidator(v); err != nil {
-			return &ValidationError{Name: "subscription_meter", err: fmt.Errorf(`ent: validator failed for field "Group.subscription_meter": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.DefaultMappedModel(); ok {
 		if err := group.DefaultMappedModelValidator(v); err != nil {
 			return &ValidationError{Name: "default_mapped_model", err: fmt.Errorf(`ent: validator failed for field "Group.default_mapped_model": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.ConfigTemplate(); ok {
-		if err := group.ConfigTemplateValidator(v); err != nil {
-			return &ValidationError{Name: "config_template", err: fmt.Errorf(`ent: validator failed for field "Group.config_template": %w`, err)}
 		}
 	}
 	return nil
@@ -2517,9 +2294,6 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	if value, ok := _u.mutation.SubscriptionType(); ok {
 		_spec.SetField(group.FieldSubscriptionType, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.SubscriptionMeter(); ok {
-		_spec.SetField(group.FieldSubscriptionMeter, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.DailyLimitUsd(); ok {
 		_spec.SetField(group.FieldDailyLimitUsd, field.TypeFloat64, value)
 	}
@@ -2546,33 +2320,6 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if _u.mutation.MonthlyLimitUsdCleared() {
 		_spec.ClearField(group.FieldMonthlyLimitUsd, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.DailyRequestLimit(); ok {
-		_spec.SetField(group.FieldDailyRequestLimit, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedDailyRequestLimit(); ok {
-		_spec.AddField(group.FieldDailyRequestLimit, field.TypeInt, value)
-	}
-	if _u.mutation.DailyRequestLimitCleared() {
-		_spec.ClearField(group.FieldDailyRequestLimit, field.TypeInt)
-	}
-	if value, ok := _u.mutation.WeeklyRequestLimit(); ok {
-		_spec.SetField(group.FieldWeeklyRequestLimit, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedWeeklyRequestLimit(); ok {
-		_spec.AddField(group.FieldWeeklyRequestLimit, field.TypeInt, value)
-	}
-	if _u.mutation.WeeklyRequestLimitCleared() {
-		_spec.ClearField(group.FieldWeeklyRequestLimit, field.TypeInt)
-	}
-	if value, ok := _u.mutation.MonthlyRequestLimit(); ok {
-		_spec.SetField(group.FieldMonthlyRequestLimit, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedMonthlyRequestLimit(); ok {
-		_spec.AddField(group.FieldMonthlyRequestLimit, field.TypeInt, value)
-	}
-	if _u.mutation.MonthlyRequestLimitCleared() {
-		_spec.ClearField(group.FieldMonthlyRequestLimit, field.TypeInt)
 	}
 	if value, ok := _u.mutation.DefaultValidityDays(); ok {
 		_spec.SetField(group.FieldDefaultValidityDays, field.TypeInt, value)
@@ -2669,8 +2416,11 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	if value, ok := _u.mutation.MessagesDispatchModelConfig(); ok {
 		_spec.SetField(group.FieldMessagesDispatchModelConfig, field.TypeJSON, value)
 	}
-	if value, ok := _u.mutation.ConfigTemplate(); ok {
-		_spec.SetField(group.FieldConfigTemplate, field.TypeString, value)
+	if value, ok := _u.mutation.RpmLimit(); ok {
+		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedRpmLimit(); ok {
+		_spec.AddField(group.FieldRpmLimit, field.TypeInt, value)
 	}
 	if _u.mutation.APIKeysCleared() {
 		edge := &sqlgraph.EdgeSpec{

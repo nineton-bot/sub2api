@@ -34,7 +34,10 @@ func ProvideAdminHandlers(
 	apiKeyHandler *admin.AdminAPIKeyHandler,
 	scheduledTestHandler *admin.ScheduledTestHandler,
 	channelHandler *admin.ChannelHandler,
+	channelMonitorHandler *admin.ChannelMonitorHandler,
+	channelMonitorTemplateHandler *admin.ChannelMonitorRequestTemplateHandler,
 	paymentHandler *admin.PaymentHandler,
+<<<<<<< HEAD
 	referralHandler *admin.ReferralHandler,
 ) *AdminHandlers {
 	return &AdminHandlers{
@@ -65,6 +68,40 @@ func ProvideAdminHandlers(
 		Channel:               channelHandler,
 		Payment:               paymentHandler,
 		Referral:              referralHandler,
+=======
+	affiliateHandler *admin.AffiliateHandler,
+) *AdminHandlers {
+	return &AdminHandlers{
+		Dashboard:              dashboardHandler,
+		User:                   userHandler,
+		Group:                  groupHandler,
+		Account:                accountHandler,
+		Announcement:           announcementHandler,
+		DataManagement:         dataManagementHandler,
+		Backup:                 backupHandler,
+		OAuth:                  oauthHandler,
+		OpenAIOAuth:            openaiOAuthHandler,
+		GeminiOAuth:            geminiOAuthHandler,
+		AntigravityOAuth:       antigravityOAuthHandler,
+		Proxy:                  proxyHandler,
+		Redeem:                 redeemHandler,
+		Promo:                  promoHandler,
+		Setting:                settingHandler,
+		Ops:                    opsHandler,
+		System:                 systemHandler,
+		Subscription:           subscriptionHandler,
+		Usage:                  usageHandler,
+		UserAttribute:          userAttributeHandler,
+		ErrorPassthrough:       errorPassthroughHandler,
+		TLSFingerprintProfile:  tlsFingerprintProfileHandler,
+		APIKey:                 apiKeyHandler,
+		ScheduledTest:          scheduledTestHandler,
+		Channel:                channelHandler,
+		ChannelMonitor:         channelMonitorHandler,
+		ChannelMonitorTemplate: channelMonitorTemplateHandler,
+		Payment:                paymentHandler,
+		Affiliate:              affiliateHandler,
+>>>>>>> upstream/main
 	}
 }
 
@@ -87,6 +124,7 @@ func ProvideHandlers(
 	redeemHandler *RedeemHandler,
 	subscriptionHandler *SubscriptionHandler,
 	announcementHandler *AnnouncementHandler,
+	channelMonitorUserHandler *ChannelMonitorUserHandler,
 	adminHandlers *AdminHandlers,
 	gatewayHandler *GatewayHandler,
 	openaiGatewayHandler *OpenAIGatewayHandler,
@@ -94,11 +132,16 @@ func ProvideHandlers(
 	totpHandler *TotpHandler,
 	paymentHandler *PaymentHandler,
 	paymentWebhookHandler *PaymentWebhookHandler,
+<<<<<<< HEAD
 	referralHandler *ReferralHandler,
+=======
+	availableChannelHandler *AvailableChannelHandler,
+>>>>>>> upstream/main
 	_ *service.IdempotencyCoordinator,
 	_ *service.IdempotencyCleanupService,
 ) *Handlers {
 	return &Handlers{
+<<<<<<< HEAD
 		Auth:           authHandler,
 		User:           userHandler,
 		APIKey:         apiKeyHandler,
@@ -114,6 +157,24 @@ func ProvideHandlers(
 		Payment:        paymentHandler,
 		PaymentWebhook: paymentWebhookHandler,
 		Referral:       referralHandler,
+=======
+		Auth:             authHandler,
+		User:             userHandler,
+		APIKey:           apiKeyHandler,
+		Usage:            usageHandler,
+		Redeem:           redeemHandler,
+		Subscription:     subscriptionHandler,
+		Announcement:     announcementHandler,
+		ChannelMonitor:   channelMonitorUserHandler,
+		Admin:            adminHandlers,
+		Gateway:          gatewayHandler,
+		OpenAIGateway:    openaiGatewayHandler,
+		Setting:          settingHandler,
+		Totp:             totpHandler,
+		Payment:          paymentHandler,
+		PaymentWebhook:   paymentWebhookHandler,
+		AvailableChannel: availableChannelHandler,
+>>>>>>> upstream/main
 	}
 }
 
@@ -127,13 +188,18 @@ var ProviderSet = wire.NewSet(
 	NewRedeemHandler,
 	NewSubscriptionHandler,
 	NewAnnouncementHandler,
+	NewChannelMonitorUserHandler,
 	NewGatewayHandler,
 	NewOpenAIGatewayHandler,
 	NewTotpHandler,
 	ProvideSettingHandler,
 	NewPaymentHandler,
 	NewPaymentWebhookHandler,
+<<<<<<< HEAD
 	NewReferralHandler,
+=======
+	NewAvailableChannelHandler,
+>>>>>>> upstream/main
 
 	// Admin handlers
 	admin.NewDashboardHandler,
@@ -161,8 +227,14 @@ var ProviderSet = wire.NewSet(
 	admin.NewAdminAPIKeyHandler,
 	admin.NewScheduledTestHandler,
 	admin.NewChannelHandler,
+	admin.NewChannelMonitorHandler,
+	admin.NewChannelMonitorRequestTemplateHandler,
 	admin.NewPaymentHandler,
+<<<<<<< HEAD
 	admin.NewReferralHandler,
+=======
+	admin.NewAffiliateHandler,
+>>>>>>> upstream/main
 
 	// AdminHandlers and Handlers constructors
 	ProvideAdminHandlers,

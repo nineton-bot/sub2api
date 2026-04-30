@@ -105,11 +105,6 @@ func SubscriptionType(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldSubscriptionType, v))
 }
 
-// SubscriptionMeter applies equality check predicate on the "subscription_meter" field. It's identical to SubscriptionMeterEQ.
-func SubscriptionMeter(v string) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldSubscriptionMeter, v))
-}
-
 // DailyLimitUsd applies equality check predicate on the "daily_limit_usd" field. It's identical to DailyLimitUsdEQ.
 func DailyLimitUsd(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDailyLimitUsd, v))
@@ -123,21 +118,6 @@ func WeeklyLimitUsd(v float64) predicate.Group {
 // MonthlyLimitUsd applies equality check predicate on the "monthly_limit_usd" field. It's identical to MonthlyLimitUsdEQ.
 func MonthlyLimitUsd(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldMonthlyLimitUsd, v))
-}
-
-// DailyRequestLimit applies equality check predicate on the "daily_request_limit" field. It's identical to DailyRequestLimitEQ.
-func DailyRequestLimit(v int) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldDailyRequestLimit, v))
-}
-
-// WeeklyRequestLimit applies equality check predicate on the "weekly_request_limit" field. It's identical to WeeklyRequestLimitEQ.
-func WeeklyRequestLimit(v int) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldWeeklyRequestLimit, v))
-}
-
-// MonthlyRequestLimit applies equality check predicate on the "monthly_request_limit" field. It's identical to MonthlyRequestLimitEQ.
-func MonthlyRequestLimit(v int) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldMonthlyRequestLimit, v))
 }
 
 // DefaultValidityDays applies equality check predicate on the "default_validity_days" field. It's identical to DefaultValidityDaysEQ.
@@ -210,9 +190,9 @@ func DefaultMappedModel(v string) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDefaultMappedModel, v))
 }
 
-// ConfigTemplate applies equality check predicate on the "config_template" field. It's identical to ConfigTemplateEQ.
-func ConfigTemplate(v string) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldConfigTemplate, v))
+// RpmLimit applies equality check predicate on the "rpm_limit" field. It's identical to RpmLimitEQ.
+func RpmLimit(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldRpmLimit, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -730,71 +710,6 @@ func SubscriptionTypeContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldSubscriptionType, v))
 }
 
-// SubscriptionMeterEQ applies the EQ predicate on the "subscription_meter" field.
-func SubscriptionMeterEQ(v string) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldSubscriptionMeter, v))
-}
-
-// SubscriptionMeterNEQ applies the NEQ predicate on the "subscription_meter" field.
-func SubscriptionMeterNEQ(v string) predicate.Group {
-	return predicate.Group(sql.FieldNEQ(FieldSubscriptionMeter, v))
-}
-
-// SubscriptionMeterIn applies the In predicate on the "subscription_meter" field.
-func SubscriptionMeterIn(vs ...string) predicate.Group {
-	return predicate.Group(sql.FieldIn(FieldSubscriptionMeter, vs...))
-}
-
-// SubscriptionMeterNotIn applies the NotIn predicate on the "subscription_meter" field.
-func SubscriptionMeterNotIn(vs ...string) predicate.Group {
-	return predicate.Group(sql.FieldNotIn(FieldSubscriptionMeter, vs...))
-}
-
-// SubscriptionMeterGT applies the GT predicate on the "subscription_meter" field.
-func SubscriptionMeterGT(v string) predicate.Group {
-	return predicate.Group(sql.FieldGT(FieldSubscriptionMeter, v))
-}
-
-// SubscriptionMeterGTE applies the GTE predicate on the "subscription_meter" field.
-func SubscriptionMeterGTE(v string) predicate.Group {
-	return predicate.Group(sql.FieldGTE(FieldSubscriptionMeter, v))
-}
-
-// SubscriptionMeterLT applies the LT predicate on the "subscription_meter" field.
-func SubscriptionMeterLT(v string) predicate.Group {
-	return predicate.Group(sql.FieldLT(FieldSubscriptionMeter, v))
-}
-
-// SubscriptionMeterLTE applies the LTE predicate on the "subscription_meter" field.
-func SubscriptionMeterLTE(v string) predicate.Group {
-	return predicate.Group(sql.FieldLTE(FieldSubscriptionMeter, v))
-}
-
-// SubscriptionMeterContains applies the Contains predicate on the "subscription_meter" field.
-func SubscriptionMeterContains(v string) predicate.Group {
-	return predicate.Group(sql.FieldContains(FieldSubscriptionMeter, v))
-}
-
-// SubscriptionMeterHasPrefix applies the HasPrefix predicate on the "subscription_meter" field.
-func SubscriptionMeterHasPrefix(v string) predicate.Group {
-	return predicate.Group(sql.FieldHasPrefix(FieldSubscriptionMeter, v))
-}
-
-// SubscriptionMeterHasSuffix applies the HasSuffix predicate on the "subscription_meter" field.
-func SubscriptionMeterHasSuffix(v string) predicate.Group {
-	return predicate.Group(sql.FieldHasSuffix(FieldSubscriptionMeter, v))
-}
-
-// SubscriptionMeterEqualFold applies the EqualFold predicate on the "subscription_meter" field.
-func SubscriptionMeterEqualFold(v string) predicate.Group {
-	return predicate.Group(sql.FieldEqualFold(FieldSubscriptionMeter, v))
-}
-
-// SubscriptionMeterContainsFold applies the ContainsFold predicate on the "subscription_meter" field.
-func SubscriptionMeterContainsFold(v string) predicate.Group {
-	return predicate.Group(sql.FieldContainsFold(FieldSubscriptionMeter, v))
-}
-
 // DailyLimitUsdEQ applies the EQ predicate on the "daily_limit_usd" field.
 func DailyLimitUsdEQ(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldDailyLimitUsd, v))
@@ -943,156 +858,6 @@ func MonthlyLimitUsdIsNil() predicate.Group {
 // MonthlyLimitUsdNotNil applies the NotNil predicate on the "monthly_limit_usd" field.
 func MonthlyLimitUsdNotNil() predicate.Group {
 	return predicate.Group(sql.FieldNotNull(FieldMonthlyLimitUsd))
-}
-
-// DailyRequestLimitEQ applies the EQ predicate on the "daily_request_limit" field.
-func DailyRequestLimitEQ(v int) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldDailyRequestLimit, v))
-}
-
-// DailyRequestLimitNEQ applies the NEQ predicate on the "daily_request_limit" field.
-func DailyRequestLimitNEQ(v int) predicate.Group {
-	return predicate.Group(sql.FieldNEQ(FieldDailyRequestLimit, v))
-}
-
-// DailyRequestLimitIn applies the In predicate on the "daily_request_limit" field.
-func DailyRequestLimitIn(vs ...int) predicate.Group {
-	return predicate.Group(sql.FieldIn(FieldDailyRequestLimit, vs...))
-}
-
-// DailyRequestLimitNotIn applies the NotIn predicate on the "daily_request_limit" field.
-func DailyRequestLimitNotIn(vs ...int) predicate.Group {
-	return predicate.Group(sql.FieldNotIn(FieldDailyRequestLimit, vs...))
-}
-
-// DailyRequestLimitGT applies the GT predicate on the "daily_request_limit" field.
-func DailyRequestLimitGT(v int) predicate.Group {
-	return predicate.Group(sql.FieldGT(FieldDailyRequestLimit, v))
-}
-
-// DailyRequestLimitGTE applies the GTE predicate on the "daily_request_limit" field.
-func DailyRequestLimitGTE(v int) predicate.Group {
-	return predicate.Group(sql.FieldGTE(FieldDailyRequestLimit, v))
-}
-
-// DailyRequestLimitLT applies the LT predicate on the "daily_request_limit" field.
-func DailyRequestLimitLT(v int) predicate.Group {
-	return predicate.Group(sql.FieldLT(FieldDailyRequestLimit, v))
-}
-
-// DailyRequestLimitLTE applies the LTE predicate on the "daily_request_limit" field.
-func DailyRequestLimitLTE(v int) predicate.Group {
-	return predicate.Group(sql.FieldLTE(FieldDailyRequestLimit, v))
-}
-
-// DailyRequestLimitIsNil applies the IsNil predicate on the "daily_request_limit" field.
-func DailyRequestLimitIsNil() predicate.Group {
-	return predicate.Group(sql.FieldIsNull(FieldDailyRequestLimit))
-}
-
-// DailyRequestLimitNotNil applies the NotNil predicate on the "daily_request_limit" field.
-func DailyRequestLimitNotNil() predicate.Group {
-	return predicate.Group(sql.FieldNotNull(FieldDailyRequestLimit))
-}
-
-// WeeklyRequestLimitEQ applies the EQ predicate on the "weekly_request_limit" field.
-func WeeklyRequestLimitEQ(v int) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldWeeklyRequestLimit, v))
-}
-
-// WeeklyRequestLimitNEQ applies the NEQ predicate on the "weekly_request_limit" field.
-func WeeklyRequestLimitNEQ(v int) predicate.Group {
-	return predicate.Group(sql.FieldNEQ(FieldWeeklyRequestLimit, v))
-}
-
-// WeeklyRequestLimitIn applies the In predicate on the "weekly_request_limit" field.
-func WeeklyRequestLimitIn(vs ...int) predicate.Group {
-	return predicate.Group(sql.FieldIn(FieldWeeklyRequestLimit, vs...))
-}
-
-// WeeklyRequestLimitNotIn applies the NotIn predicate on the "weekly_request_limit" field.
-func WeeklyRequestLimitNotIn(vs ...int) predicate.Group {
-	return predicate.Group(sql.FieldNotIn(FieldWeeklyRequestLimit, vs...))
-}
-
-// WeeklyRequestLimitGT applies the GT predicate on the "weekly_request_limit" field.
-func WeeklyRequestLimitGT(v int) predicate.Group {
-	return predicate.Group(sql.FieldGT(FieldWeeklyRequestLimit, v))
-}
-
-// WeeklyRequestLimitGTE applies the GTE predicate on the "weekly_request_limit" field.
-func WeeklyRequestLimitGTE(v int) predicate.Group {
-	return predicate.Group(sql.FieldGTE(FieldWeeklyRequestLimit, v))
-}
-
-// WeeklyRequestLimitLT applies the LT predicate on the "weekly_request_limit" field.
-func WeeklyRequestLimitLT(v int) predicate.Group {
-	return predicate.Group(sql.FieldLT(FieldWeeklyRequestLimit, v))
-}
-
-// WeeklyRequestLimitLTE applies the LTE predicate on the "weekly_request_limit" field.
-func WeeklyRequestLimitLTE(v int) predicate.Group {
-	return predicate.Group(sql.FieldLTE(FieldWeeklyRequestLimit, v))
-}
-
-// WeeklyRequestLimitIsNil applies the IsNil predicate on the "weekly_request_limit" field.
-func WeeklyRequestLimitIsNil() predicate.Group {
-	return predicate.Group(sql.FieldIsNull(FieldWeeklyRequestLimit))
-}
-
-// WeeklyRequestLimitNotNil applies the NotNil predicate on the "weekly_request_limit" field.
-func WeeklyRequestLimitNotNil() predicate.Group {
-	return predicate.Group(sql.FieldNotNull(FieldWeeklyRequestLimit))
-}
-
-// MonthlyRequestLimitEQ applies the EQ predicate on the "monthly_request_limit" field.
-func MonthlyRequestLimitEQ(v int) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldMonthlyRequestLimit, v))
-}
-
-// MonthlyRequestLimitNEQ applies the NEQ predicate on the "monthly_request_limit" field.
-func MonthlyRequestLimitNEQ(v int) predicate.Group {
-	return predicate.Group(sql.FieldNEQ(FieldMonthlyRequestLimit, v))
-}
-
-// MonthlyRequestLimitIn applies the In predicate on the "monthly_request_limit" field.
-func MonthlyRequestLimitIn(vs ...int) predicate.Group {
-	return predicate.Group(sql.FieldIn(FieldMonthlyRequestLimit, vs...))
-}
-
-// MonthlyRequestLimitNotIn applies the NotIn predicate on the "monthly_request_limit" field.
-func MonthlyRequestLimitNotIn(vs ...int) predicate.Group {
-	return predicate.Group(sql.FieldNotIn(FieldMonthlyRequestLimit, vs...))
-}
-
-// MonthlyRequestLimitGT applies the GT predicate on the "monthly_request_limit" field.
-func MonthlyRequestLimitGT(v int) predicate.Group {
-	return predicate.Group(sql.FieldGT(FieldMonthlyRequestLimit, v))
-}
-
-// MonthlyRequestLimitGTE applies the GTE predicate on the "monthly_request_limit" field.
-func MonthlyRequestLimitGTE(v int) predicate.Group {
-	return predicate.Group(sql.FieldGTE(FieldMonthlyRequestLimit, v))
-}
-
-// MonthlyRequestLimitLT applies the LT predicate on the "monthly_request_limit" field.
-func MonthlyRequestLimitLT(v int) predicate.Group {
-	return predicate.Group(sql.FieldLT(FieldMonthlyRequestLimit, v))
-}
-
-// MonthlyRequestLimitLTE applies the LTE predicate on the "monthly_request_limit" field.
-func MonthlyRequestLimitLTE(v int) predicate.Group {
-	return predicate.Group(sql.FieldLTE(FieldMonthlyRequestLimit, v))
-}
-
-// MonthlyRequestLimitIsNil applies the IsNil predicate on the "monthly_request_limit" field.
-func MonthlyRequestLimitIsNil() predicate.Group {
-	return predicate.Group(sql.FieldIsNull(FieldMonthlyRequestLimit))
-}
-
-// MonthlyRequestLimitNotNil applies the NotNil predicate on the "monthly_request_limit" field.
-func MonthlyRequestLimitNotNil() predicate.Group {
-	return predicate.Group(sql.FieldNotNull(FieldMonthlyRequestLimit))
 }
 
 // DefaultValidityDaysEQ applies the EQ predicate on the "default_validity_days" field.
@@ -1560,69 +1325,44 @@ func DefaultMappedModelContainsFold(v string) predicate.Group {
 	return predicate.Group(sql.FieldContainsFold(FieldDefaultMappedModel, v))
 }
 
-// ConfigTemplateEQ applies the EQ predicate on the "config_template" field.
-func ConfigTemplateEQ(v string) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldConfigTemplate, v))
+// RpmLimitEQ applies the EQ predicate on the "rpm_limit" field.
+func RpmLimitEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldRpmLimit, v))
 }
 
-// ConfigTemplateNEQ applies the NEQ predicate on the "config_template" field.
-func ConfigTemplateNEQ(v string) predicate.Group {
-	return predicate.Group(sql.FieldNEQ(FieldConfigTemplate, v))
+// RpmLimitNEQ applies the NEQ predicate on the "rpm_limit" field.
+func RpmLimitNEQ(v int) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldRpmLimit, v))
 }
 
-// ConfigTemplateIn applies the In predicate on the "config_template" field.
-func ConfigTemplateIn(vs ...string) predicate.Group {
-	return predicate.Group(sql.FieldIn(FieldConfigTemplate, vs...))
+// RpmLimitIn applies the In predicate on the "rpm_limit" field.
+func RpmLimitIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldRpmLimit, vs...))
 }
 
-// ConfigTemplateNotIn applies the NotIn predicate on the "config_template" field.
-func ConfigTemplateNotIn(vs ...string) predicate.Group {
-	return predicate.Group(sql.FieldNotIn(FieldConfigTemplate, vs...))
+// RpmLimitNotIn applies the NotIn predicate on the "rpm_limit" field.
+func RpmLimitNotIn(vs ...int) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldRpmLimit, vs...))
 }
 
-// ConfigTemplateGT applies the GT predicate on the "config_template" field.
-func ConfigTemplateGT(v string) predicate.Group {
-	return predicate.Group(sql.FieldGT(FieldConfigTemplate, v))
+// RpmLimitGT applies the GT predicate on the "rpm_limit" field.
+func RpmLimitGT(v int) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldRpmLimit, v))
 }
 
-// ConfigTemplateGTE applies the GTE predicate on the "config_template" field.
-func ConfigTemplateGTE(v string) predicate.Group {
-	return predicate.Group(sql.FieldGTE(FieldConfigTemplate, v))
+// RpmLimitGTE applies the GTE predicate on the "rpm_limit" field.
+func RpmLimitGTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldRpmLimit, v))
 }
 
-// ConfigTemplateLT applies the LT predicate on the "config_template" field.
-func ConfigTemplateLT(v string) predicate.Group {
-	return predicate.Group(sql.FieldLT(FieldConfigTemplate, v))
+// RpmLimitLT applies the LT predicate on the "rpm_limit" field.
+func RpmLimitLT(v int) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldRpmLimit, v))
 }
 
-// ConfigTemplateLTE applies the LTE predicate on the "config_template" field.
-func ConfigTemplateLTE(v string) predicate.Group {
-	return predicate.Group(sql.FieldLTE(FieldConfigTemplate, v))
-}
-
-// ConfigTemplateContains applies the Contains predicate on the "config_template" field.
-func ConfigTemplateContains(v string) predicate.Group {
-	return predicate.Group(sql.FieldContains(FieldConfigTemplate, v))
-}
-
-// ConfigTemplateHasPrefix applies the HasPrefix predicate on the "config_template" field.
-func ConfigTemplateHasPrefix(v string) predicate.Group {
-	return predicate.Group(sql.FieldHasPrefix(FieldConfigTemplate, v))
-}
-
-// ConfigTemplateHasSuffix applies the HasSuffix predicate on the "config_template" field.
-func ConfigTemplateHasSuffix(v string) predicate.Group {
-	return predicate.Group(sql.FieldHasSuffix(FieldConfigTemplate, v))
-}
-
-// ConfigTemplateEqualFold applies the EqualFold predicate on the "config_template" field.
-func ConfigTemplateEqualFold(v string) predicate.Group {
-	return predicate.Group(sql.FieldEqualFold(FieldConfigTemplate, v))
-}
-
-// ConfigTemplateContainsFold applies the ContainsFold predicate on the "config_template" field.
-func ConfigTemplateContainsFold(v string) predicate.Group {
-	return predicate.Group(sql.FieldContainsFold(FieldConfigTemplate, v))
+// RpmLimitLTE applies the LTE predicate on the "rpm_limit" field.
+func RpmLimitLTE(v int) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldRpmLimit, v))
 }
 
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.

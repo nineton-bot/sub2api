@@ -273,6 +273,15 @@
                 }}</span>
               </button>
               <button
+                @click="handleRPMOverrides(row)"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-orange-600 dark:hover:bg-dark-700 dark:hover:text-orange-400"
+              >
+                <Icon name="bolt" size="sm" />
+                <span class="text-xs">{{
+                  t("admin.groups.rpmOverrides")
+                }}</span>
+              </button>
+              <button
                 @click="handleDelete(row)"
                 class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
               >
@@ -455,6 +464,18 @@
           />
           <p class="input-hint">{{ t("admin.groups.rateMultiplierHint") }}</p>
         </div>
+        <div>
+          <label class="input-label">{{ t("admin.groups.form.rpmLimit") }}</label>
+          <input
+            v-model.number="createForm.rpm_limit"
+            type="number"
+            min="0"
+            step="1"
+            class="input"
+            :placeholder="t('admin.groups.form.rpmLimitPlaceholder')"
+          />
+          <p class="input-hint">{{ t("admin.groups.form.rpmLimitHint") }}</p>
+        </div>
         <div
           v-if="createForm.subscription_type !== 'subscription'"
           data-tour="group-form-exclusive"
@@ -626,11 +647,12 @@
           </div>
         </div>
 
-        <!-- 图片生成计费配置（antigravity 和 gemini 平台） -->
+        <!-- 图片生成计费配置 -->
         <div
           v-if="
             createForm.platform === 'antigravity' ||
-            createForm.platform === 'gemini'
+            createForm.platform === 'gemini' ||
+            createForm.platform === 'openai'
           "
           class="border-t pt-4"
         >
@@ -1624,6 +1646,18 @@
             data-tour="group-form-multiplier"
           />
         </div>
+        <div>
+          <label class="input-label">{{ t("admin.groups.form.rpmLimit") }}</label>
+          <input
+            v-model.number="editForm.rpm_limit"
+            type="number"
+            min="0"
+            step="1"
+            class="input"
+            :placeholder="t('admin.groups.form.rpmLimitPlaceholder')"
+          />
+          <p class="input-hint">{{ t("admin.groups.form.rpmLimitHint") }}</p>
+        </div>
         <div v-if="editForm.subscription_type !== 'subscription'">
           <div class="mb-1.5 flex items-center gap-1">
             <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1802,11 +1836,12 @@
           </div>
         </div>
 
-        <!-- 图片生成计费配置（antigravity 和 gemini 平台） -->
+        <!-- 图片生成计费配置 -->
         <div
           v-if="
             editForm.platform === 'antigravity' ||
-            editForm.platform === 'gemini'
+            editForm.platform === 'gemini' ||
+            editForm.platform === 'openai'
           "
           class="border-t pt-4"
         >
@@ -2754,6 +2789,14 @@
       @close="showRateMultipliersModal = false"
       @success="loadGroups"
     />
+
+    <!-- Group RPM Overrides Modal -->
+    <GroupRPMOverridesModal
+      :show="showRPMOverridesModal"
+      :group="rpmOverridesGroup"
+      @close="showRPMOverridesModal = false"
+      @success="loadGroups"
+    />
   </AppLayout>
 </template>
 
@@ -2776,6 +2819,7 @@ import Select from "@/components/common/Select.vue";
 import PlatformIcon from "@/components/common/PlatformIcon.vue";
 import Icon from "@/components/icons/Icon.vue";
 import GroupRateMultipliersModal from "@/components/admin/group/GroupRateMultipliersModal.vue";
+import GroupRPMOverridesModal from "@/components/admin/group/GroupRPMOverridesModal.vue";
 import GroupCapacityBadge from "@/components/common/GroupCapacityBadge.vue";
 import { VueDraggable } from "vue-draggable-plus";
 import { createStableObjectKeyResolver } from "@/utils/stableObjectKey";
@@ -3021,6 +3065,8 @@ const editingGroup = ref<AdminGroup | null>(null);
 const deletingGroup = ref<AdminGroup | null>(null);
 const showRateMultipliersModal = ref(false);
 const rateMultipliersGroup = ref<AdminGroup | null>(null);
+const showRPMOverridesModal = ref(false);
+const rpmOverridesGroup = ref<AdminGroup | null>(null);
 const sortableGroups = ref<AdminGroup[]>([]);
 const createMessagesDispatchDefaults = createDefaultMessagesDispatchFormState();
 const editMessagesDispatchDefaults = createDefaultMessagesDispatchFormState();
@@ -3066,6 +3112,8 @@ const createForm = reactive({
   config_template: "claude_native" as "claude_native" | "domestic_anthropic",
   // 从分组复制账号
   copy_accounts_from_group_ids: [] as number[],
+  // 分组级 RPM 限制（每用户每分钟最大请求数；0 = 不限制）
+  rpm_limit: 0 as number,
 });
 
 // 简单账号类型（用于模型路由选择）
@@ -3335,6 +3383,7 @@ const editForm = reactive({
   fallback_group_id_on_invalid_request: null as number | null,
   // OpenAI Messages 调度配置（仅 openai 平台使用）
   allow_messages_dispatch: false,
+  default_mapped_model: '',
   opus_mapped_model: editMessagesDispatchDefaults.opus_mapped_model,
   sonnet_mapped_model: editMessagesDispatchDefaults.sonnet_mapped_model,
   haiku_mapped_model: editMessagesDispatchDefaults.haiku_mapped_model,
@@ -3352,6 +3401,8 @@ const editForm = reactive({
   config_template: "claude_native" as "claude_native" | "domestic_anthropic",
   // 从分组复制账号
   copy_accounts_from_group_ids: [] as number[],
+  // 分组级 RPM 限制（每用户每分钟最大请求数；0 = 不限制）
+  rpm_limit: 0 as number,
 });
 
 // 根据分组类型返回不同的删除确认消息
@@ -3706,6 +3757,7 @@ const handleEdit = async (group: AdminGroup) => {
     ? "domestic_anthropic"
     : "claude_native");
   editForm.copy_accounts_from_group_ids = []; // 复制账号字段每次编辑时重置为空
+  editForm.rpm_limit = group.rpm_limit ?? 0;
   // 加载模型路由规则（异步加载账号名称）
   editModelRoutingRules.value = await convertApiFormatToRoutingRules(
     group.model_routing,
@@ -3835,6 +3887,11 @@ const handleRateMultipliers = (group: AdminGroup) => {
   showRateMultipliersModal.value = true;
 };
 
+const handleRPMOverrides = (group: AdminGroup) => {
+  rpmOverridesGroup.value = group;
+  showRPMOverridesModal.value = true;
+};
+
 const handleDelete = (group: AdminGroup) => {
   deletingGroup.value = group;
   showDeleteDialog.value = true;
@@ -3920,6 +3977,19 @@ watch(
     }
   },
 );
+
+watch(
+  () => editForm.platform,
+  (newVal) => {
+    if (!['anthropic', 'antigravity'].includes(newVal)) {
+      editForm.fallback_group_id_on_invalid_request = null
+    }
+    if (newVal !== 'openai') {
+      editForm.allow_messages_dispatch = false
+      editForm.default_mapped_model = ''
+    }
+  }
+)
 
 // 点击外部关闭账号搜索下拉框
 const handleClickOutside = (event: MouseEvent) => {

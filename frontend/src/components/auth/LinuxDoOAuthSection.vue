@@ -44,8 +44,9 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { getReferralCodeFromCookie } from '@/utils/referralCookie'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   disabled?: boolean
+  affCode?: string
   showDivider?: boolean
 }>(), {
   showDivider: true
@@ -56,6 +57,7 @@ const { t } = useI18n()
 
 function startLogin(): void {
   const redirectTo = (route.query.redirect as string) || '/dashboard'
+  storeOAuthAffiliateCode(resolveAffiliateReferralCode(props.affCode, route.query.aff, route.query.aff_code))
   const apiBase = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '/api/v1'
   const normalized = apiBase.replace(/\/$/, '')
   // 邀请返佣：优先显式 URL ?ref=，其次从 /g/:code 设置的 cookie 读取。

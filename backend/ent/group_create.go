@@ -161,20 +161,6 @@ func (_c *GroupCreate) SetNillableSubscriptionType(v *string) *GroupCreate {
 	return _c
 }
 
-// SetSubscriptionMeter sets the "subscription_meter" field.
-func (_c *GroupCreate) SetSubscriptionMeter(v string) *GroupCreate {
-	_c.mutation.SetSubscriptionMeter(v)
-	return _c
-}
-
-// SetNillableSubscriptionMeter sets the "subscription_meter" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableSubscriptionMeter(v *string) *GroupCreate {
-	if v != nil {
-		_c.SetSubscriptionMeter(*v)
-	}
-	return _c
-}
-
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (_c *GroupCreate) SetDailyLimitUsd(v float64) *GroupCreate {
 	_c.mutation.SetDailyLimitUsd(v)
@@ -213,48 +199,6 @@ func (_c *GroupCreate) SetMonthlyLimitUsd(v float64) *GroupCreate {
 func (_c *GroupCreate) SetNillableMonthlyLimitUsd(v *float64) *GroupCreate {
 	if v != nil {
 		_c.SetMonthlyLimitUsd(*v)
-	}
-	return _c
-}
-
-// SetDailyRequestLimit sets the "daily_request_limit" field.
-func (_c *GroupCreate) SetDailyRequestLimit(v int) *GroupCreate {
-	_c.mutation.SetDailyRequestLimit(v)
-	return _c
-}
-
-// SetNillableDailyRequestLimit sets the "daily_request_limit" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableDailyRequestLimit(v *int) *GroupCreate {
-	if v != nil {
-		_c.SetDailyRequestLimit(*v)
-	}
-	return _c
-}
-
-// SetWeeklyRequestLimit sets the "weekly_request_limit" field.
-func (_c *GroupCreate) SetWeeklyRequestLimit(v int) *GroupCreate {
-	_c.mutation.SetWeeklyRequestLimit(v)
-	return _c
-}
-
-// SetNillableWeeklyRequestLimit sets the "weekly_request_limit" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableWeeklyRequestLimit(v *int) *GroupCreate {
-	if v != nil {
-		_c.SetWeeklyRequestLimit(*v)
-	}
-	return _c
-}
-
-// SetMonthlyRequestLimit sets the "monthly_request_limit" field.
-func (_c *GroupCreate) SetMonthlyRequestLimit(v int) *GroupCreate {
-	_c.mutation.SetMonthlyRequestLimit(v)
-	return _c
-}
-
-// SetNillableMonthlyRequestLimit sets the "monthly_request_limit" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableMonthlyRequestLimit(v *int) *GroupCreate {
-	if v != nil {
-		_c.SetMonthlyRequestLimit(*v)
 	}
 	return _c
 }
@@ -481,16 +425,16 @@ func (_c *GroupCreate) SetNillableMessagesDispatchModelConfig(v *domain.OpenAIMe
 	return _c
 }
 
-// SetConfigTemplate sets the "config_template" field.
-func (_c *GroupCreate) SetConfigTemplate(v string) *GroupCreate {
-	_c.mutation.SetConfigTemplate(v)
+// SetRpmLimit sets the "rpm_limit" field.
+func (_c *GroupCreate) SetRpmLimit(v int) *GroupCreate {
+	_c.mutation.SetRpmLimit(v)
 	return _c
 }
 
-// SetNillableConfigTemplate sets the "config_template" field if the given value is not nil.
-func (_c *GroupCreate) SetNillableConfigTemplate(v *string) *GroupCreate {
+// SetNillableRpmLimit sets the "rpm_limit" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableRpmLimit(v *int) *GroupCreate {
 	if v != nil {
-		_c.SetConfigTemplate(*v)
+		_c.SetRpmLimit(*v)
 	}
 	return _c
 }
@@ -656,10 +600,6 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultSubscriptionType
 		_c.mutation.SetSubscriptionType(v)
 	}
-	if _, ok := _c.mutation.SubscriptionMeter(); !ok {
-		v := group.DefaultSubscriptionMeter
-		_c.mutation.SetSubscriptionMeter(v)
-	}
 	if _, ok := _c.mutation.DefaultValidityDays(); !ok {
 		v := group.DefaultDefaultValidityDays
 		_c.mutation.SetDefaultValidityDays(v)
@@ -704,9 +644,9 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultMessagesDispatchModelConfig
 		_c.mutation.SetMessagesDispatchModelConfig(v)
 	}
-	if _, ok := _c.mutation.ConfigTemplate(); !ok {
-		v := group.DefaultConfigTemplate
-		_c.mutation.SetConfigTemplate(v)
+	if _, ok := _c.mutation.RpmLimit(); !ok {
+		v := group.DefaultRpmLimit
+		_c.mutation.SetRpmLimit(v)
 	}
 	return nil
 }
@@ -757,14 +697,6 @@ func (_c *GroupCreate) check() error {
 			return &ValidationError{Name: "subscription_type", err: fmt.Errorf(`ent: validator failed for field "Group.subscription_type": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.SubscriptionMeter(); !ok {
-		return &ValidationError{Name: "subscription_meter", err: errors.New(`ent: missing required field "Group.subscription_meter"`)}
-	}
-	if v, ok := _c.mutation.SubscriptionMeter(); ok {
-		if err := group.SubscriptionMeterValidator(v); err != nil {
-			return &ValidationError{Name: "subscription_meter", err: fmt.Errorf(`ent: validator failed for field "Group.subscription_meter": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.DefaultValidityDays(); !ok {
 		return &ValidationError{Name: "default_validity_days", err: errors.New(`ent: missing required field "Group.default_validity_days"`)}
 	}
@@ -803,13 +735,8 @@ func (_c *GroupCreate) check() error {
 	if _, ok := _c.mutation.MessagesDispatchModelConfig(); !ok {
 		return &ValidationError{Name: "messages_dispatch_model_config", err: errors.New(`ent: missing required field "Group.messages_dispatch_model_config"`)}
 	}
-	if _, ok := _c.mutation.ConfigTemplate(); !ok {
-		return &ValidationError{Name: "config_template", err: errors.New(`ent: missing required field "Group.config_template"`)}
-	}
-	if v, ok := _c.mutation.ConfigTemplate(); ok {
-		if err := group.ConfigTemplateValidator(v); err != nil {
-			return &ValidationError{Name: "config_template", err: fmt.Errorf(`ent: validator failed for field "Group.config_template": %w`, err)}
-		}
+	if _, ok := _c.mutation.RpmLimit(); !ok {
+		return &ValidationError{Name: "rpm_limit", err: errors.New(`ent: missing required field "Group.rpm_limit"`)}
 	}
 	return nil
 }
@@ -878,10 +805,6 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 		_spec.SetField(group.FieldSubscriptionType, field.TypeString, value)
 		_node.SubscriptionType = value
 	}
-	if value, ok := _c.mutation.SubscriptionMeter(); ok {
-		_spec.SetField(group.FieldSubscriptionMeter, field.TypeString, value)
-		_node.SubscriptionMeter = value
-	}
 	if value, ok := _c.mutation.DailyLimitUsd(); ok {
 		_spec.SetField(group.FieldDailyLimitUsd, field.TypeFloat64, value)
 		_node.DailyLimitUsd = &value
@@ -893,18 +816,6 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.MonthlyLimitUsd(); ok {
 		_spec.SetField(group.FieldMonthlyLimitUsd, field.TypeFloat64, value)
 		_node.MonthlyLimitUsd = &value
-	}
-	if value, ok := _c.mutation.DailyRequestLimit(); ok {
-		_spec.SetField(group.FieldDailyRequestLimit, field.TypeInt, value)
-		_node.DailyRequestLimit = &value
-	}
-	if value, ok := _c.mutation.WeeklyRequestLimit(); ok {
-		_spec.SetField(group.FieldWeeklyRequestLimit, field.TypeInt, value)
-		_node.WeeklyRequestLimit = &value
-	}
-	if value, ok := _c.mutation.MonthlyRequestLimit(); ok {
-		_spec.SetField(group.FieldMonthlyRequestLimit, field.TypeInt, value)
-		_node.MonthlyRequestLimit = &value
 	}
 	if value, ok := _c.mutation.DefaultValidityDays(); ok {
 		_spec.SetField(group.FieldDefaultValidityDays, field.TypeInt, value)
@@ -974,9 +885,9 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 		_spec.SetField(group.FieldMessagesDispatchModelConfig, field.TypeJSON, value)
 		_node.MessagesDispatchModelConfig = value
 	}
-	if value, ok := _c.mutation.ConfigTemplate(); ok {
-		_spec.SetField(group.FieldConfigTemplate, field.TypeString, value)
-		_node.ConfigTemplate = value
+	if value, ok := _c.mutation.RpmLimit(); ok {
+		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)
+		_node.RpmLimit = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1260,18 +1171,6 @@ func (u *GroupUpsert) UpdateSubscriptionType() *GroupUpsert {
 	return u
 }
 
-// SetSubscriptionMeter sets the "subscription_meter" field.
-func (u *GroupUpsert) SetSubscriptionMeter(v string) *GroupUpsert {
-	u.Set(group.FieldSubscriptionMeter, v)
-	return u
-}
-
-// UpdateSubscriptionMeter sets the "subscription_meter" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateSubscriptionMeter() *GroupUpsert {
-	u.SetExcluded(group.FieldSubscriptionMeter)
-	return u
-}
-
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (u *GroupUpsert) SetDailyLimitUsd(v float64) *GroupUpsert {
 	u.Set(group.FieldDailyLimitUsd, v)
@@ -1341,78 +1240,6 @@ func (u *GroupUpsert) AddMonthlyLimitUsd(v float64) *GroupUpsert {
 // ClearMonthlyLimitUsd clears the value of the "monthly_limit_usd" field.
 func (u *GroupUpsert) ClearMonthlyLimitUsd() *GroupUpsert {
 	u.SetNull(group.FieldMonthlyLimitUsd)
-	return u
-}
-
-// SetDailyRequestLimit sets the "daily_request_limit" field.
-func (u *GroupUpsert) SetDailyRequestLimit(v int) *GroupUpsert {
-	u.Set(group.FieldDailyRequestLimit, v)
-	return u
-}
-
-// UpdateDailyRequestLimit sets the "daily_request_limit" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateDailyRequestLimit() *GroupUpsert {
-	u.SetExcluded(group.FieldDailyRequestLimit)
-	return u
-}
-
-// AddDailyRequestLimit adds v to the "daily_request_limit" field.
-func (u *GroupUpsert) AddDailyRequestLimit(v int) *GroupUpsert {
-	u.Add(group.FieldDailyRequestLimit, v)
-	return u
-}
-
-// ClearDailyRequestLimit clears the value of the "daily_request_limit" field.
-func (u *GroupUpsert) ClearDailyRequestLimit() *GroupUpsert {
-	u.SetNull(group.FieldDailyRequestLimit)
-	return u
-}
-
-// SetWeeklyRequestLimit sets the "weekly_request_limit" field.
-func (u *GroupUpsert) SetWeeklyRequestLimit(v int) *GroupUpsert {
-	u.Set(group.FieldWeeklyRequestLimit, v)
-	return u
-}
-
-// UpdateWeeklyRequestLimit sets the "weekly_request_limit" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateWeeklyRequestLimit() *GroupUpsert {
-	u.SetExcluded(group.FieldWeeklyRequestLimit)
-	return u
-}
-
-// AddWeeklyRequestLimit adds v to the "weekly_request_limit" field.
-func (u *GroupUpsert) AddWeeklyRequestLimit(v int) *GroupUpsert {
-	u.Add(group.FieldWeeklyRequestLimit, v)
-	return u
-}
-
-// ClearWeeklyRequestLimit clears the value of the "weekly_request_limit" field.
-func (u *GroupUpsert) ClearWeeklyRequestLimit() *GroupUpsert {
-	u.SetNull(group.FieldWeeklyRequestLimit)
-	return u
-}
-
-// SetMonthlyRequestLimit sets the "monthly_request_limit" field.
-func (u *GroupUpsert) SetMonthlyRequestLimit(v int) *GroupUpsert {
-	u.Set(group.FieldMonthlyRequestLimit, v)
-	return u
-}
-
-// UpdateMonthlyRequestLimit sets the "monthly_request_limit" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateMonthlyRequestLimit() *GroupUpsert {
-	u.SetExcluded(group.FieldMonthlyRequestLimit)
-	return u
-}
-
-// AddMonthlyRequestLimit adds v to the "monthly_request_limit" field.
-func (u *GroupUpsert) AddMonthlyRequestLimit(v int) *GroupUpsert {
-	u.Add(group.FieldMonthlyRequestLimit, v)
-	return u
-}
-
-// ClearMonthlyRequestLimit clears the value of the "monthly_request_limit" field.
-func (u *GroupUpsert) ClearMonthlyRequestLimit() *GroupUpsert {
-	u.SetNull(group.FieldMonthlyRequestLimit)
 	return u
 }
 
@@ -1698,15 +1525,21 @@ func (u *GroupUpsert) UpdateMessagesDispatchModelConfig() *GroupUpsert {
 	return u
 }
 
-// SetConfigTemplate sets the "config_template" field.
-func (u *GroupUpsert) SetConfigTemplate(v string) *GroupUpsert {
-	u.Set(group.FieldConfigTemplate, v)
+// SetRpmLimit sets the "rpm_limit" field.
+func (u *GroupUpsert) SetRpmLimit(v int) *GroupUpsert {
+	u.Set(group.FieldRpmLimit, v)
 	return u
 }
 
-// UpdateConfigTemplate sets the "config_template" field to the value that was provided on create.
-func (u *GroupUpsert) UpdateConfigTemplate() *GroupUpsert {
-	u.SetExcluded(group.FieldConfigTemplate)
+// UpdateRpmLimit sets the "rpm_limit" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateRpmLimit() *GroupUpsert {
+	u.SetExcluded(group.FieldRpmLimit)
+	return u
+}
+
+// AddRpmLimit adds v to the "rpm_limit" field.
+func (u *GroupUpsert) AddRpmLimit(v int) *GroupUpsert {
+	u.Add(group.FieldRpmLimit, v)
 	return u
 }
 
@@ -1902,20 +1735,6 @@ func (u *GroupUpsertOne) UpdateSubscriptionType() *GroupUpsertOne {
 	})
 }
 
-// SetSubscriptionMeter sets the "subscription_meter" field.
-func (u *GroupUpsertOne) SetSubscriptionMeter(v string) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetSubscriptionMeter(v)
-	})
-}
-
-// UpdateSubscriptionMeter sets the "subscription_meter" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateSubscriptionMeter() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateSubscriptionMeter()
-	})
-}
-
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (u *GroupUpsertOne) SetDailyLimitUsd(v float64) *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
@@ -1997,90 +1816,6 @@ func (u *GroupUpsertOne) UpdateMonthlyLimitUsd() *GroupUpsertOne {
 func (u *GroupUpsertOne) ClearMonthlyLimitUsd() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearMonthlyLimitUsd()
-	})
-}
-
-// SetDailyRequestLimit sets the "daily_request_limit" field.
-func (u *GroupUpsertOne) SetDailyRequestLimit(v int) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetDailyRequestLimit(v)
-	})
-}
-
-// AddDailyRequestLimit adds v to the "daily_request_limit" field.
-func (u *GroupUpsertOne) AddDailyRequestLimit(v int) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.AddDailyRequestLimit(v)
-	})
-}
-
-// UpdateDailyRequestLimit sets the "daily_request_limit" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateDailyRequestLimit() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateDailyRequestLimit()
-	})
-}
-
-// ClearDailyRequestLimit clears the value of the "daily_request_limit" field.
-func (u *GroupUpsertOne) ClearDailyRequestLimit() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearDailyRequestLimit()
-	})
-}
-
-// SetWeeklyRequestLimit sets the "weekly_request_limit" field.
-func (u *GroupUpsertOne) SetWeeklyRequestLimit(v int) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetWeeklyRequestLimit(v)
-	})
-}
-
-// AddWeeklyRequestLimit adds v to the "weekly_request_limit" field.
-func (u *GroupUpsertOne) AddWeeklyRequestLimit(v int) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.AddWeeklyRequestLimit(v)
-	})
-}
-
-// UpdateWeeklyRequestLimit sets the "weekly_request_limit" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateWeeklyRequestLimit() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateWeeklyRequestLimit()
-	})
-}
-
-// ClearWeeklyRequestLimit clears the value of the "weekly_request_limit" field.
-func (u *GroupUpsertOne) ClearWeeklyRequestLimit() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearWeeklyRequestLimit()
-	})
-}
-
-// SetMonthlyRequestLimit sets the "monthly_request_limit" field.
-func (u *GroupUpsertOne) SetMonthlyRequestLimit(v int) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetMonthlyRequestLimit(v)
-	})
-}
-
-// AddMonthlyRequestLimit adds v to the "monthly_request_limit" field.
-func (u *GroupUpsertOne) AddMonthlyRequestLimit(v int) *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.AddMonthlyRequestLimit(v)
-	})
-}
-
-// UpdateMonthlyRequestLimit sets the "monthly_request_limit" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateMonthlyRequestLimit() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateMonthlyRequestLimit()
-	})
-}
-
-// ClearMonthlyRequestLimit clears the value of the "monthly_request_limit" field.
-func (u *GroupUpsertOne) ClearMonthlyRequestLimit() *GroupUpsertOne {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearMonthlyRequestLimit()
 	})
 }
 
@@ -2413,17 +2148,24 @@ func (u *GroupUpsertOne) UpdateMessagesDispatchModelConfig() *GroupUpsertOne {
 	})
 }
 
-// SetConfigTemplate sets the "config_template" field.
-func (u *GroupUpsertOne) SetConfigTemplate(v string) *GroupUpsertOne {
+// SetRpmLimit sets the "rpm_limit" field.
+func (u *GroupUpsertOne) SetRpmLimit(v int) *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
-		s.SetConfigTemplate(v)
+		s.SetRpmLimit(v)
 	})
 }
 
-// UpdateConfigTemplate sets the "config_template" field to the value that was provided on create.
-func (u *GroupUpsertOne) UpdateConfigTemplate() *GroupUpsertOne {
+// AddRpmLimit adds v to the "rpm_limit" field.
+func (u *GroupUpsertOne) AddRpmLimit(v int) *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
-		s.UpdateConfigTemplate()
+		s.AddRpmLimit(v)
+	})
+}
+
+// UpdateRpmLimit sets the "rpm_limit" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateRpmLimit() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateRpmLimit()
 	})
 }
 
@@ -2785,20 +2527,6 @@ func (u *GroupUpsertBulk) UpdateSubscriptionType() *GroupUpsertBulk {
 	})
 }
 
-// SetSubscriptionMeter sets the "subscription_meter" field.
-func (u *GroupUpsertBulk) SetSubscriptionMeter(v string) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetSubscriptionMeter(v)
-	})
-}
-
-// UpdateSubscriptionMeter sets the "subscription_meter" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateSubscriptionMeter() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateSubscriptionMeter()
-	})
-}
-
 // SetDailyLimitUsd sets the "daily_limit_usd" field.
 func (u *GroupUpsertBulk) SetDailyLimitUsd(v float64) *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
@@ -2880,90 +2608,6 @@ func (u *GroupUpsertBulk) UpdateMonthlyLimitUsd() *GroupUpsertBulk {
 func (u *GroupUpsertBulk) ClearMonthlyLimitUsd() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearMonthlyLimitUsd()
-	})
-}
-
-// SetDailyRequestLimit sets the "daily_request_limit" field.
-func (u *GroupUpsertBulk) SetDailyRequestLimit(v int) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetDailyRequestLimit(v)
-	})
-}
-
-// AddDailyRequestLimit adds v to the "daily_request_limit" field.
-func (u *GroupUpsertBulk) AddDailyRequestLimit(v int) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.AddDailyRequestLimit(v)
-	})
-}
-
-// UpdateDailyRequestLimit sets the "daily_request_limit" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateDailyRequestLimit() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateDailyRequestLimit()
-	})
-}
-
-// ClearDailyRequestLimit clears the value of the "daily_request_limit" field.
-func (u *GroupUpsertBulk) ClearDailyRequestLimit() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearDailyRequestLimit()
-	})
-}
-
-// SetWeeklyRequestLimit sets the "weekly_request_limit" field.
-func (u *GroupUpsertBulk) SetWeeklyRequestLimit(v int) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetWeeklyRequestLimit(v)
-	})
-}
-
-// AddWeeklyRequestLimit adds v to the "weekly_request_limit" field.
-func (u *GroupUpsertBulk) AddWeeklyRequestLimit(v int) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.AddWeeklyRequestLimit(v)
-	})
-}
-
-// UpdateWeeklyRequestLimit sets the "weekly_request_limit" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateWeeklyRequestLimit() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateWeeklyRequestLimit()
-	})
-}
-
-// ClearWeeklyRequestLimit clears the value of the "weekly_request_limit" field.
-func (u *GroupUpsertBulk) ClearWeeklyRequestLimit() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearWeeklyRequestLimit()
-	})
-}
-
-// SetMonthlyRequestLimit sets the "monthly_request_limit" field.
-func (u *GroupUpsertBulk) SetMonthlyRequestLimit(v int) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.SetMonthlyRequestLimit(v)
-	})
-}
-
-// AddMonthlyRequestLimit adds v to the "monthly_request_limit" field.
-func (u *GroupUpsertBulk) AddMonthlyRequestLimit(v int) *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.AddMonthlyRequestLimit(v)
-	})
-}
-
-// UpdateMonthlyRequestLimit sets the "monthly_request_limit" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateMonthlyRequestLimit() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.UpdateMonthlyRequestLimit()
-	})
-}
-
-// ClearMonthlyRequestLimit clears the value of the "monthly_request_limit" field.
-func (u *GroupUpsertBulk) ClearMonthlyRequestLimit() *GroupUpsertBulk {
-	return u.Update(func(s *GroupUpsert) {
-		s.ClearMonthlyRequestLimit()
 	})
 }
 
@@ -3296,17 +2940,24 @@ func (u *GroupUpsertBulk) UpdateMessagesDispatchModelConfig() *GroupUpsertBulk {
 	})
 }
 
-// SetConfigTemplate sets the "config_template" field.
-func (u *GroupUpsertBulk) SetConfigTemplate(v string) *GroupUpsertBulk {
+// SetRpmLimit sets the "rpm_limit" field.
+func (u *GroupUpsertBulk) SetRpmLimit(v int) *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
-		s.SetConfigTemplate(v)
+		s.SetRpmLimit(v)
 	})
 }
 
-// UpdateConfigTemplate sets the "config_template" field to the value that was provided on create.
-func (u *GroupUpsertBulk) UpdateConfigTemplate() *GroupUpsertBulk {
+// AddRpmLimit adds v to the "rpm_limit" field.
+func (u *GroupUpsertBulk) AddRpmLimit(v int) *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
-		s.UpdateConfigTemplate()
+		s.AddRpmLimit(v)
+	})
+}
+
+// UpdateRpmLimit sets the "rpm_limit" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateRpmLimit() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateRpmLimit()
 	})
 }
 
