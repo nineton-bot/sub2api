@@ -1093,7 +1093,7 @@ func (s *UserService) UpdateReferralUsable(ctx context.Context, userID int64, de
 			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			if err := s.billingCache.InvalidateUserBalance(cacheCtx, userID); err != nil {
-				log.Printf("invalidate user balance cache failed (referral_usable): user_id=%d err=%v", userID, err)
+				slog.Warn("invalidate user balance cache failed (referral_usable)", "user_id", userID, "error", err)
 			}
 		}()
 	}

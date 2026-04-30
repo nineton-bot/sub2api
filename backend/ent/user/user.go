@@ -43,6 +43,12 @@ const (
 	FieldTotpEnabled = "totp_enabled"
 	// FieldTotpEnabledAt holds the string denoting the totp_enabled_at field in the database.
 	FieldTotpEnabledAt = "totp_enabled_at"
+	// FieldInvitedByUserID holds the string denoting the invited_by_user_id field in the database.
+	FieldInvitedByUserID = "invited_by_user_id"
+	// FieldInviteCode holds the string denoting the invite_code field in the database.
+	FieldInviteCode = "invite_code"
+	// FieldReferralUsable holds the string denoting the referral_usable field in the database.
+	FieldReferralUsable = "referral_usable"
 	// FieldSignupSource holds the string denoting the signup_source field in the database.
 	FieldSignupSource = "signup_source"
 	// FieldLastLoginAt holds the string denoting the last_login_at field in the database.
@@ -197,6 +203,9 @@ var Columns = []string{
 	FieldTotpSecretEncrypted,
 	FieldTotpEnabled,
 	FieldTotpEnabledAt,
+	FieldInvitedByUserID,
+	FieldInviteCode,
+	FieldReferralUsable,
 	FieldSignupSource,
 	FieldLastLoginAt,
 	FieldLastActiveAt,
@@ -262,6 +271,10 @@ var (
 	DefaultNotes string
 	// DefaultTotpEnabled holds the default value on creation for the "totp_enabled" field.
 	DefaultTotpEnabled bool
+	// InviteCodeValidator is a validator for the "invite_code" field. It is called by the builders before save.
+	InviteCodeValidator func(string) error
+	// DefaultReferralUsable holds the default value on creation for the "referral_usable" field.
+	DefaultReferralUsable float64
 	// DefaultSignupSource holds the default value on creation for the "signup_source" field.
 	DefaultSignupSource string
 	// SignupSourceValidator is a validator for the "signup_source" field. It is called by the builders before save.
@@ -354,6 +367,21 @@ func ByTotpEnabled(opts ...sql.OrderTermOption) OrderOption {
 // ByTotpEnabledAt orders the results by the totp_enabled_at field.
 func ByTotpEnabledAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTotpEnabledAt, opts...).ToFunc()
+}
+
+// ByInvitedByUserID orders the results by the invited_by_user_id field.
+func ByInvitedByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInvitedByUserID, opts...).ToFunc()
+}
+
+// ByInviteCode orders the results by the invite_code field.
+func ByInviteCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInviteCode, opts...).ToFunc()
+}
+
+// ByReferralUsable orders the results by the referral_usable field.
+func ByReferralUsable(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReferralUsable, opts...).ToFunc()
 }
 
 // BySignupSource orders the results by the signup_source field.

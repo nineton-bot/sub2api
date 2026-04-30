@@ -7,7 +7,7 @@ import type { QuotaThresholdType, QuotaResetMode } from '@/constants/account'
 const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
-  meter: 'cost' | 'requests' | null
+  meter?: 'cost' | 'requests' | null
   meterEditable?: boolean
   totalLimit: number | null
   dailyLimit: number | null
@@ -29,6 +29,7 @@ const props = withDefaults(defineProps<{
   quotaNotifyTotalThreshold?: number | null
   quotaNotifyTotalThresholdType?: QuotaThresholdType | null
 }>(), {
+  meter: 'cost',
   meterEditable: true,
   quotaNotifyGlobalEnabled: false,
   quotaNotifyDailyEnabled: null,
@@ -130,25 +131,6 @@ const weeklyFixedHint = computed(() => {
     timezone: props.resetTimezone || 'UTC',
   })
 })
-
-const onDailyModeChange = (e: Event) => {
-  const val = (e.target as HTMLSelectElement).value as 'rolling' | 'fixed'
-  emit('update:dailyResetMode', val)
-  if (val === 'fixed') {
-    if (props.dailyResetHour == null) emit('update:dailyResetHour', 0)
-    if (!props.resetTimezone) emit('update:resetTimezone', 'UTC')
-  }
-}
-
-const onWeeklyModeChange = (e: Event) => {
-  const val = (e.target as HTMLSelectElement).value as 'rolling' | 'fixed'
-  emit('update:weeklyResetMode', val)
-  if (val === 'fixed') {
-    if (props.weeklyResetDay == null) emit('update:weeklyResetDay', 1)
-    if (props.weeklyResetHour == null) emit('update:weeklyResetHour', 0)
-    if (!props.resetTimezone) emit('update:resetTimezone', 'UTC')
-  }
-}
 
 const isRequestMeter = computed(() => meterValue.value === 'requests')
 

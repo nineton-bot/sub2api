@@ -2206,11 +2206,11 @@ CREATE TABLE IF NOT EXISTS user_avatars (
 		cfg,
 		settingSvc,
 		emailService,
-		nil,
-		nil,
-		nil,
+		nil, // turnstileService
+		nil, // emailQueueService
+		nil, // promoService
+		nil, // referralService (V2 — 测试不验证返佣绑定)
 		options.defaultSubAssigner,
-		nil,
 	)
 	userSvc := service.NewUserService(userRepo, nil, nil, nil)
 	var totpSvc *service.TotpService
@@ -2792,6 +2792,10 @@ func (r *oauthPendingFlowUserRepo) UpdateBalance(context.Context, int64, float64
 
 func (r *oauthPendingFlowUserRepo) DeductBalance(context.Context, int64, float64) error {
 	panic("unexpected DeductBalance call")
+}
+
+func (r *oauthPendingFlowUserRepo) UpdateReferralUsable(context.Context, int64, float64) error {
+	panic("unexpected UpdateReferralUsable call")
 }
 
 func (r *oauthPendingFlowUserRepo) UpdateConcurrency(context.Context, int64, int) error {

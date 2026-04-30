@@ -634,9 +634,13 @@ var (
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
 		{Name: "platform", Type: field.TypeString, Size: 50, Default: "anthropic"},
 		{Name: "subscription_type", Type: field.TypeString, Size: 20, Default: "standard"},
+		{Name: "subscription_meter", Type: field.TypeString, Size: 20, Default: "cost_quota"},
 		{Name: "daily_limit_usd", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "weekly_limit_usd", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "monthly_limit_usd", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "daily_request_limit", Type: field.TypeInt, Nullable: true},
+		{Name: "weekly_request_limit", Type: field.TypeInt, Nullable: true},
+		{Name: "monthly_request_limit", Type: field.TypeInt, Nullable: true},
 		{Name: "default_validity_days", Type: field.TypeInt, Default: 30},
 		{Name: "image_price_1k", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "image_price_2k", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
@@ -654,6 +658,7 @@ var (
 		{Name: "require_privacy_set", Type: field.TypeBool, Default: false},
 		{Name: "default_mapped_model", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "messages_dispatch_model_config", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "config_template", Type: field.TypeString, Size: 32, Default: "claude_native"},
 		{Name: "rpm_limit", Type: field.TypeInt, Default: 0},
 	}
 	// GroupsTable holds the schema information for the "groups" table.
@@ -678,6 +683,11 @@ var (
 				Columns: []*schema.Column{GroupsColumns[10]},
 			},
 			{
+				Name:    "group_subscription_meter",
+				Unique:  false,
+				Columns: []*schema.Column{GroupsColumns[11]},
+			},
+			{
 				Name:    "group_is_exclusive",
 				Unique:  false,
 				Columns: []*schema.Column{GroupsColumns[7]},
@@ -690,7 +700,7 @@ var (
 			{
 				Name:    "group_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[25]},
+				Columns: []*schema.Column{GroupsColumns[29]},
 			},
 		},
 	}
@@ -1158,6 +1168,147 @@ var (
 			},
 		},
 	}
+	// ReferralCommissionsColumns holds the columns for the "referral_commissions" table.
+	ReferralCommissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "referrer_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "referee_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "source_type", Type: field.TypeString, Size: 20},
+		{Name: "source_order_id", Type: field.TypeInt64},
+		{Name: "source_amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "source_subscription_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "source_validity_days", Type: field.TypeInt, Nullable: true},
+		{Name: "source_starts_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "commission_rate", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(10,6)"}},
+		{Name: "gross_commission", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "released_commission", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "consumed_attributed", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "accruing"},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ReferralCommissionsTable holds the schema information for the "referral_commissions" table.
+	ReferralCommissionsTable = &schema.Table{
+		Name:       "referral_commissions",
+		Columns:    ReferralCommissionsColumns,
+		PrimaryKey: []*schema.Column{ReferralCommissionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "referralcommission_referrer_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralCommissionsColumns[1], ReferralCommissionsColumns[13]},
+			},
+			{
+				Name:    "referralcommission_referee_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralCommissionsColumns[2]},
+			},
+			{
+				Name:    "referralcommission_source_type_status",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralCommissionsColumns[3], ReferralCommissionsColumns[13]},
+			},
+			{
+				Name:    "referralcommission_source_order_id_source_type",
+				Unique:  true,
+				Columns: []*schema.Column{ReferralCommissionsColumns[4], ReferralCommissionsColumns[3]},
+			},
+		},
+	}
+	// ReferralCommissionReleaseLogsColumns holds the columns for the "referral_commission_release_logs" table.
+	ReferralCommissionReleaseLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "commission_id", Type: field.TypeInt64},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "trigger_type", Type: field.TypeString, Size: 30},
+		{Name: "rate_snapshot", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(10,6)"}},
+		{Name: "computation_detail", Type: field.TypeString, Default: "{}", SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ReferralCommissionReleaseLogsTable holds the schema information for the "referral_commission_release_logs" table.
+	ReferralCommissionReleaseLogsTable = &schema.Table{
+		Name:       "referral_commission_release_logs",
+		Columns:    ReferralCommissionReleaseLogsColumns,
+		PrimaryKey: []*schema.Column{ReferralCommissionReleaseLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "referralcommissionreleaselog_commission_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralCommissionReleaseLogsColumns[1]},
+			},
+			{
+				Name:    "referralcommissionreleaselog_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralCommissionReleaseLogsColumns[2], ReferralCommissionReleaseLogsColumns[7]},
+			},
+		},
+	}
+	// ReferralPendingBonusesColumns holds the columns for the "referral_pending_bonuses" table.
+	ReferralPendingBonusesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "referee_id", Type: field.TypeInt64, Unique: true},
+		{Name: "referrer_id", Type: field.TypeInt64},
+		{Name: "bonus_amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
+		{Name: "granted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "granted_trigger", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "granted_order_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// ReferralPendingBonusesTable holds the schema information for the "referral_pending_bonuses" table.
+	ReferralPendingBonusesTable = &schema.Table{
+		Name:       "referral_pending_bonuses",
+		Columns:    ReferralPendingBonusesColumns,
+		PrimaryKey: []*schema.Column{ReferralPendingBonusesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "referralpendingbonus_referee_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralPendingBonusesColumns[1], ReferralPendingBonusesColumns[4]},
+			},
+			{
+				Name:    "referralpendingbonus_referrer_id",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralPendingBonusesColumns[2]},
+			},
+		},
+	}
+	// ReferralWithdrawalsColumns holds the columns for the "referral_withdrawals" table.
+	ReferralWithdrawalsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "payout_method", Type: field.TypeString, Size: 20},
+		{Name: "payout_account", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "notes", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending"},
+		{Name: "requested_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "reviewed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "completed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "reviewed_by", Type: field.TypeInt64, Nullable: true},
+		{Name: "review_notes", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+	}
+	// ReferralWithdrawalsTable holds the schema information for the "referral_withdrawals" table.
+	ReferralWithdrawalsTable = &schema.Table{
+		Name:       "referral_withdrawals",
+		Columns:    ReferralWithdrawalsColumns,
+		PrimaryKey: []*schema.Column{ReferralWithdrawalsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "referralwithdrawal_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralWithdrawalsColumns[3], ReferralWithdrawalsColumns[8]},
+			},
+			{
+				Name:    "referralwithdrawal_status_requested_at",
+				Unique:  false,
+				Columns: []*schema.Column{ReferralWithdrawalsColumns[8], ReferralWithdrawalsColumns[9]},
+			},
+		},
+	}
 	// SecuritySecretsColumns holds the columns for the "security_secrets" table.
 	SecuritySecretsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1440,6 +1591,9 @@ var (
 		{Name: "totp_secret_encrypted", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "totp_enabled", Type: field.TypeBool, Default: false},
 		{Name: "totp_enabled_at", Type: field.TypeTime, Nullable: true},
+		{Name: "invited_by_user_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "invite_code", Type: field.TypeString, Nullable: true, Size: 16},
+		{Name: "referral_usable", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "signup_source", Type: field.TypeString, Default: "email"},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "last_active_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
@@ -1465,6 +1619,11 @@ var (
 				Name:    "user_deleted_at",
 				Unique:  false,
 				Columns: []*schema.Column{UsersColumns[3]},
+			},
+			{
+				Name:    "user_invited_by_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UsersColumns[15]},
 			},
 		},
 	}
@@ -1587,6 +1746,31 @@ var (
 			},
 		},
 	}
+	// UserReferralConfigsColumns holds the columns for the "user_referral_configs" table.
+	UserReferralConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "user_id", Type: field.TypeInt64, Unique: true},
+		{Name: "enabled", Type: field.TypeBool, Nullable: true},
+		{Name: "commission_rate_override", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,6)"}},
+		{Name: "referee_bonus_override", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
+		{Name: "withdrawal_allowed", Type: field.TypeBool, Default: false},
+		{Name: "notes", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+	}
+	// UserReferralConfigsTable holds the schema information for the "user_referral_configs" table.
+	UserReferralConfigsTable = &schema.Table{
+		Name:       "user_referral_configs",
+		Columns:    UserReferralConfigsColumns,
+		PrimaryKey: []*schema.Column{UserReferralConfigsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "userreferralconfig_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserReferralConfigsColumns[3]},
+			},
+		},
+	}
 	// UserSubscriptionsColumns holds the columns for the "user_subscriptions" table.
 	UserSubscriptionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1602,6 +1786,9 @@ var (
 		{Name: "daily_usage_usd", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
 		{Name: "weekly_usage_usd", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
 		{Name: "monthly_usage_usd", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(20,10)"}},
+		{Name: "daily_request_count", Type: field.TypeInt, Default: 0},
+		{Name: "weekly_request_count", Type: field.TypeInt, Default: 0},
+		{Name: "monthly_request_count", Type: field.TypeInt, Default: 0},
 		{Name: "assigned_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "notes", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "group_id", Type: field.TypeInt64},
@@ -1616,19 +1803,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "user_subscriptions_groups_subscriptions",
-				Columns:    []*schema.Column{UserSubscriptionsColumns[15]},
+				Columns:    []*schema.Column{UserSubscriptionsColumns[18]},
 				RefColumns: []*schema.Column{GroupsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "user_subscriptions_users_subscriptions",
-				Columns:    []*schema.Column{UserSubscriptionsColumns[16]},
+				Columns:    []*schema.Column{UserSubscriptionsColumns[19]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "user_subscriptions_users_assigned_subscriptions",
-				Columns:    []*schema.Column{UserSubscriptionsColumns[17]},
+				Columns:    []*schema.Column{UserSubscriptionsColumns[20]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1637,12 +1824,12 @@ var (
 			{
 				Name:    "usersubscription_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{UserSubscriptionsColumns[16]},
+				Columns: []*schema.Column{UserSubscriptionsColumns[19]},
 			},
 			{
 				Name:    "usersubscription_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{UserSubscriptionsColumns[15]},
+				Columns: []*schema.Column{UserSubscriptionsColumns[18]},
 			},
 			{
 				Name:    "usersubscription_status",
@@ -1657,17 +1844,17 @@ var (
 			{
 				Name:    "usersubscription_user_id_status_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{UserSubscriptionsColumns[16], UserSubscriptionsColumns[6], UserSubscriptionsColumns[5]},
+				Columns: []*schema.Column{UserSubscriptionsColumns[19], UserSubscriptionsColumns[6], UserSubscriptionsColumns[5]},
 			},
 			{
 				Name:    "usersubscription_assigned_by",
 				Unique:  false,
-				Columns: []*schema.Column{UserSubscriptionsColumns[17]},
+				Columns: []*schema.Column{UserSubscriptionsColumns[20]},
 			},
 			{
 				Name:    "usersubscription_user_id_group_id",
 				Unique:  false,
-				Columns: []*schema.Column{UserSubscriptionsColumns[16], UserSubscriptionsColumns[15]},
+				Columns: []*schema.Column{UserSubscriptionsColumns[19], UserSubscriptionsColumns[18]},
 			},
 			{
 				Name:    "usersubscription_deleted_at",
@@ -1701,6 +1888,10 @@ var (
 		PromoCodeUsagesTable,
 		ProxiesTable,
 		RedeemCodesTable,
+		ReferralCommissionsTable,
+		ReferralCommissionReleaseLogsTable,
+		ReferralPendingBonusesTable,
+		ReferralWithdrawalsTable,
 		SecuritySecretsTable,
 		SettingsTable,
 		SubscriptionPlansTable,
@@ -1711,6 +1902,7 @@ var (
 		UserAllowedGroupsTable,
 		UserAttributeDefinitionsTable,
 		UserAttributeValuesTable,
+		UserReferralConfigsTable,
 		UserSubscriptionsTable,
 	}
 )
@@ -1805,6 +1997,18 @@ func init() {
 	RedeemCodesTable.Annotation = &entsql.Annotation{
 		Table: "redeem_codes",
 	}
+	ReferralCommissionsTable.Annotation = &entsql.Annotation{
+		Table: "referral_commissions",
+	}
+	ReferralCommissionReleaseLogsTable.Annotation = &entsql.Annotation{
+		Table: "referral_commission_release_logs",
+	}
+	ReferralPendingBonusesTable.Annotation = &entsql.Annotation{
+		Table: "referral_pending_bonuses",
+	}
+	ReferralWithdrawalsTable.Annotation = &entsql.Annotation{
+		Table: "referral_withdrawals",
+	}
 	SecuritySecretsTable.Annotation = &entsql.Annotation{
 		Table: "security_secrets",
 	}
@@ -1843,6 +2047,9 @@ func init() {
 	UserAttributeValuesTable.ForeignKeys[1].RefTable = UserAttributeDefinitionsTable
 	UserAttributeValuesTable.Annotation = &entsql.Annotation{
 		Table: "user_attribute_values",
+	}
+	UserReferralConfigsTable.Annotation = &entsql.Annotation{
+		Table: "user_referral_configs",
 	}
 	UserSubscriptionsTable.ForeignKeys[0].RefTable = GroupsTable
 	UserSubscriptionsTable.ForeignKeys[1].RefTable = UsersTable

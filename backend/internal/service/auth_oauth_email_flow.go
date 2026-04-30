@@ -170,12 +170,15 @@ func (s *AuthService) RegisterOAuthEmailAccount(
 
 // FinalizeOAuthEmailAccount applies invitation usage and normal signup bootstrap
 // only after the pending OAuth flow has fully reached its last reversible step.
+//
+// referrerCode：V2 邀请返佣的推荐码。空串时不绑定 inviter；非空且未绑定（首次注册）
+// 时尝试通过 referralService 绑定 inviter，并按设置发放赠金。
 func (s *AuthService) FinalizeOAuthEmailAccount(
 	ctx context.Context,
 	user *User,
 	invitationCode string,
 	signupSource string,
-	affiliateCode string,
+	referrerCode string,
 ) error {
 	if s == nil || user == nil || user.ID <= 0 {
 		return ErrServiceUnavailable
@@ -195,7 +198,7 @@ func (s *AuthService) FinalizeOAuthEmailAccount(
 	s.updateOAuthSignupSource(ctx, user.ID, signupSource)
 	grantPlan := s.resolveSignupGrantPlan(ctx, signupSource)
 	s.assignSubscriptions(ctx, user.ID, grantPlan.Subscriptions, "auto assigned by signup defaults")
-	s.bindOAuthAffiliate(ctx, user.ID, affiliateCode)
+	s.bindReferrerAfterRegister(ctx, user.ID, referrerCode)
 	return nil
 }
 

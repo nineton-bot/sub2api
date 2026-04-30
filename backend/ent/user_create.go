@@ -213,6 +213,48 @@ func (_c *UserCreate) SetNillableTotpEnabledAt(v *time.Time) *UserCreate {
 	return _c
 }
 
+// SetInvitedByUserID sets the "invited_by_user_id" field.
+func (_c *UserCreate) SetInvitedByUserID(v int64) *UserCreate {
+	_c.mutation.SetInvitedByUserID(v)
+	return _c
+}
+
+// SetNillableInvitedByUserID sets the "invited_by_user_id" field if the given value is not nil.
+func (_c *UserCreate) SetNillableInvitedByUserID(v *int64) *UserCreate {
+	if v != nil {
+		_c.SetInvitedByUserID(*v)
+	}
+	return _c
+}
+
+// SetInviteCode sets the "invite_code" field.
+func (_c *UserCreate) SetInviteCode(v string) *UserCreate {
+	_c.mutation.SetInviteCode(v)
+	return _c
+}
+
+// SetNillableInviteCode sets the "invite_code" field if the given value is not nil.
+func (_c *UserCreate) SetNillableInviteCode(v *string) *UserCreate {
+	if v != nil {
+		_c.SetInviteCode(*v)
+	}
+	return _c
+}
+
+// SetReferralUsable sets the "referral_usable" field.
+func (_c *UserCreate) SetReferralUsable(v float64) *UserCreate {
+	_c.mutation.SetReferralUsable(v)
+	return _c
+}
+
+// SetNillableReferralUsable sets the "referral_usable" field if the given value is not nil.
+func (_c *UserCreate) SetNillableReferralUsable(v *float64) *UserCreate {
+	if v != nil {
+		_c.SetReferralUsable(*v)
+	}
+	return _c
+}
+
 // SetSignupSource sets the "signup_source" field.
 func (_c *UserCreate) SetSignupSource(v string) *UserCreate {
 	_c.mutation.SetSignupSource(v)
@@ -598,6 +640,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultTotpEnabled
 		_c.mutation.SetTotpEnabled(v)
 	}
+	if _, ok := _c.mutation.ReferralUsable(); !ok {
+		v := user.DefaultReferralUsable
+		_c.mutation.SetReferralUsable(v)
+	}
 	if _, ok := _c.mutation.SignupSource(); !ok {
 		v := user.DefaultSignupSource
 		_c.mutation.SetSignupSource(v)
@@ -684,6 +730,14 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.TotpEnabled(); !ok {
 		return &ValidationError{Name: "totp_enabled", err: errors.New(`ent: missing required field "User.totp_enabled"`)}
+	}
+	if v, ok := _c.mutation.InviteCode(); ok {
+		if err := user.InviteCodeValidator(v); err != nil {
+			return &ValidationError{Name: "invite_code", err: fmt.Errorf(`ent: validator failed for field "User.invite_code": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ReferralUsable(); !ok {
+		return &ValidationError{Name: "referral_usable", err: errors.New(`ent: missing required field "User.referral_usable"`)}
 	}
 	if _, ok := _c.mutation.SignupSource(); !ok {
 		return &ValidationError{Name: "signup_source", err: errors.New(`ent: missing required field "User.signup_source"`)}
@@ -790,6 +844,18 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.TotpEnabledAt(); ok {
 		_spec.SetField(user.FieldTotpEnabledAt, field.TypeTime, value)
 		_node.TotpEnabledAt = &value
+	}
+	if value, ok := _c.mutation.InvitedByUserID(); ok {
+		_spec.SetField(user.FieldInvitedByUserID, field.TypeInt64, value)
+		_node.InvitedByUserID = &value
+	}
+	if value, ok := _c.mutation.InviteCode(); ok {
+		_spec.SetField(user.FieldInviteCode, field.TypeString, value)
+		_node.InviteCode = &value
+	}
+	if value, ok := _c.mutation.ReferralUsable(); ok {
+		_spec.SetField(user.FieldReferralUsable, field.TypeFloat64, value)
+		_node.ReferralUsable = value
 	}
 	if value, ok := _c.mutation.SignupSource(); ok {
 		_spec.SetField(user.FieldSignupSource, field.TypeString, value)
@@ -1261,6 +1327,66 @@ func (u *UserUpsert) ClearTotpEnabledAt() *UserUpsert {
 	return u
 }
 
+// SetInvitedByUserID sets the "invited_by_user_id" field.
+func (u *UserUpsert) SetInvitedByUserID(v int64) *UserUpsert {
+	u.Set(user.FieldInvitedByUserID, v)
+	return u
+}
+
+// UpdateInvitedByUserID sets the "invited_by_user_id" field to the value that was provided on create.
+func (u *UserUpsert) UpdateInvitedByUserID() *UserUpsert {
+	u.SetExcluded(user.FieldInvitedByUserID)
+	return u
+}
+
+// AddInvitedByUserID adds v to the "invited_by_user_id" field.
+func (u *UserUpsert) AddInvitedByUserID(v int64) *UserUpsert {
+	u.Add(user.FieldInvitedByUserID, v)
+	return u
+}
+
+// ClearInvitedByUserID clears the value of the "invited_by_user_id" field.
+func (u *UserUpsert) ClearInvitedByUserID() *UserUpsert {
+	u.SetNull(user.FieldInvitedByUserID)
+	return u
+}
+
+// SetInviteCode sets the "invite_code" field.
+func (u *UserUpsert) SetInviteCode(v string) *UserUpsert {
+	u.Set(user.FieldInviteCode, v)
+	return u
+}
+
+// UpdateInviteCode sets the "invite_code" field to the value that was provided on create.
+func (u *UserUpsert) UpdateInviteCode() *UserUpsert {
+	u.SetExcluded(user.FieldInviteCode)
+	return u
+}
+
+// ClearInviteCode clears the value of the "invite_code" field.
+func (u *UserUpsert) ClearInviteCode() *UserUpsert {
+	u.SetNull(user.FieldInviteCode)
+	return u
+}
+
+// SetReferralUsable sets the "referral_usable" field.
+func (u *UserUpsert) SetReferralUsable(v float64) *UserUpsert {
+	u.Set(user.FieldReferralUsable, v)
+	return u
+}
+
+// UpdateReferralUsable sets the "referral_usable" field to the value that was provided on create.
+func (u *UserUpsert) UpdateReferralUsable() *UserUpsert {
+	u.SetExcluded(user.FieldReferralUsable)
+	return u
+}
+
+// AddReferralUsable adds v to the "referral_usable" field.
+func (u *UserUpsert) AddReferralUsable(v float64) *UserUpsert {
+	u.Add(user.FieldReferralUsable, v)
+	return u
+}
+
 // SetSignupSource sets the "signup_source" field.
 func (u *UserUpsert) SetSignupSource(v string) *UserUpsert {
 	u.Set(user.FieldSignupSource, v)
@@ -1664,6 +1790,76 @@ func (u *UserUpsertOne) UpdateTotpEnabledAt() *UserUpsertOne {
 func (u *UserUpsertOne) ClearTotpEnabledAt() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearTotpEnabledAt()
+	})
+}
+
+// SetInvitedByUserID sets the "invited_by_user_id" field.
+func (u *UserUpsertOne) SetInvitedByUserID(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetInvitedByUserID(v)
+	})
+}
+
+// AddInvitedByUserID adds v to the "invited_by_user_id" field.
+func (u *UserUpsertOne) AddInvitedByUserID(v int64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddInvitedByUserID(v)
+	})
+}
+
+// UpdateInvitedByUserID sets the "invited_by_user_id" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateInvitedByUserID() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateInvitedByUserID()
+	})
+}
+
+// ClearInvitedByUserID clears the value of the "invited_by_user_id" field.
+func (u *UserUpsertOne) ClearInvitedByUserID() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearInvitedByUserID()
+	})
+}
+
+// SetInviteCode sets the "invite_code" field.
+func (u *UserUpsertOne) SetInviteCode(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetInviteCode(v)
+	})
+}
+
+// UpdateInviteCode sets the "invite_code" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateInviteCode() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateInviteCode()
+	})
+}
+
+// ClearInviteCode clears the value of the "invite_code" field.
+func (u *UserUpsertOne) ClearInviteCode() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearInviteCode()
+	})
+}
+
+// SetReferralUsable sets the "referral_usable" field.
+func (u *UserUpsertOne) SetReferralUsable(v float64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferralUsable(v)
+	})
+}
+
+// AddReferralUsable adds v to the "referral_usable" field.
+func (u *UserUpsertOne) AddReferralUsable(v float64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddReferralUsable(v)
+	})
+}
+
+// UpdateReferralUsable sets the "referral_usable" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateReferralUsable() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferralUsable()
 	})
 }
 
@@ -2260,6 +2456,76 @@ func (u *UserUpsertBulk) UpdateTotpEnabledAt() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearTotpEnabledAt() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearTotpEnabledAt()
+	})
+}
+
+// SetInvitedByUserID sets the "invited_by_user_id" field.
+func (u *UserUpsertBulk) SetInvitedByUserID(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetInvitedByUserID(v)
+	})
+}
+
+// AddInvitedByUserID adds v to the "invited_by_user_id" field.
+func (u *UserUpsertBulk) AddInvitedByUserID(v int64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddInvitedByUserID(v)
+	})
+}
+
+// UpdateInvitedByUserID sets the "invited_by_user_id" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateInvitedByUserID() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateInvitedByUserID()
+	})
+}
+
+// ClearInvitedByUserID clears the value of the "invited_by_user_id" field.
+func (u *UserUpsertBulk) ClearInvitedByUserID() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearInvitedByUserID()
+	})
+}
+
+// SetInviteCode sets the "invite_code" field.
+func (u *UserUpsertBulk) SetInviteCode(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetInviteCode(v)
+	})
+}
+
+// UpdateInviteCode sets the "invite_code" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateInviteCode() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateInviteCode()
+	})
+}
+
+// ClearInviteCode clears the value of the "invite_code" field.
+func (u *UserUpsertBulk) ClearInviteCode() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearInviteCode()
+	})
+}
+
+// SetReferralUsable sets the "referral_usable" field.
+func (u *UserUpsertBulk) SetReferralUsable(v float64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetReferralUsable(v)
+	})
+}
+
+// AddReferralUsable adds v to the "referral_usable" field.
+func (u *UserUpsertBulk) AddReferralUsable(v float64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddReferralUsable(v)
+	})
+}
+
+// UpdateReferralUsable sets the "referral_usable" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateReferralUsable() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateReferralUsable()
 	})
 }
 

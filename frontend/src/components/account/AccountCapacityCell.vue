@@ -193,17 +193,4 @@ const formatCost = (value: number | null | undefined) => {
   if (value === null || value === undefined) return '0'
   return value.toFixed(2)
 }
-
-// ====== 配额 ======
-const isQuotaEligible = computed(() => props.account.type === 'apikey' || props.account.type === 'bedrock')
-
-const showDailyQuota = computed(() =>
-  isQuotaEligible.value && props.account.quota_daily_limit != null && props.account.quota_daily_limit > 0
-)
-const showWeeklyQuota = computed(() =>
-  isQuotaEligible.value && props.account.quota_weekly_limit != null && props.account.quota_weekly_limit > 0
-)
-const showTotalQuota = computed(() =>
-  isQuotaEligible.value && props.account.quota_limit != null && props.account.quota_limit > 0
-)
 </script>
