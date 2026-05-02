@@ -75,7 +75,7 @@ func (User) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 
-		// 邀请返佣字段（见迁移 103_add_referral_system.sql）
+		// 邀请返佣字段（见迁移 134_add_referral_system.sql，原 103）
 		// invited_by_user_id 是邀请关系，终身绑定。部分用户未必被邀请，故 Optional+Nillable。
 		field.Int64("invited_by_user_id").
 			Optional().
@@ -88,7 +88,7 @@ func (User) Fields() []ent.Field {
 
 		// 可使用佣金池（V2），与 balance 解耦。
 		// 释放事件写入此字段；用户可主动"转入余额"或"申请提现"。
-		// 见迁移 105_referral_usable_and_withdrawals.sql。
+		// 见迁移 136_referral_usable_and_withdrawals.sql（原 105）。
 		field.Float("referral_usable").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
 			Default(0),

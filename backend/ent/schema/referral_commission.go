@@ -34,7 +34,7 @@ func (ReferralCommission) Annotations() []schema.Annotation {
 func (ReferralCommission) Fields() []ent.Field {
 	return []ent.Field{
 		// referrer_id / referee_id 在 users 被硬删除时通过 FK ON DELETE SET NULL
-		// 置空（见迁移 104_referral_commissions_set_null_fk.sql），以保留佣金台账
+		// 置空（见迁移 135_referral_commissions_set_null_fk.sql，原 104），以保留佣金台账
 		// 作为审计证据。业务代码写入时仍传非空值。
 		field.Int64("referrer_id").
 			Optional().
