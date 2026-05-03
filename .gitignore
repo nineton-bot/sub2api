@@ -136,3 +136,7 @@ docs/*
 frontend/coverage/
 aicodex
 output/
+assets/ultraman-livestream-poster.svg
+deploy/docker-compose.dev.override.yml
+lumaihomepage/
+user-report-error/
