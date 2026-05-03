@@ -8,6 +8,7 @@ import (
 )
 
 type OpenAIMessagesDispatchModelConfig = domain.OpenAIMessagesDispatchModelConfig
+type GroupTierMapping = domain.GroupTierMapping
 
 type Group struct {
 	ID             int64
@@ -58,6 +59,10 @@ type Group struct {
 
 	// 配置模板（仅 anthropic 平台生效，控制 UseKeyModal 生成的 openclaw / CC settings）
 	ConfigTemplate string
+
+	// 国产 Anthropic 协议组的 tier 映射（仅 config_template=domestic_anthropic 时使用）。
+	// 决定"导入到 CCS"时写入 Claude Code env 的具体模型名，与网关侧 model_mapping 无关。
+	TierMapping GroupTierMapping
 
 	// OpenAI Messages 调度配置（仅 openai 平台使用）
 	AllowMessagesDispatch       bool

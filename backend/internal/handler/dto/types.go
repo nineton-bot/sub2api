@@ -118,6 +118,11 @@ type Group struct {
 	// 配置模板（仅 anthropic 平台生效，驱动前端 UseKeyModal 的配置文案）
 	ConfigTemplate string `json:"config_template,omitempty"`
 
+	// 国产 Anthropic 协议组的 tier 映射（仅 domestic_anthropic 模板有效）
+	// 用户侧可见，因为前端 KeysView 的"导入到 CCS"需要据此拼装 deeplink。
+	// 使用指针 + omitempty：claude_native / 未配置场景在 JSON 里不出现该字段。
+	TierMapping *domain.GroupTierMapping `json:"tier_mapping,omitempty"`
+
 	// RPMLimit 分组级每分钟请求数上限（0 = 不限制），设置后覆盖用户级 rpm_limit。
 	RPMLimit int `json:"rpm_limit"`
 

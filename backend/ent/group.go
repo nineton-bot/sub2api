@@ -89,6 +89,8 @@ type Group struct {
 	MessagesDispatchModelConfig domain.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config,omitempty"`
 	// 使用密钥弹窗的配置模板：claude_native(Claude 原生) / domestic_anthropic(国产 Anthropic 协议)
 	ConfigTemplate string `json:"config_template,omitempty"`
+	// 国产 Anthropic 协议组的 Claude tier → 国产模型映射（导入到 CCS 时使用）
+	TierMapping domain.GroupTierMapping `json:"tier_mapping,omitempty"`
 	// 分组 RPM 上限，0 表示不限制；设置后接管该分组用户的限流
 	RpmLimit int `json:"rpm_limit,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -197,7 +199,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldMessagesDispatchModelConfig:
+		case group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldMessagesDispatchModelConfig, group.FieldTierMapping:
 			values[i] = new([]byte)
 		case group.FieldIsExclusive, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet:
 			values[i] = new(sql.NullBool)
@@ -459,6 +461,14 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ConfigTemplate = value.String
 			}
+		case group.FieldTierMapping:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field tier_mapping", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.TierMapping); err != nil {
+					return fmt.Errorf("unmarshal field tier_mapping: %w", err)
+				}
+			}
 		case group.FieldRpmLimit:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field rpm_limit", values[i])
@@ -671,6 +681,9 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("config_template=")
 	builder.WriteString(_m.ConfigTemplate)
+	builder.WriteString(", ")
+	builder.WriteString("tier_mapping=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TierMapping))
 	builder.WriteString(", ")
 	builder.WriteString("rpm_limit=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RpmLimit))

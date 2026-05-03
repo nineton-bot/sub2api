@@ -495,6 +495,20 @@ func (_c *GroupCreate) SetNillableConfigTemplate(v *string) *GroupCreate {
 	return _c
 }
 
+// SetTierMapping sets the "tier_mapping" field.
+func (_c *GroupCreate) SetTierMapping(v domain.GroupTierMapping) *GroupCreate {
+	_c.mutation.SetTierMapping(v)
+	return _c
+}
+
+// SetNillableTierMapping sets the "tier_mapping" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableTierMapping(v *domain.GroupTierMapping) *GroupCreate {
+	if v != nil {
+		_c.SetTierMapping(*v)
+	}
+	return _c
+}
+
 // SetRpmLimit sets the "rpm_limit" field.
 func (_c *GroupCreate) SetRpmLimit(v int) *GroupCreate {
 	_c.mutation.SetRpmLimit(v)
@@ -722,6 +736,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultConfigTemplate
 		_c.mutation.SetConfigTemplate(v)
 	}
+	if _, ok := _c.mutation.TierMapping(); !ok {
+		v := group.DefaultTierMapping
+		_c.mutation.SetTierMapping(v)
+	}
 	if _, ok := _c.mutation.RpmLimit(); !ok {
 		v := group.DefaultRpmLimit
 		_c.mutation.SetRpmLimit(v)
@@ -828,6 +846,9 @@ func (_c *GroupCreate) check() error {
 		if err := group.ConfigTemplateValidator(v); err != nil {
 			return &ValidationError{Name: "config_template", err: fmt.Errorf(`ent: validator failed for field "Group.config_template": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.TierMapping(); !ok {
+		return &ValidationError{Name: "tier_mapping", err: errors.New(`ent: missing required field "Group.tier_mapping"`)}
 	}
 	if _, ok := _c.mutation.RpmLimit(); !ok {
 		return &ValidationError{Name: "rpm_limit", err: errors.New(`ent: missing required field "Group.rpm_limit"`)}
@@ -998,6 +1019,10 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ConfigTemplate(); ok {
 		_spec.SetField(group.FieldConfigTemplate, field.TypeString, value)
 		_node.ConfigTemplate = value
+	}
+	if value, ok := _c.mutation.TierMapping(); ok {
+		_spec.SetField(group.FieldTierMapping, field.TypeJSON, value)
+		_node.TierMapping = value
 	}
 	if value, ok := _c.mutation.RpmLimit(); ok {
 		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)
@@ -1735,6 +1760,18 @@ func (u *GroupUpsert) UpdateConfigTemplate() *GroupUpsert {
 	return u
 }
 
+// SetTierMapping sets the "tier_mapping" field.
+func (u *GroupUpsert) SetTierMapping(v domain.GroupTierMapping) *GroupUpsert {
+	u.Set(group.FieldTierMapping, v)
+	return u
+}
+
+// UpdateTierMapping sets the "tier_mapping" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateTierMapping() *GroupUpsert {
+	u.SetExcluded(group.FieldTierMapping)
+	return u
+}
+
 // SetRpmLimit sets the "rpm_limit" field.
 func (u *GroupUpsert) SetRpmLimit(v int) *GroupUpsert {
 	u.Set(group.FieldRpmLimit, v)
@@ -2467,6 +2504,20 @@ func (u *GroupUpsertOne) SetConfigTemplate(v string) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateConfigTemplate() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateConfigTemplate()
+	})
+}
+
+// SetTierMapping sets the "tier_mapping" field.
+func (u *GroupUpsertOne) SetTierMapping(v domain.GroupTierMapping) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetTierMapping(v)
+	})
+}
+
+// UpdateTierMapping sets the "tier_mapping" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateTierMapping() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateTierMapping()
 	})
 }
 
@@ -3371,6 +3422,20 @@ func (u *GroupUpsertBulk) SetConfigTemplate(v string) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateConfigTemplate() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateConfigTemplate()
+	})
+}
+
+// SetTierMapping sets the "tier_mapping" field.
+func (u *GroupUpsertBulk) SetTierMapping(v domain.GroupTierMapping) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetTierMapping(v)
+	})
+}
+
+// UpdateTierMapping sets the "tier_mapping" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateTierMapping() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateTierMapping()
 	})
 }
 

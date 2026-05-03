@@ -213,6 +213,8 @@ type CreateGroupInput struct {
 	MessagesDispatchModelConfig OpenAIMessagesDispatchModelConfig
 	// 配置模板（仅 anthropic 平台生效）
 	ConfigTemplate string
+	// 国产 Anthropic 协议组的 tier 映射（仅 config_template=domestic_anthropic 时使用）
+	TierMapping GroupTierMapping
 	// RPMLimit 分组 RPM 上限（0 = 不限制）
 	RPMLimit int
 	// 从指定分组复制账号（创建分组后在同一事务内绑定）
@@ -259,6 +261,8 @@ type UpdateGroupInput struct {
 	MessagesDispatchModelConfig *OpenAIMessagesDispatchModelConfig
 	// 配置模板（仅 anthropic 平台生效，nil 表示不修改）
 	ConfigTemplate *string
+	// 国产 Anthropic 协议组的 tier 映射（nil 表示不修改）
+	TierMapping *GroupTierMapping
 	// RPMLimit 分组 RPM 上限（0 = 不限制），nil 表示未提供不改动。
 	RPMLimit *int
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
@@ -1458,6 +1462,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	}
 
 	configTemplate := normalizeGroupConfigTemplate(platform, input.ConfigTemplate)
+	tierMapping := normalizeGroupTierMapping(configTemplate, input.TierMapping)
 
 	group := &Group{
 		Name:                            input.Name,
@@ -1489,6 +1494,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		DefaultMappedModel:              input.DefaultMappedModel,
 		MessagesDispatchModelConfig:     normalizeOpenAIMessagesDispatchModelConfig(input.MessagesDispatchModelConfig),
 		ConfigTemplate:                  configTemplate,
+		TierMapping:                     tierMapping,
 		RPMLimit:                        input.RPMLimit,
 	}
 	sanitizeGroupMessagesDispatchFields(group)
@@ -1539,6 +1545,20 @@ func normalizeGroupConfigTemplate(platform, template string) string {
 		return template
 	default:
 		return ConfigTemplateClaudeNative
+	}
+}
+
+// normalizeGroupTierMapping 规范化 tier_mapping：仅 domestic_anthropic 模板保留值，
+// 其他模板统一清空（防止无意义的脏数据传递到 CCS 导入流程）。
+func normalizeGroupTierMapping(configTemplate string, tm GroupTierMapping) GroupTierMapping {
+	if configTemplate != ConfigTemplateDomesticAnthropic {
+		return GroupTierMapping{}
+	}
+	return GroupTierMapping{
+		Default: strings.TrimSpace(tm.Default),
+		Haiku:   strings.TrimSpace(tm.Haiku),
+		Sonnet:  strings.TrimSpace(tm.Sonnet),
+		Opus:    strings.TrimSpace(tm.Opus),
 	}
 }
 
@@ -1834,6 +1854,11 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		group.ConfigTemplate = normalizeGroupConfigTemplate(group.Platform, *input.ConfigTemplate)
 	} else {
 		group.ConfigTemplate = normalizeGroupConfigTemplate(group.Platform, group.ConfigTemplate)
+	}
+	if input.TierMapping != nil {
+		group.TierMapping = normalizeGroupTierMapping(group.ConfigTemplate, *input.TierMapping)
+	} else {
+		group.TierMapping = normalizeGroupTierMapping(group.ConfigTemplate, group.TierMapping)
 	}
 	if input.RPMLimit != nil {
 		group.RPMLimit = *input.RPMLimit

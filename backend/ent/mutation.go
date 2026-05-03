@@ -14805,6 +14805,7 @@ type GroupMutation struct {
 	default_mapped_model                    *string
 	messages_dispatch_model_config          *domain.OpenAIMessagesDispatchModelConfig
 	config_template                         *string
+	tier_mapping                            *domain.GroupTierMapping
 	rpm_limit                               *int
 	addrpm_limit                            *int
 	clearedFields                           map[string]struct{}
@@ -16677,6 +16678,42 @@ func (m *GroupMutation) ResetConfigTemplate() {
 	m.config_template = nil
 }
 
+// SetTierMapping sets the "tier_mapping" field.
+func (m *GroupMutation) SetTierMapping(dtm domain.GroupTierMapping) {
+	m.tier_mapping = &dtm
+}
+
+// TierMapping returns the value of the "tier_mapping" field in the mutation.
+func (m *GroupMutation) TierMapping() (r domain.GroupTierMapping, exists bool) {
+	v := m.tier_mapping
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTierMapping returns the old "tier_mapping" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldTierMapping(ctx context.Context) (v domain.GroupTierMapping, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTierMapping is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTierMapping requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTierMapping: %w", err)
+	}
+	return oldValue.TierMapping, nil
+}
+
+// ResetTierMapping resets all changes to the "tier_mapping" field.
+func (m *GroupMutation) ResetTierMapping() {
+	m.tier_mapping = nil
+}
+
 // SetRpmLimit sets the "rpm_limit" field.
 func (m *GroupMutation) SetRpmLimit(i int) {
 	m.rpm_limit = &i
@@ -17091,7 +17128,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 36)
+	fields := make([]string, 0, 37)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -17197,6 +17234,9 @@ func (m *GroupMutation) Fields() []string {
 	if m.config_template != nil {
 		fields = append(fields, group.FieldConfigTemplate)
 	}
+	if m.tier_mapping != nil {
+		fields = append(fields, group.FieldTierMapping)
+	}
 	if m.rpm_limit != nil {
 		fields = append(fields, group.FieldRpmLimit)
 	}
@@ -17278,6 +17318,8 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.MessagesDispatchModelConfig()
 	case group.FieldConfigTemplate:
 		return m.ConfigTemplate()
+	case group.FieldTierMapping:
+		return m.TierMapping()
 	case group.FieldRpmLimit:
 		return m.RpmLimit()
 	}
@@ -17359,6 +17401,8 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldMessagesDispatchModelConfig(ctx)
 	case group.FieldConfigTemplate:
 		return m.OldConfigTemplate(ctx)
+	case group.FieldTierMapping:
+		return m.OldTierMapping(ctx)
 	case group.FieldRpmLimit:
 		return m.OldRpmLimit(ctx)
 	}
@@ -17614,6 +17658,13 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetConfigTemplate(v)
+		return nil
+	case group.FieldTierMapping:
+		v, ok := value.(domain.GroupTierMapping)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTierMapping(v)
 		return nil
 	case group.FieldRpmLimit:
 		v, ok := value.(int)
@@ -18045,6 +18096,9 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldConfigTemplate:
 		m.ResetConfigTemplate()
+		return nil
+	case group.FieldTierMapping:
+		m.ResetTierMapping()
 		return nil
 	case group.FieldRpmLimit:
 		m.ResetRpmLimit()

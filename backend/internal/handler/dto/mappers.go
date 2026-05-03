@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
@@ -190,10 +191,20 @@ func groupFromServiceBase(g *service.Group) Group {
 		RequireOAuthOnly:                g.RequireOAuthOnly,
 		RequirePrivacySet:               g.RequirePrivacySet,
 		ConfigTemplate:                  g.ConfigTemplate,
+		TierMapping:                     tierMappingPtrIfSet(g.TierMapping),
 		RPMLimit:                        g.RPMLimit,
 		CreatedAt:                       g.CreatedAt,
 		UpdatedAt:                       g.UpdatedAt,
 	}
+}
+
+// tierMappingPtrIfSet 返回非空 tier_mapping 的指针；空结构体返回 nil 以便 JSON 省略字段。
+func tierMappingPtrIfSet(tm domain.GroupTierMapping) *domain.GroupTierMapping {
+	if tm.IsEmpty() {
+		return nil
+	}
+	cp := tm
+	return &cp
 }
 
 func AccountFromServiceShallow(a *service.Account) *Account {

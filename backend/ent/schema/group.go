@@ -164,6 +164,13 @@ func (Group) Fields() []ent.Field {
 			Default(domain.ConfigTemplateClaudeNative).
 			Comment("使用密钥弹窗的配置模板：claude_native(Claude 原生) / domestic_anthropic(国产 Anthropic 协议)"),
 
+		// 国产 Anthropic 协议组的 tier 映射（added by migration 138）
+		// 仅在 config_template=domestic_anthropic 时使用，决定"导入到 CCS"时写入 Claude Code env 的具体模型名
+		field.JSON("tier_mapping", domain.GroupTierMapping{}).
+			Default(domain.GroupTierMapping{}).
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("国产 Anthropic 协议组的 Claude tier → 国产模型映射（导入到 CCS 时使用）"),
+
 		// 分组级每分钟请求数上限（0 = 不限制）。设置后优先于用户级兜底生效。
 		field.Int("rpm_limit").
 			Default(0).

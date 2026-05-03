@@ -676,6 +676,20 @@ func (_u *GroupUpdate) SetNillableConfigTemplate(v *string) *GroupUpdate {
 	return _u
 }
 
+// SetTierMapping sets the "tier_mapping" field.
+func (_u *GroupUpdate) SetTierMapping(v domain.GroupTierMapping) *GroupUpdate {
+	_u.mutation.SetTierMapping(v)
+	return _u
+}
+
+// SetNillableTierMapping sets the "tier_mapping" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableTierMapping(v *domain.GroupTierMapping) *GroupUpdate {
+	if v != nil {
+		_u.SetTierMapping(*v)
+	}
+	return _u
+}
+
 // SetRpmLimit sets the "rpm_limit" field.
 func (_u *GroupUpdate) SetRpmLimit(v int) *GroupUpdate {
 	_u.mutation.ResetRpmLimit()
@@ -1202,6 +1216,9 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ConfigTemplate(); ok {
 		_spec.SetField(group.FieldConfigTemplate, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.TierMapping(); ok {
+		_spec.SetField(group.FieldTierMapping, field.TypeJSON, value)
 	}
 	if value, ok := _u.mutation.RpmLimit(); ok {
 		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)
@@ -2163,6 +2180,20 @@ func (_u *GroupUpdateOne) SetNillableConfigTemplate(v *string) *GroupUpdateOne {
 	return _u
 }
 
+// SetTierMapping sets the "tier_mapping" field.
+func (_u *GroupUpdateOne) SetTierMapping(v domain.GroupTierMapping) *GroupUpdateOne {
+	_u.mutation.SetTierMapping(v)
+	return _u
+}
+
+// SetNillableTierMapping sets the "tier_mapping" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableTierMapping(v *domain.GroupTierMapping) *GroupUpdateOne {
+	if v != nil {
+		_u.SetTierMapping(*v)
+	}
+	return _u
+}
+
 // SetRpmLimit sets the "rpm_limit" field.
 func (_u *GroupUpdateOne) SetRpmLimit(v int) *GroupUpdateOne {
 	_u.mutation.ResetRpmLimit()
@@ -2719,6 +2750,9 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.ConfigTemplate(); ok {
 		_spec.SetField(group.FieldConfigTemplate, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.TierMapping(); ok {
+		_spec.SetField(group.FieldTierMapping, field.TypeJSON, value)
 	}
 	if value, ok := _u.mutation.RpmLimit(); ok {
 		_spec.SetField(group.FieldRpmLimit, field.TypeInt, value)

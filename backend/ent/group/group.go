@@ -86,6 +86,8 @@ const (
 	FieldMessagesDispatchModelConfig = "messages_dispatch_model_config"
 	// FieldConfigTemplate holds the string denoting the config_template field in the database.
 	FieldConfigTemplate = "config_template"
+	// FieldTierMapping holds the string denoting the tier_mapping field in the database.
+	FieldTierMapping = "tier_mapping"
 	// FieldRpmLimit holds the string denoting the rpm_limit field in the database.
 	FieldRpmLimit = "rpm_limit"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
@@ -198,6 +200,7 @@ var Columns = []string{
 	FieldDefaultMappedModel,
 	FieldMessagesDispatchModelConfig,
 	FieldConfigTemplate,
+	FieldTierMapping,
 	FieldRpmLimit,
 }
 
@@ -284,6 +287,8 @@ var (
 	DefaultConfigTemplate string
 	// ConfigTemplateValidator is a validator for the "config_template" field. It is called by the builders before save.
 	ConfigTemplateValidator func(string) error
+	// DefaultTierMapping holds the default value on creation for the "tier_mapping" field.
+	DefaultTierMapping domain.GroupTierMapping
 	// DefaultRpmLimit holds the default value on creation for the "rpm_limit" field.
 	DefaultRpmLimit int
 )

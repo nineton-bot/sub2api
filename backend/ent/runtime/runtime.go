@@ -862,8 +862,12 @@ func init() {
 	group.DefaultConfigTemplate = groupDescConfigTemplate.Default.(string)
 	// group.ConfigTemplateValidator is a validator for the "config_template" field. It is called by the builders before save.
 	group.ConfigTemplateValidator = groupDescConfigTemplate.Validators[0].(func(string) error)
+	// groupDescTierMapping is the schema descriptor for tier_mapping field.
+	groupDescTierMapping := groupFields[32].Descriptor()
+	// group.DefaultTierMapping holds the default value on creation for the tier_mapping field.
+	group.DefaultTierMapping = groupDescTierMapping.Default.(domain.GroupTierMapping)
 	// groupDescRpmLimit is the schema descriptor for rpm_limit field.
-	groupDescRpmLimit := groupFields[32].Descriptor()
+	groupDescRpmLimit := groupFields[33].Descriptor()
 	// group.DefaultRpmLimit holds the default value on creation for the rpm_limit field.
 	group.DefaultRpmLimit = groupDescRpmLimit.Default.(int)
 	idempotencyrecordMixin := schema.IdempotencyRecord{}.Mixin()

@@ -452,6 +452,15 @@ export type SubscriptionMeter = 'cost_quota' | 'request_quota'
 // 分组配置模板（仅 anthropic 平台生效，驱动 UseKeyModal 配置文案）
 export type GroupConfigTemplate = 'claude_native' | 'domestic_anthropic'
 
+// 国产 Anthropic 协议组的 tier 映射（仅 config_template=domestic_anthropic 时使用）
+// 决定"导入到 CCS"时写入 Claude Code env 的具体模型名
+export interface GroupTierMapping {
+  default?: string
+  haiku?: string
+  sonnet?: string
+  opus?: string
+}
+
 export interface OpenAIMessagesDispatchModelConfig {
   opus_mapped_model?: string
   sonnet_mapped_model?: string
@@ -492,6 +501,8 @@ export interface Group {
   require_privacy_set: boolean
   // 配置模板（仅 anthropic 平台生效）
   config_template?: GroupConfigTemplate
+  // 国产 Anthropic 协议组的 tier 映射（仅 domestic_anthropic 有效）
+  tier_mapping?: GroupTierMapping
   created_at: string
   updated_at: string
 }
@@ -602,6 +613,8 @@ export interface CreateGroupRequest {
   supported_model_scopes?: string[]
   require_oauth_only?: boolean
   require_privacy_set?: boolean
+  config_template?: GroupConfigTemplate
+  tier_mapping?: GroupTierMapping
   // 从指定分组复制账号
   copy_accounts_from_group_ids?: number[]
 }
@@ -631,6 +644,8 @@ export interface UpdateGroupRequest {
   supported_model_scopes?: string[]
   require_oauth_only?: boolean
   require_privacy_set?: boolean
+  config_template?: GroupConfigTemplate
+  tier_mapping?: GroupTierMapping
   copy_accounts_from_group_ids?: number[]
 }
 

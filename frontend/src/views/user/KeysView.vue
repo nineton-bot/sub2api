@@ -1913,6 +1913,23 @@ const executeCcsImport = (row: ApiKey, clientType: 'claude' | 'gemini') => {
     usageScript: btoa(usageScript),
     usageAutoInterval: '30'
   })
+
+  // 国产 Anthropic 协议组：把 group.tier_mapping 拼到 deeplink，
+  // CCSwitch 会写入 ~/.claude/settings.json 的 env，让 Claude Code 直接发国产模型名
+  // （ANTHROPIC_MODEL / ANTHROPIC_DEFAULT_HAIKU_MODEL / SONNET / OPUS）
+  if (platform === 'anthropic' && row.group?.config_template === 'domestic_anthropic') {
+    const tier = row.group?.tier_mapping
+    const trimmed = (v?: string) => (v ?? '').trim()
+    const def = trimmed(tier?.default)
+    const haiku = trimmed(tier?.haiku)
+    const sonnet = trimmed(tier?.sonnet)
+    const opus = trimmed(tier?.opus)
+    if (def) params.set('model', def)
+    if (haiku) params.set('haikuModel', haiku)
+    if (sonnet) params.set('sonnetModel', sonnet)
+    if (opus) params.set('opusModel', opus)
+  }
+
   const deeplink = `ccswitch://v1/import?${params.toString()}`
 
   try {

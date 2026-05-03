@@ -847,6 +847,35 @@
           </p>
         </div>
 
+        <!-- Tier 映射（仅 anthropic + domestic_anthropic 模板） -->
+        <div
+          v-if="createForm.platform === 'anthropic' && createForm.config_template === 'domestic_anthropic'"
+          class="border-t pt-4"
+        >
+          <label class="input-label">Claude Tier → 国产模型映射（用于"导入到 CCS"）</label>
+          <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">默认模型 (ANTHROPIC_MODEL)</label>
+              <input v-model="createForm.tier_default" type="text" class="input-base" placeholder="如 qwen-plus、glm-4.6、kimi-k2-turbo-preview" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Haiku tier (DEFAULT_HAIKU_MODEL)</label>
+              <input v-model="createForm.tier_haiku" type="text" class="input-base" placeholder="对应低成本模型" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Sonnet tier (DEFAULT_SONNET_MODEL)</label>
+              <input v-model="createForm.tier_sonnet" type="text" class="input-base" placeholder="对应通用模型" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Opus tier (DEFAULT_OPUS_MODEL)</label>
+              <input v-model="createForm.tier_opus" type="text" class="input-base" placeholder="对应旗舰模型" />
+            </div>
+          </div>
+          <p class="input-hint">
+            Claude Code 启动后会读这些 env，用对应模型替换 <code>claude-haiku-*</code> / <code>claude-sonnet-*</code> / <code>claude-opus-*</code> 请求。模型名需在分组账号的 model_mapping 中存在。留空则该 tier 不写入 CC settings。
+          </p>
+        </div>
+
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="createForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -2036,6 +2065,35 @@
           </p>
         </div>
 
+        <!-- Tier 映射（仅 anthropic + domestic_anthropic 模板） -->
+        <div
+          v-if="editForm.platform === 'anthropic' && editForm.config_template === 'domestic_anthropic'"
+          class="border-t pt-4"
+        >
+          <label class="input-label">Claude Tier → 国产模型映射（用于"导入到 CCS"）</label>
+          <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">默认模型 (ANTHROPIC_MODEL)</label>
+              <input v-model="editForm.tier_default" type="text" class="input-base" placeholder="如 qwen-plus、glm-4.6、kimi-k2-turbo-preview" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Haiku tier (DEFAULT_HAIKU_MODEL)</label>
+              <input v-model="editForm.tier_haiku" type="text" class="input-base" placeholder="对应低成本模型" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Sonnet tier (DEFAULT_SONNET_MODEL)</label>
+              <input v-model="editForm.tier_sonnet" type="text" class="input-base" placeholder="对应通用模型" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">Opus tier (DEFAULT_OPUS_MODEL)</label>
+              <input v-model="editForm.tier_opus" type="text" class="input-base" placeholder="对应旗舰模型" />
+            </div>
+          </div>
+          <p class="input-hint">
+            Claude Code 启动后会读这些 env，用对应模型替换 <code>claude-haiku-*</code> / <code>claude-sonnet-*</code> / <code>claude-opus-*</code> 请求。模型名需在分组账号的 model_mapping 中存在。留空则该 tier 不写入 CC settings。
+          </p>
+        </div>
+
         <!-- Claude Code 客户端限制（仅 anthropic 平台） -->
         <div v-if="editForm.platform === 'anthropic'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -2806,7 +2864,7 @@ import { useI18n } from "vue-i18n";
 import { useAppStore } from "@/stores/app";
 import { useOnboardingStore } from "@/stores/onboarding";
 import { adminAPI } from "@/api/admin";
-import type { AdminGroup, GroupPlatform, SubscriptionMeter, SubscriptionType } from "@/types";
+import type { AdminGroup, GroupPlatform, GroupTierMapping, SubscriptionMeter, SubscriptionType } from "@/types";
 import type { Column } from "@/components/common/types";
 import AppLayout from "@/components/layout/AppLayout.vue";
 import TablePageLayout from "@/components/layout/TablePageLayout.vue";
@@ -3110,6 +3168,11 @@ const createForm = reactive({
   mcp_xml_inject: true,
   // 配置模板（仅 anthropic 平台）
   config_template: "claude_native" as "claude_native" | "domestic_anthropic",
+  // 国产 Anthropic 协议组的 tier 映射（仅 domestic_anthropic 模板使用）
+  tier_default: "" as string,
+  tier_haiku: "" as string,
+  tier_sonnet: "" as string,
+  tier_opus: "" as string,
   // 从分组复制账号
   copy_accounts_from_group_ids: [] as number[],
   // 分组级 RPM 限制（每用户每分钟最大请求数；0 = 不限制）
@@ -3399,6 +3462,11 @@ const editForm = reactive({
   mcp_xml_inject: true,
   // 配置模板（仅 anthropic 平台）
   config_template: "claude_native" as "claude_native" | "domestic_anthropic",
+  // 国产 Anthropic 协议组的 tier 映射（仅 domestic_anthropic 模板使用）
+  tier_default: "" as string,
+  tier_haiku: "" as string,
+  tier_sonnet: "" as string,
+  tier_opus: "" as string,
   // 从分组复制账号
   copy_accounts_from_group_ids: [] as number[],
   // 分组级 RPM 限制（每用户每分钟最大请求数；0 = 不限制）
@@ -3609,8 +3677,30 @@ const closeCreateModal = () => {
   createForm.supported_model_scopes = ["claude", "gemini_text", "gemini_image"];
   createForm.mcp_xml_inject = true;
   createForm.config_template = "claude_native";
+  createForm.tier_default = "";
+  createForm.tier_haiku = "";
+  createForm.tier_sonnet = "";
+  createForm.tier_opus = "";
   createForm.copy_accounts_from_group_ids = [];
   createModelRoutingRules.value = [];
+};
+
+// buildTierMappingPayload 仅在 anthropic + domestic_anthropic 模板下才构造载荷，
+// 其他场景一律返回空结构体（后端 normalize 时会清掉）。
+const buildTierMappingPayload = (
+  platform: string,
+  configTemplate: string,
+  form: { tier_default: string; tier_haiku: string; tier_sonnet: string; tier_opus: string },
+): GroupTierMapping => {
+  if (platform !== "anthropic" || configTemplate !== "domestic_anthropic") {
+    return {};
+  }
+  return {
+    default: form.tier_default.trim() || undefined,
+    haiku: form.tier_haiku.trim() || undefined,
+    sonnet: form.tier_sonnet.trim() || undefined,
+    opus: form.tier_opus.trim() || undefined,
+  };
 };
 
 const normalizeOptionalLimit = (
@@ -3673,6 +3763,11 @@ const handleCreateGroup = async () => {
               exact_model_mappings: createForm.exact_model_mappings,
             })
           : undefined,
+      tier_mapping: buildTierMappingPayload(
+        createForm.platform,
+        createForm.config_template,
+        createForm,
+      ),
     };
     // v-model.number 清空输入框时产生 ""，转为 null 让后端设为无限制
     const emptyToNull = (v: any) => (v === "" ? null : v);
@@ -3756,6 +3851,10 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.config_template = (group.config_template === "domestic_anthropic"
     ? "domestic_anthropic"
     : "claude_native");
+  editForm.tier_default = group.tier_mapping?.default ?? "";
+  editForm.tier_haiku = group.tier_mapping?.haiku ?? "";
+  editForm.tier_sonnet = group.tier_mapping?.sonnet ?? "";
+  editForm.tier_opus = group.tier_mapping?.opus ?? "";
   editForm.copy_accounts_from_group_ids = []; // 复制账号字段每次编辑时重置为空
   editForm.rpm_limit = group.rpm_limit ?? 0;
   // 加载模型路由规则（异步加载账号名称）
@@ -3826,6 +3925,11 @@ const handleUpdateGroup = async () => {
               exact_model_mappings: editForm.exact_model_mappings,
             })
           : undefined,
+      tier_mapping: buildTierMappingPayload(
+        editForm.platform,
+        editForm.config_template,
+        editForm,
+      ),
     };
     // v-model.number 清空输入框时产生 ""，转为 null 让后端设为无限制
     const emptyToNull = (v: any) => (v === "" ? null : v);

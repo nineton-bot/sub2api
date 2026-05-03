@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
@@ -165,6 +166,8 @@ type CreateGroupRequest struct {
 	MessagesDispatchModelConfig service.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	// 配置模板（仅 anthropic 平台生效）
 	ConfigTemplate string `json:"config_template" binding:"omitempty,oneof=claude_native domestic_anthropic"`
+	// 国产 Anthropic 协议组的 tier 映射（仅 domestic_anthropic 模板使用）
+	TierMapping *domain.GroupTierMapping `json:"tier_mapping"`
 	// 分组 RPM 上限（0 = 不限制）
 	RPMLimit int `json:"rpm_limit"`
 	// 从指定分组复制账号（创建后自动绑定）
@@ -208,6 +211,8 @@ type UpdateGroupRequest struct {
 	MessagesDispatchModelConfig *service.OpenAIMessagesDispatchModelConfig `json:"messages_dispatch_model_config"`
 	// 配置模板（仅 anthropic 平台生效，nil 表示不修改）
 	ConfigTemplate *string `json:"config_template" binding:"omitempty,oneof=claude_native domestic_anthropic"`
+	// 国产 Anthropic 协议组的 tier 映射（nil 表示不修改）
+	TierMapping *domain.GroupTierMapping `json:"tier_mapping"`
 	// 分组 RPM 上限（0 = 不限制）；nil 表示未提供不改动
 	RPMLimit *int `json:"rpm_limit"`
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
@@ -332,6 +337,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		DefaultMappedModel:              req.DefaultMappedModel,
 		MessagesDispatchModelConfig:     req.MessagesDispatchModelConfig,
 		ConfigTemplate:                  req.ConfigTemplate,
+		TierMapping:                     deRefGroupTierMapping(req.TierMapping),
 		RPMLimit:                        req.RPMLimit,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
 	})
@@ -341,6 +347,14 @@ func (h *GroupHandler) Create(c *gin.Context) {
 	}
 
 	response.Success(c, dto.GroupFromServiceAdmin(group))
+}
+
+// deRefGroupTierMapping 将可选指针 fallback 为零值结构体。
+func deRefGroupTierMapping(p *domain.GroupTierMapping) domain.GroupTierMapping {
+	if p == nil {
+		return domain.GroupTierMapping{}
+	}
+	return *p
 }
 
 // Update handles updating a group
@@ -392,6 +406,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		DefaultMappedModel:              req.DefaultMappedModel,
 		MessagesDispatchModelConfig:     req.MessagesDispatchModelConfig,
 		ConfigTemplate:                  req.ConfigTemplate,
+		TierMapping:                     req.TierMapping,
 		RPMLimit:                        req.RPMLimit,
 		CopyAccountsFromGroupIDs:        req.CopyAccountsFromGroupIDs,
 	})
