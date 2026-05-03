@@ -7952,30 +7952,7 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 				slog.Error("deduct balance failed", "user_id", p.User.ID, "error", err)
 			}
 			deps.billingCacheService.QueueDeductBalance(p.User.ID, cost.ActualCost)
-			// 异步释放充值型返佣：按 FIFO 把本次扣费金额归因到被邀请人最早未充分归因
-			// 的充值型 commission 上。失败仅记日志，不影响扣费主流程。
-			if deps.referralService != nil {
-				referralSvc := deps.referralService
-				userID := p.User.ID
-				consumed := cost.ActualCost
-				go func() {
-					// 防御 panic：脱离请求 context 的 goroutine 若 panic 会被 Go runtime 当作
-					// 未捕获异常拉爆进程（并非 gin 中间件能接到的 panic）。哪怕底层 DB/Redis 驱动
-					// 偶发空指针/断言失败，也必须被吞掉，不能影响其他正在处理的请求。
-					defer func() {
-						if r := recover(); r != nil {
-							slog.Error("release referral commission panic recovered",
-								"user_id", userID, "consumed", consumed, "panic", r)
-						}
-					}()
-					rctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-					defer cancel()
-					if err := referralSvc.ReleaseCommissionForRechargeConsumption(rctx, userID, consumed); err != nil {
-						slog.Warn("release referral commission failed",
-							"user_id", userID, "consumed", consumed, "error", err)
-					}
-				}()
-			}
+			asyncReleaseRechargeCommission(deps.referralService, p.User.ID, cost.ActualCost)
 		}
 	}
 
@@ -8140,6 +8117,7 @@ func finalizePostUsageBilling(p *postUsageBillingParams, deps *billingDeps, resu
 		}
 	} else if p.Cost.ActualCost > 0 && p.User != nil {
 		deps.billingCacheService.QueueDeductBalance(p.User.ID, p.Cost.ActualCost)
+		asyncReleaseRechargeCommission(deps.referralService, p.User.ID, p.Cost.ActualCost)
 	}
 
 	if p.Cost.ActualCost > 0 && p.APIKey != nil && p.APIKey.HasRateLimits() {
@@ -8232,6 +8210,32 @@ func detachedBillingContext(ctx context.Context) (context.Context, context.Cance
 		base = context.WithoutCancel(ctx)
 	}
 	return context.WithTimeout(base, postUsageBillingTimeout)
+}
+
+// asyncReleaseRechargeCommission 异步释放充值型返佣：按 FIFO 把本次扣费金额归因到被邀请人最早
+// 未充分归因的充值型 commission 上。失败仅记日志，不影响扣费主流程。
+//
+// 防御 panic：脱离请求 context 的 goroutine 若 panic 会被 Go runtime 当作未捕获异常拉爆进程
+// （并非 gin 中间件能接到的 panic）。哪怕底层 DB/Redis 驱动偶发空指针/断言失败，也必须被吞掉，
+// 不能影响其他正在处理的请求。
+func asyncReleaseRechargeCommission(referralSvc *ReferralService, userID int64, consumed float64) {
+	if referralSvc == nil || consumed <= 0 {
+		return
+	}
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("release referral commission panic recovered",
+					"user_id", userID, "consumed", consumed, "panic", r)
+			}
+		}()
+		rctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := referralSvc.ReleaseCommissionForRechargeConsumption(rctx, userID, consumed); err != nil {
+			slog.Warn("release referral commission failed",
+				"user_id", userID, "consumed", consumed, "error", err)
+		}
+	}()
 }
 
 func detachStreamUpstreamContext(ctx context.Context, stream bool) (context.Context, context.CancelFunc) {
