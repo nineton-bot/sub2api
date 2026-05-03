@@ -573,16 +573,6 @@ type GatewayService struct {
 	referralService       *ReferralService // 可选：用于消费扣费后异步释放充值型佣金
 }
 
-// SetReferralService 在 wire 初始化完成后注入 ReferralService，避免与 PaymentService
-// 之间形成循环依赖（ReferralService 需要 billingCacheService 等基础设施，已在 gateway
-// 启动后构造）。不注入时，gateway 扣费路径的返佣释放短路跳过。
-func (s *GatewayService) SetReferralService(rs *ReferralService) {
-	if s == nil {
-		return
-	}
-	s.referralService = rs
-}
-
 // NewGatewayService creates a new GatewayService
 func NewGatewayService(
 	accountRepo AccountRepository,
@@ -611,6 +601,7 @@ func NewGatewayService(
 	channelService *ChannelService,
 	resolver *ModelPricingResolver,
 	balanceNotifyService *BalanceNotifyService,
+	referralService *ReferralService,
 ) *GatewayService {
 	userGroupRateTTL := resolveUserGroupRateCacheTTL(cfg)
 	modelsListTTL := resolveModelsListCacheTTL(cfg)
@@ -646,6 +637,7 @@ func NewGatewayService(
 		channelService:       channelService,
 		resolver:             resolver,
 		balanceNotifyService: balanceNotifyService,
+		referralService:      referralService,
 	}
 	svc.userGroupRateResolver = newUserGroupRateResolver(
 		userGroupRateRepo,
