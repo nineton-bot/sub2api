@@ -523,19 +523,11 @@ function amountFitsMethod(amt: number, methodType: string): boolean {
   return true
 }
 
-// Visible methods decide the amount range shown to users.
-const globalMinAmount = computed(() => {
-  const limits = Object.values(visibleMethods.value)
-  if (limits.length === 0) return 0
-  if (limits.some(limit => limit.single_min <= 0)) return 0
-  return Math.min(...limits.map(limit => limit.single_min))
-})
-const globalMaxAmount = computed(() => {
-  const limits = Object.values(visibleMethods.value)
-  if (limits.length === 0) return 0
-  if (limits.some(limit => limit.single_max <= 0)) return 0
-  return Math.max(...limits.map(limit => limit.single_max))
-})
+// 直接用后端 /payment/checkout-info 返回的 global_min/global_max。
+// 后端已把 admin "支付设置-最低/最高金额" 与每种支付方式的 single_min/max 合并取交集，
+// 与下单时 validateOrderInput 的边界一致，避免「hint 写 ≥1，提交才报最低 50」的不一致。
+const globalMinAmount = computed(() => checkout.value.global_min || 0)
+const globalMaxAmount = computed(() => checkout.value.global_max || 0)
 
 // Selected method's limits (for validation and error messages)
 const selectedLimit = computed(() => visibleMethods.value[selectedMethod.value])
@@ -565,6 +557,13 @@ const totalAmount = computed(() =>
 
 const amountError = computed(() => {
   if (validAmount.value <= 0) return ''
+  // 全局边界（admin 支付设置最低/最高 ∩ 各支付方式 single_min/max），与下单时校验一致
+  if (globalMinAmount.value > 0 && validAmount.value < globalMinAmount.value) {
+    return t('payment.amountTooLow', { min: globalMinAmount.value })
+  }
+  if (globalMaxAmount.value > 0 && validAmount.value > globalMaxAmount.value) {
+    return t('payment.amountTooHigh', { max: globalMaxAmount.value })
+  }
   // No method can handle this amount
   if (!enabledMethods.value.some((m) => amountFitsMethod(validAmount.value, m))) {
     return t('payment.amountNoMethod')
@@ -580,6 +579,8 @@ const amountError = computed(() => {
 
 const canSubmit = computed(() =>
   validAmount.value > 0
+    && (globalMinAmount.value <= 0 || validAmount.value >= globalMinAmount.value)
+    && (globalMaxAmount.value <= 0 || validAmount.value <= globalMaxAmount.value)
     && amountFitsMethod(validAmount.value, selectedMethod.value)
     && selectedLimit.value?.available !== false
 )

@@ -130,10 +130,16 @@ func (h *PaymentHandler) GetCheckoutInfo(c *gin.Context) {
 		})
 	}
 
+	// admin 的全局 MinAmount/MaxAmount（"支付设置-最低/最高金额"）是 validateOrderInput
+	// 真正校验的边界，但 limitsResp.GlobalMin/Max 仅来自每种支付方式的 single_min/max。
+	// 这里取交集（floor 取大、ceiling 取小，0 视为无约束）后再返给前端，使 hint 与下单实际边界一致。
+	effectiveMin := mergeFloor(limitsResp.GlobalMin, cfg.MinAmount)
+	effectiveMax := mergeCap(limitsResp.GlobalMax, cfg.MaxAmount)
+
 	response.Success(c, checkoutInfoResponse{
 		Methods:                   limitsResp.Methods,
-		GlobalMin:                 limitsResp.GlobalMin,
-		GlobalMax:                 limitsResp.GlobalMax,
+		GlobalMin:                 effectiveMin,
+		GlobalMax:                 effectiveMax,
 		Plans:                     planList,
 		BalanceDisabled:           cfg.BalanceDisabled,
 		BalanceRechargeMultiplier: cfg.BalanceRechargeMultiplier,
@@ -142,6 +148,34 @@ func (h *PaymentHandler) GetCheckoutInfo(c *gin.Context) {
 		HelpImageURL:              cfg.HelpImageURL,
 		StripePublishableKey:      cfg.StripePublishableKey,
 	})
+}
+
+// mergeFloor 返回更严格的下限（取较大者）。0 视为「无约束」，让另一方胜出。
+func mergeFloor(a, b float64) float64 {
+	if a == 0 {
+		return b
+	}
+	if b == 0 {
+		return a
+	}
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// mergeCap 返回更严格的上限（取较小者）。0 视为「无约束」，让另一方胜出。
+func mergeCap(a, b float64) float64 {
+	if a == 0 {
+		return b
+	}
+	if b == 0 {
+		return a
+	}
+	if a < b {
+		return a
+	}
+	return b
 }
 
 type checkoutInfoResponse struct {
@@ -197,10 +231,16 @@ func parseFeatures(raw string) []string {
 // GetLimits returns per-payment-type limits derived from enabled provider instances.
 // GET /api/v1/payment/limits
 func (h *PaymentHandler) GetLimits(c *gin.Context) {
-	resp, err := h.configService.GetAvailableMethodLimits(c.Request.Context())
+	ctx := c.Request.Context()
+	resp, err := h.configService.GetAvailableMethodLimits(ctx)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
+	}
+	// 同 GetCheckoutInfo：把 admin 全局 MinAmount/MaxAmount 合并进 GlobalMin/Max。
+	if cfg, cerr := h.configService.GetPaymentConfig(ctx); cerr == nil && cfg != nil {
+		resp.GlobalMin = mergeFloor(resp.GlobalMin, cfg.MinAmount)
+		resp.GlobalMax = mergeCap(resp.GlobalMax, cfg.MaxAmount)
 	}
 	response.Success(c, resp)
 }
