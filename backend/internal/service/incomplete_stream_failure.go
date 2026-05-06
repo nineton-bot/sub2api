@@ -75,6 +75,12 @@ func (s *GatewayService) handleIncompleteStreamFailure(
 	if s == nil || account == nil || streamErr == nil || parsed == nil {
 		return
 	}
+	// Kill switch：admin "网关服务设置" 中可开关，**默认 OFF**。
+	// 仅当管理员显式打开后 handler 才会执行后续动作（emit / unbind sticky / 599 policy）。
+	// settingService 为 nil 或读取失败时按默认 OFF 处理，确保安全默认。
+	if s.settingService == nil || !s.settingService.IsIncompleteStreamFailoverEnabled(ctx) {
+		return
+	}
 	if !isUpstreamIncompleteStreamError(streamErr) {
 		return
 	}

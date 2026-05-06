@@ -48,6 +48,12 @@ func (s *OpenAIGatewayService) handleIncompleteStreamFailure(
 	if s == nil || account == nil || streamErr == nil {
 		return
 	}
+	// Kill switch：admin "网关服务设置" 中可开关，**默认 OFF**。
+	// 与 Anthropic 版共用同一开关 IsIncompleteStreamFailoverEnabled。
+	// settingService 为 nil 或读取失败时按默认 OFF 处理，确保安全默认。
+	if s.settingService == nil || !s.settingService.IsIncompleteStreamFailoverEnabled(ctx) {
+		return
+	}
 	if !isUpstreamIncompleteStreamError(streamErr) {
 		return
 	}

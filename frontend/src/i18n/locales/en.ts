@@ -5111,6 +5111,8 @@ export default {
         cchSigningHint: 'Sign the billing header in forwarded requests with CCH hash. When disabled, the placeholder is preserved.',
         anthropicCacheTTL1hInjection: 'Anthropic Cache TTL Injection',
         anthropicCacheTTL1hInjectionHint: 'When enabled, existing ephemeral cache_control blocks in Anthropic OAuth/Setup Token request bodies are forced to 1h; response usage is billed back as 5m by default, with account-level TTL billing override taking priority.',
+        incompleteStreamFailover: 'Incomplete-Stream Upstream Failover',
+        incompleteStreamFailoverHint: 'Default OFF. When enabled, if the upstream returns 200 but the SSE stream is truncated (no terminal event such as message_stop / response.completed), proactively send an SSE error event to the client and unbind the sticky session so the user is auto-rerouted to a healthy account on the next request. Only triggers on deterministic upstream truncation; never fires on client cancel / network disconnect. Off keeps pre-fix behavior (clients wait for SDK idle timeout, typically 1–3 minutes). Controls both Anthropic and OpenAI gateway paths. Recommend validating in staging before enabling in production.',
       },
       webSearchEmulation: {
         title: 'Web Search Emulation',

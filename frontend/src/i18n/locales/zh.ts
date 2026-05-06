@@ -5270,6 +5270,8 @@ export default {
         cchSigningHint: '对转发请求的 billing header 进行 CCH 哈希签名。关闭时保留原始占位符。',
         anthropicCacheTTL1hInjection: 'Anthropic 缓存 TTL 注入',
         anthropicCacheTTL1hInjectionHint: '开启后，对 Anthropic OAuth/Setup Token 请求体中已有的 ephemeral 缓存块强制写入 1h；响应 usage 默认按 5m 回写计费，账号级 TTL 计费设置优先。',
+        incompleteStreamFailover: '上游 SSE 截断主动 Failover',
+        incompleteStreamFailoverHint: '默认关闭。开启后，上游返回 200 但 SSE 流缺失终止事件（message_stop / response.completed）时，主动给客户端发 SSE error event 并解除 sticky 绑定，让用户下一次请求自动调度到健康账号。仅匹配上游确定性截断，客户端取消 / 网络断开等不会触发。关闭则保持修复前行为（用户需等 SDK 自身 idle timeout，1-3 分钟）。同时控制 Anthropic 与 OpenAI 两条网关路径。建议先在测试环境观察行为符合预期再上生产。',
       },
       webSearchEmulation: {
         title: 'Web Search 模拟',

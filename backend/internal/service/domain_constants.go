@@ -379,6 +379,12 @@ const (
 	// SettingKeyEnableAnthropicCacheTTL1hInjection 是否对 Anthropic OAuth/SetupToken 请求体注入 1h cache_control ttl（默认 false）
 	SettingKeyEnableAnthropicCacheTTL1hInjection = "enable_anthropic_cache_ttl_1h_injection"
 
+	// SettingKeyEnableIncompleteStreamFailover 是否在上游 SSE 截断（HTTP 200 但缺
+	// terminal event）时主动给客户端发 error event 并解 sticky 绑定，让用户下一次
+	// 请求自动调度到健康账号。同时控制 Anthropic + OpenAI 两条网关路径。
+	// 默认 true（修复生效）；OFF 时退化为修复前行为（用户等 SDK 自身 idle timeout）。
+	SettingKeyEnableIncompleteStreamFailover = "enable_incomplete_stream_failover"
+
 	// Balance Low Notification
 	SettingKeyBalanceLowNotifyEnabled     = "balance_low_notify_enabled"      // 全局开关
 	SettingKeyBalanceLowNotifyThreshold   = "balance_low_notify_threshold"    // 默认阈值（USD）

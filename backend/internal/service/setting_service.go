@@ -86,6 +86,7 @@ type cachedGatewayForwardingSettings struct {
 	metadataPassthrough          bool
 	cchSigning                   bool
 	anthropicCacheTTL1hInjection bool
+	incompleteStreamFailover     bool
 	expiresAt                    int64 // unix nano
 }
 
@@ -1274,6 +1275,7 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyEnableMetadataPassthrough] = strconv.FormatBool(settings.EnableMetadataPassthrough)
 	updates[SettingKeyEnableCCHSigning] = strconv.FormatBool(settings.EnableCCHSigning)
 	updates[SettingKeyEnableAnthropicCacheTTL1hInjection] = strconv.FormatBool(settings.EnableAnthropicCacheTTL1hInjection)
+	updates[SettingKeyEnableIncompleteStreamFailover] = strconv.FormatBool(settings.EnableIncompleteStreamFailover)
 	updates[SettingPaymentVisibleMethodAlipaySource] = settings.PaymentVisibleMethodAlipaySource
 	updates[SettingPaymentVisibleMethodWxpaySource] = settings.PaymentVisibleMethodWxpaySource
 	updates[SettingPaymentVisibleMethodAlipayEnabled] = strconv.FormatBool(settings.PaymentVisibleMethodAlipayEnabled)
@@ -1356,6 +1358,7 @@ func (s *SettingService) refreshCachedSettings(settings *SystemSettings) {
 		metadataPassthrough:          settings.EnableMetadataPassthrough,
 		cchSigning:                   settings.EnableCCHSigning,
 		anthropicCacheTTL1hInjection: settings.EnableAnthropicCacheTTL1hInjection,
+		incompleteStreamFailover:     settings.EnableIncompleteStreamFailover,
 		expiresAt:                    time.Now().Add(gatewayForwardingCacheTTL).UnixNano(),
 	})
 	openAIAdvancedSchedulerSettingSF.Forget(openAIAdvancedSchedulerSettingKey)
@@ -1464,17 +1467,18 @@ func (s *SettingService) IsBackendModeEnabled(ctx context.Context) bool {
 }
 
 type gatewayForwardingSettingsResult struct {
-	fp, mp, cch, cacheTTL1h bool
+	fp, mp, cch, cacheTTL1h, incFailover bool
 }
 
 func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context) gatewayForwardingSettingsResult {
 	if cached, ok := gatewayForwardingCache.Load().(*cachedGatewayForwardingSettings); ok && cached != nil {
 		if time.Now().UnixNano() < cached.expiresAt {
 			return gatewayForwardingSettingsResult{
-				fp:         cached.fingerprintUnification,
-				mp:         cached.metadataPassthrough,
-				cch:        cached.cchSigning,
-				cacheTTL1h: cached.anthropicCacheTTL1hInjection,
+				fp:          cached.fingerprintUnification,
+				mp:          cached.metadataPassthrough,
+				cch:         cached.cchSigning,
+				cacheTTL1h:  cached.anthropicCacheTTL1hInjection,
+				incFailover: cached.incompleteStreamFailover,
 			}
 		}
 	}
@@ -1482,10 +1486,11 @@ func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context)
 		if cached, ok := gatewayForwardingCache.Load().(*cachedGatewayForwardingSettings); ok && cached != nil {
 			if time.Now().UnixNano() < cached.expiresAt {
 				return gatewayForwardingSettingsResult{
-					fp:         cached.fingerprintUnification,
-					mp:         cached.metadataPassthrough,
-					cch:        cached.cchSigning,
-					cacheTTL1h: cached.anthropicCacheTTL1hInjection,
+					fp:          cached.fingerprintUnification,
+					mp:          cached.metadataPassthrough,
+					cch:         cached.cchSigning,
+					cacheTTL1h:  cached.anthropicCacheTTL1hInjection,
+					incFailover: cached.incompleteStreamFailover,
 				}, nil
 			}
 		}
@@ -1496,6 +1501,7 @@ func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context)
 			SettingKeyEnableMetadataPassthrough,
 			SettingKeyEnableCCHSigning,
 			SettingKeyEnableAnthropicCacheTTL1hInjection,
+			SettingKeyEnableIncompleteStreamFailover,
 		})
 		if err != nil {
 			slog.Warn("failed to get gateway forwarding settings", "error", err)
@@ -1504,6 +1510,7 @@ func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context)
 				metadataPassthrough:          false,
 				cchSigning:                   false,
 				anthropicCacheTTL1hInjection: false,
+				incompleteStreamFailover:     false, // 默认 OFF：DB 故障时保持安全（不触发 failover）
 				expiresAt:                    time.Now().Add(gatewayForwardingErrorTTL).UnixNano(),
 			})
 			return gatewayForwardingSettingsResult{fp: true}, nil
@@ -1515,19 +1522,23 @@ func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context)
 		mp := values[SettingKeyEnableMetadataPassthrough] == "true"
 		cch := values[SettingKeyEnableCCHSigning] == "true"
 		cacheTTL1h := values[SettingKeyEnableAnthropicCacheTTL1hInjection] == "true"
+		// incomplete-stream failover 默认 OFF：未显式设置（DB 中没有 row 或 row 为空）按关闭处理，
+		// 与 EnsureRequiredSettings 默认 seed "false" 保持一致。仅当 DB 中显式存为 "true" 时才生效。
+		incFailover := values[SettingKeyEnableIncompleteStreamFailover] == "true"
 		gatewayForwardingCache.Store(&cachedGatewayForwardingSettings{
 			fingerprintUnification:       fp,
 			metadataPassthrough:          mp,
 			cchSigning:                   cch,
 			anthropicCacheTTL1hInjection: cacheTTL1h,
+			incompleteStreamFailover:     incFailover,
 			expiresAt:                    time.Now().Add(gatewayForwardingCacheTTL).UnixNano(),
 		})
-		return gatewayForwardingSettingsResult{fp: fp, mp: mp, cch: cch, cacheTTL1h: cacheTTL1h}, nil
+		return gatewayForwardingSettingsResult{fp: fp, mp: mp, cch: cch, cacheTTL1h: cacheTTL1h, incFailover: incFailover}, nil
 	})
 	if r, ok := val.(gatewayForwardingSettingsResult); ok {
 		return r
 	}
-	return gatewayForwardingSettingsResult{fp: true}
+	return gatewayForwardingSettingsResult{fp: true} // 默认 OFF（incFailover 隐式 false）
 }
 
 // GetGatewayForwardingSettings returns cached gateway forwarding settings.
@@ -1541,6 +1552,19 @@ func (s *SettingService) GetGatewayForwardingSettings(ctx context.Context) (fing
 // IsAnthropicCacheTTL1hInjectionEnabled 检查是否对 Anthropic OAuth/SetupToken 请求体注入 1h cache_control ttl。
 func (s *SettingService) IsAnthropicCacheTTL1hInjectionEnabled(ctx context.Context) bool {
 	return s.getGatewayForwardingSettingsCached(ctx).cacheTTL1h
+}
+
+// IsIncompleteStreamFailoverEnabled 检查是否启用上游 SSE 截断时的主动 failover
+// （emit error event 给客户端 + 解 sticky 绑定）。同时控制 Anthropic + OpenAI
+// 两条网关路径的 incomplete-stream handler。
+//
+// 默认 OFF（修复不生效，行为与修复前一致）；管理员需在「网关服务设置」中
+// 显式开启。OFF 时 handler 立刻早 return，不写 SSE、不解 sticky、不触发 599 policy。
+func (s *SettingService) IsIncompleteStreamFailoverEnabled(ctx context.Context) bool {
+	if s == nil {
+		return false // service 未初始化时按默认 OFF 处理（安全默认，不引入新行为）
+	}
+	return s.getGatewayForwardingSettingsCached(ctx).incFailover
 }
 
 // IsEmailVerifyEnabled 检查是否开启邮件验证
@@ -1942,6 +1966,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		// 分组隔离（默认不允许未分组 Key 调度）
 		SettingKeyAllowUngroupedKeyScheduling:        "false",
 		SettingKeyEnableAnthropicCacheTTL1hInjection: "false",
+		SettingKeyEnableIncompleteStreamFailover:     "false", // 默认 OFF：管理员手动开启后才生效
 		SettingPaymentVisibleMethodAlipaySource:      "",
 		SettingPaymentVisibleMethodWxpaySource:       "",
 		SettingPaymentVisibleMethodAlipayEnabled:     "false",
@@ -2298,6 +2323,8 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result.EnableMetadataPassthrough = settings[SettingKeyEnableMetadataPassthrough] == "true"
 	result.EnableCCHSigning = settings[SettingKeyEnableCCHSigning] == "true"
 	result.EnableAnthropicCacheTTL1hInjection = settings[SettingKeyEnableAnthropicCacheTTL1hInjection] == "true"
+	// incomplete-stream failover 默认 OFF：未显式设置（key 缺失/值为空/值非 "true"）按关闭处理。
+	result.EnableIncompleteStreamFailover = settings[SettingKeyEnableIncompleteStreamFailover] == "true"
 
 	// Web search emulation: quick enabled check from the JSON config
 	if raw := settings[SettingKeyWebSearchEmulationConfig]; raw != "" {
