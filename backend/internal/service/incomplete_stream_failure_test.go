@@ -17,13 +17,35 @@ import (
 
 // TestCanary_MissingTerminalEventStringExists 守护字符串耦合：
 // isUpstreamIncompleteStreamError 用 strings.Contains 匹配错误文案，
-// 一旦 upstream 改了 gateway_service.go 里的 "missing terminal event" 措辞，
-// 我们的判别会静默失效。让这个测试红，强制开发者来同步更新匹配条件。
+// 一旦上游改了 "missing terminal event" 措辞，我们的判别会静默失效。
+// 让这些测试红，强制开发者来同步更新匹配条件。
 func TestCanary_MissingTerminalEventStringExists(t *testing.T) {
-	src, err := os.ReadFile("gateway_service.go")
-	require.NoError(t, err)
-	require.Contains(t, string(src), "missing terminal event",
-		"upstream renamed the incomplete-stream error; update isUpstreamIncompleteStreamError to match")
+	srcs := map[string]string{
+		"gateway_service.go":        "missing terminal event",
+		"openai_gateway_service.go": "missing terminal event",
+	}
+	for path, want := range srcs {
+		src, err := os.ReadFile(path)
+		require.NoError(t, err, "read %s", path)
+		require.Contains(t, string(src), want,
+			"upstream renamed the incomplete-stream error in %s; update isUpstreamIncompleteStreamError to match", path)
+	}
+}
+
+// TestCanary_UpstreamStreamEndedWithoutTerminalEventStringExists 守护 OpenAI buffered 路径
+// 的另一条错误措辞：openai_gateway_chat_completions.go / openai_gateway_messages.go
+// 在 buffered（非流式）路径上返回这条字符串。一旦改了，OpenAI 的解 sticky 也会静默失效。
+func TestCanary_UpstreamStreamEndedWithoutTerminalEventStringExists(t *testing.T) {
+	srcs := []string{
+		"openai_gateway_chat_completions.go",
+		"openai_gateway_messages.go",
+	}
+	for _, path := range srcs {
+		src, err := os.ReadFile(path)
+		require.NoError(t, err, "read %s", path)
+		require.Contains(t, string(src), "upstream stream ended without terminal event",
+			"upstream renamed the buffered incomplete-stream error in %s; update isUpstreamIncompleteStreamError to match", path)
+	}
 }
 
 // incompleteStreamDeleteCall 记录一次 DeleteSessionAccountID 的调用参数。
@@ -67,11 +89,18 @@ func TestIsUpstreamIncompleteStreamError(t *testing.T) {
 		want bool
 	}{
 		{"nil", nil, false},
-		{"missing terminal event", fmt.Errorf("stream usage incomplete: missing terminal event"), true},
+		{"missing terminal event (Anthropic + OpenAI streaming)", fmt.Errorf("stream usage incomplete: missing terminal event"), true},
+		{"upstream stream ended without terminal event (OpenAI buffered)", fmt.Errorf("upstream stream ended without terminal event"), true},
 		{"after disconnect", fmt.Errorf("stream usage incomplete after disconnect: %w", context.Canceled), false},
 		{"after timeout", fmt.Errorf("stream usage incomplete after timeout"), false},
 		{"context canceled wrapped", fmt.Errorf("stream usage incomplete: %w", context.Canceled), false},
 		{"unrelated error", errors.New("upstream 500"), false},
+		// 关键防误判：buffered 路径在 client cancel 时会把 ctx 错误包进同一句话，
+		// 此时即便字符串命中也必须 reject，否则会误解 sticky / 误触 599 policy。
+		{"buffered + client cancel wraps ctx", fmt.Errorf("upstream stream ended without terminal event after client cancel: %w", context.Canceled), false},
+		{"buffered + client deadline wraps ctx", fmt.Errorf("upstream stream ended without terminal event after client cancel: %w", context.DeadlineExceeded), false},
+		// 防御性：即便未来 Anthropic 那边把 missing terminal event 也包了 ctx，也不会误触发
+		{"missing terminal + ctx wrapped (defense in depth)", fmt.Errorf("missing terminal event: %w", context.Canceled), false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -171,9 +200,8 @@ func TestHandleIncompleteStreamFailure_SkipNonMatchingError(t *testing.T) {
 //   2. 与 gateway_handler.go:handleStreamingAwareError 的 schema 一致（type/error/upstream_error）
 func TestEmitIncompleteStreamErrorEvent_WritesSSEFormat(t *testing.T) {
 	c, w := makeGinContextWithRecorder(t)
-	parsed := &ParsedRequest{Stream: true}
 
-	emitIncompleteStreamErrorEvent(c, parsed)
+	emitIncompleteStreamErrorEvent(c, true)
 
 	body := w.Body.String()
 	require.Contains(t, body, `data: `, "must be SSE format")
@@ -183,13 +211,11 @@ func TestEmitIncompleteStreamErrorEvent_WritesSSEFormat(t *testing.T) {
 	require.True(t, strings.HasSuffix(body, "\n\n"), "SSE event must terminate with blank line")
 }
 
-// TestEmitIncompleteStreamErrorEvent_NilSafe 验证 nil c / nil parsed 不 panic。
+// TestEmitIncompleteStreamErrorEvent_NilSafe 验证 nil c 不 panic。
 func TestEmitIncompleteStreamErrorEvent_NilSafe(t *testing.T) {
 	require.NotPanics(t, func() {
-		emitIncompleteStreamErrorEvent(nil, nil)
-		emitIncompleteStreamErrorEvent(nil, &ParsedRequest{Stream: true})
-		c, _ := makeGinContextWithRecorder(t)
-		emitIncompleteStreamErrorEvent(c, nil)
+		emitIncompleteStreamErrorEvent(nil, true)
+		emitIncompleteStreamErrorEvent(nil, false)
 	})
 }
 
@@ -197,9 +223,8 @@ func TestEmitIncompleteStreamErrorEvent_NilSafe(t *testing.T) {
 // 非流式（JSON）请求不应被注入 SSE 字节，否则客户端拿到畸形 body。
 func TestEmitIncompleteStreamErrorEvent_SkipsNonStreamRequest(t *testing.T) {
 	c, w := makeGinContextWithRecorder(t)
-	parsed := &ParsedRequest{Stream: false}
 
-	emitIncompleteStreamErrorEvent(c, parsed)
+	emitIncompleteStreamErrorEvent(c, false)
 
 	require.Empty(t, w.Body.String(), "non-stream request must NOT receive SSE bytes")
 }

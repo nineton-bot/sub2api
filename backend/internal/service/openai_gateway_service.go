@@ -1977,7 +1977,16 @@ func (s *OpenAIGatewayService) handleFailoverSideEffects(ctx context.Context, re
 }
 
 // Forward forwards request to OpenAI API
-func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, body []byte) (*OpenAIForwardResult, error) {
+func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, body []byte) (result *OpenAIForwardResult, err error) {
+	// 当上游 SSE 截断（HTTP 200 但无 terminal event）时，主动给客户端发 error event
+	// 并解 sticky 绑定，让用户下一次请求自动回落到健康账号。
+	// handler 仅匹配 "missing terminal event" / "upstream stream ended without terminal event"
+	// 两条字符串，其他错误路径不受影响（详见 openai_incomplete_stream_failure.go）。
+	_, deferIsStream, _ := extractOpenAIRequestMetaFromBody(body)
+	defer func() {
+		s.handleIncompleteStreamFailure(ctx, c, account, body, deferIsStream, err)
+	}()
+
 	startTime := time.Now()
 
 	restrictionResult := s.detectCodexClientRestriction(c, account)

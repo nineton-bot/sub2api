@@ -355,6 +355,13 @@ func (s *OpenAIGatewayService) handleAnthropicBufferedStreamingResponse(
 
 	if finalResponse == nil {
 		writeAnthropicError(c, http.StatusBadGateway, "api_error", "Upstream stream ended without a terminal response event")
+		// 区分两种成因：客户端取消 vs 上游真截断（同一句错误信息会让上层 incomplete-stream
+		// handler 误判为上游故障 → 解错 sticky / 错触 599 临时不可调度规则）。
+		// 客户端取消时把 ctx 错误用 %w 包裹，让上层 errors.Is 能识别并跳过。
+		if scanErr := scanner.Err(); scanErr != nil &&
+			(errors.Is(scanErr, context.Canceled) || errors.Is(scanErr, context.DeadlineExceeded)) {
+			return nil, fmt.Errorf("upstream stream ended without terminal event after client cancel: %w", scanErr)
+		}
 		return nil, fmt.Errorf("upstream stream ended without terminal event")
 	}
 

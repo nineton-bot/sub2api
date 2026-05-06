@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -81,7 +82,7 @@ func (s *GatewayService) handleIncompleteStreamFailure(
 	// 0) 让客户端立刻知道失败 → 触发 SDK 立即重试到下一次请求（核心目标）。
 	//    必须最先做：客户端连接随时可能被 SDK idle-timeout 关掉。
 	//    如果不做这步，用户要等 SDK 自身 idle timeout（通常 1-3 分钟）才知道。
-	emitIncompleteStreamErrorEvent(c, parsed)
+	emitIncompleteStreamErrorEvent(c, parsed.Stream)
 
 	// 调用方 ctx 在 incomplete-stream 触发时通常已被取消（客户端 idle timeout
 	// 是这类故障的典型触发器）。必须切到独立 ctx，否则 cleanup 会立即失败、
@@ -132,16 +133,19 @@ func (s *GatewayService) handleIncompleteStreamFailure(
 // emitIncompleteStreamErrorEvent 主动给客户端发一个 SSE error event，
 // 避免 SDK 等到自身 idle timeout 才发现失败。
 //
-// 仅在 parsed.Stream=true 时写入：避免给非流式（JSON）响应注入 SSE 字节、
+// 仅在 isStream=true 时写入：避免给非流式（JSON）响应注入 SSE 字节、
 // 产生畸形 body。即便 isUpstreamIncompleteStreamError 上游只在流式路径产生，
 // 这里也按构造防御一次，杜绝跨包数据流耦合带来的潜在污染。
 //
+// 调用方传 isStream 而不是 *ParsedRequest，是为了让 Anthropic / OpenAI
+// 两个 gateway 复用同一份写入逻辑（OpenAI 没有 ParsedRequest 类型）。
+//
 // 客户端连接 reset / nil context / 不支持 flusher 时静默忽略，绝不 panic。
-func emitIncompleteStreamErrorEvent(c *gin.Context, parsed *ParsedRequest) {
+func emitIncompleteStreamErrorEvent(c *gin.Context, isStream bool) {
 	if c == nil || c.Writer == nil {
 		return
 	}
-	if parsed == nil || !parsed.Stream {
+	if !isStream {
 		return
 	}
 	flusher, ok := c.Writer.(http.Flusher)
@@ -157,13 +161,35 @@ func emitIncompleteStreamErrorEvent(c *gin.Context, parsed *ParsedRequest) {
 
 // isUpstreamIncompleteStreamError 仅匹配上游确定性截断（HTTP 200 但无 terminal event）。
 //
+// 双层判别：
+//
+//  1. 早 reject：任何包裹了 context.Canceled / context.DeadlineExceeded 的错误一律
+//     不算上游故障。这是为了应对 OpenAI buffered 路径的字符串歧义——同一句
+//     "upstream stream ended without terminal event" 既可能是上游真截断、也可能是
+//     客户端取消导致 scanner 提前 EOF。openai_gateway_chat_completions.go /
+//     openai_gateway_messages.go 在 client cancel 场景下已被改造成
+//     fmt.Errorf("...: %w", scanErr) 包裹 ctx 错误，让此处 errors.Is 能识别。
+//
+//  2. 字符串匹配两条上游侧成因：
+//      - "missing terminal event" — Anthropic gateway (gateway_service.go:5352, :7388)
+//        与 OpenAI streaming 路径 (openai_gateway_service.go:3511, :4166)
+//      - "upstream stream ended without terminal event" — OpenAI buffered 路径
+//        (openai_gateway_chat_completions.go:408, openai_gateway_messages.go:358)
+//
 // 故意不匹配以下变体（它们由客户端断开或读超时导致，不是上游故障）：
 //   - "stream usage incomplete after disconnect: ..."
 //   - "stream usage incomplete after timeout"
-//   - "stream usage incomplete: context canceled"
+//   - "stream usage incomplete: context canceled"（其本身已被 errors.Is 早 reject）
 func isUpstreamIncompleteStreamError(err error) bool {
 	if err == nil {
 		return false
 	}
-	return strings.Contains(err.Error(), "missing terminal event")
+	// 客户端侧成因 → 不动作。防止误判用户取消为上游故障，避免错解 sticky / 错触
+	// 599 policy（运维若开了 599 临时不可调度规则，误判会拉黑健康账号、影响所有用户）。
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "missing terminal event") ||
+		strings.Contains(msg, "upstream stream ended without terminal event")
 }
