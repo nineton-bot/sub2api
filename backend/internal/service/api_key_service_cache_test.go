@@ -206,6 +206,7 @@ func TestAPIKeyService_GetByKey_UsesL2Cache(t *testing.T) {
 				Platform:            PlatformAnthropic,
 				Status:              StatusActive,
 				SubscriptionType:    SubscriptionTypeStandard,
+				SubscriptionMeter:   SubscriptionMeterCostQuota,
 				RateMultiplier:      1,
 				ModelRoutingEnabled: true,
 				ModelRouting: map[string][]int64{
@@ -235,6 +236,7 @@ func TestAPIKeyService_SnapshotRoundTrip_PreservesMessagesDispatchModelConfig(t 
 		UserID:  2,
 		GroupID: &groupID,
 		Key:     "k-roundtrip",
+		Name:    "Audit Key",
 		Status:  StatusActive,
 		User: &User{
 			ID:          2,
@@ -267,6 +269,7 @@ func TestAPIKeyService_SnapshotRoundTrip_PreservesMessagesDispatchModelConfig(t 
 	roundTrip := svc.snapshotToAPIKey(apiKey.Key, snapshot)
 
 	require.NotNil(t, roundTrip)
+	require.Equal(t, apiKey.Name, roundTrip.Name)
 	require.NotNil(t, roundTrip.Group)
 	require.Equal(t, apiKey.Group.MessagesDispatchModelConfig, roundTrip.Group.MessagesDispatchModelConfig)
 }
@@ -297,6 +300,7 @@ func TestAPIKeyService_GetByKey_IgnoresLegacyAuthCacheSnapshotWithoutMessagesDis
 					Status:                StatusActive,
 					Hydrated:              true,
 					SubscriptionType:      SubscriptionTypeStandard,
+					SubscriptionMeter:     SubscriptionMeterCostQuota,
 					RateMultiplier:        1,
 					AllowMessagesDispatch: true,
 					DefaultMappedModel:    "gpt-5.4",
@@ -335,6 +339,7 @@ func TestAPIKeyService_GetByKey_IgnoresLegacyAuthCacheSnapshotWithoutMessagesDis
 					Platform:              PlatformOpenAI,
 					Status:                StatusActive,
 					SubscriptionType:      SubscriptionTypeStandard,
+					SubscriptionMeter:     SubscriptionMeterCostQuota,
 					RateMultiplier:        1,
 					AllowMessagesDispatch: true,
 					DefaultMappedModel:    "gpt-5.4",

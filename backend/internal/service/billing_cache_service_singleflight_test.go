@@ -97,6 +97,10 @@ func (s *balanceLoadUserRepoStub) UnbindUserAuthProvider(context.Context, int64,
 	return nil
 }
 
+func (s *balanceLoadUserRepoStub) UpdateReferralUsable(context.Context, int64, float64) error {
+	return nil
+}
+
 func TestBillingCacheServiceGetUserBalance_Singleflight(t *testing.T) {
 	cache := &billingCacheMissStub{}
 	userRepo := &balanceLoadUserRepoStub{

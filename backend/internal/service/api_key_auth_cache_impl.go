@@ -14,7 +14,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 7 // v7: added UserGroupRPMOverride on user snapshot
+const apiKeyAuthSnapshotVersion = 9 // v9: added API Key name for audit logs
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -227,6 +227,7 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 		APIKeyID:    apiKey.ID,
 		UserID:      apiKey.UserID,
 		GroupID:     apiKey.GroupID,
+		Name:        apiKey.Name,
 		Status:      apiKey.Status,
 		IPWhitelist: apiKey.IPWhitelist,
 		IPBlacklist: apiKey.IPBlacklist,
@@ -276,6 +277,9 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			DailyRequestLimit:               apiKey.Group.DailyRequestLimit,
 			WeeklyRequestLimit:              apiKey.Group.WeeklyRequestLimit,
 			MonthlyRequestLimit:             apiKey.Group.MonthlyRequestLimit,
+			AllowImageGeneration:            apiKey.Group.AllowImageGeneration,
+			ImageRateIndependent:            apiKey.Group.ImageRateIndependent,
+			ImageRateMultiplier:             apiKey.Group.ImageRateMultiplier,
 			ImagePrice1K:                    apiKey.Group.ImagePrice1K,
 			ImagePrice2K:                    apiKey.Group.ImagePrice2K,
 			ImagePrice4K:                    apiKey.Group.ImagePrice4K,
@@ -304,6 +308,7 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 		UserID:      snapshot.UserID,
 		GroupID:     snapshot.GroupID,
 		Key:         key,
+		Name:        snapshot.Name,
 		Status:      snapshot.Status,
 		IPWhitelist: snapshot.IPWhitelist,
 		IPBlacklist: snapshot.IPBlacklist,
@@ -346,6 +351,9 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			DailyRequestLimit:               snapshot.Group.DailyRequestLimit,
 			WeeklyRequestLimit:              snapshot.Group.WeeklyRequestLimit,
 			MonthlyRequestLimit:             snapshot.Group.MonthlyRequestLimit,
+			AllowImageGeneration:            snapshot.Group.AllowImageGeneration,
+			ImageRateIndependent:            snapshot.Group.ImageRateIndependent,
+			ImageRateMultiplier:             snapshot.Group.ImageRateMultiplier,
 			ImagePrice1K:                    snapshot.Group.ImagePrice1K,
 			ImagePrice2K:                    snapshot.Group.ImagePrice2K,
 			ImagePrice4K:                    snapshot.Group.ImagePrice4K,

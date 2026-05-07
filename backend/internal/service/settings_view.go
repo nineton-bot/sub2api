@@ -20,6 +20,10 @@ type SystemSettings struct {
 	FrontendURL                      string
 	InvitationCodeEnabled            bool
 	TotpEnabled                      bool // TOTP 双因素认证
+	LoginAgreementEnabled            bool
+	LoginAgreementMode               string
+	LoginAgreementUpdatedAt          string
+	LoginAgreementDocuments          []LoginAgreementDocument
 
 	SMTPHost               string
 	SMTPPort               int
@@ -89,6 +93,20 @@ type SystemSettings struct {
 	OIDCConnectUserInfoIDPath         string
 	OIDCConnectUserInfoUsernamePath   string
 
+	// GitHub / Google 邮箱快捷登录
+	GitHubOAuthEnabled                bool
+	GitHubOAuthClientID               string
+	GitHubOAuthClientSecret           string
+	GitHubOAuthClientSecretConfigured bool
+	GitHubOAuthRedirectURL            string
+	GitHubOAuthFrontendRedirectURL    string
+	GoogleOAuthEnabled                bool
+	GoogleOAuthClientID               string
+	GoogleOAuthClientSecret           string
+	GoogleOAuthClientSecretConfigured bool
+	GoogleOAuthRedirectURL            string
+	GoogleOAuthFrontendRedirectURL    string
+
 	SiteName                    string
 	SiteLogo                    string
 	SiteSubtitle                string
@@ -104,15 +122,11 @@ type SystemSettings struct {
 	CustomMenuItems             string // JSON array of custom menu items
 	CustomEndpoints             string // JSON array of custom endpoints
 
-	DefaultConcurrency           int
-	DefaultBalance               float64
-	AffiliateEnabled             bool
-	AffiliateRebateRate          float64
-	AffiliateRebateFreezeHours   int
-	AffiliateRebateDurationDays  int
-	AffiliateRebatePerInviteeCap float64
-	DefaultUserRPMLimit          int
-	DefaultSubscriptions         []DefaultSubscriptionSetting
+	DefaultConcurrency   int
+	DefaultBalance       float64
+	RiskControlEnabled   bool
+	DefaultUserRPMLimit  int
+	DefaultSubscriptions []DefaultSubscriptionSetting
 
 	// Model fallback configuration
 	EnableModelFallback      bool   `json:"enable_model_fallback"`
@@ -199,6 +213,11 @@ type PublicSettings struct {
 	PasswordResetEnabled             bool
 	InvitationCodeEnabled            bool
 	TotpEnabled                      bool // TOTP 双因素认证
+	LoginAgreementEnabled            bool
+	LoginAgreementMode               string
+	LoginAgreementUpdatedAt          string
+	LoginAgreementRevision           string
+	LoginAgreementDocuments          []LoginAgreementDocument
 	TurnstileEnabled                 bool
 	TurnstileSiteKey                 string
 	SiteName                         string
@@ -226,6 +245,8 @@ type PublicSettings struct {
 	PaymentEnabled           bool
 	OIDCOAuthEnabled         bool
 	OIDCOAuthProviderName    string
+	GitHubOAuthEnabled       bool
+	GoogleOAuthEnabled       bool
 	Version                  string
 
 	BalanceLowNotifyEnabled     bool
@@ -246,6 +267,15 @@ type PublicSettings struct {
 	// ReferralDefaultForAllUsers V2：推广页默认可见性。管理员面板上的单用户 override
 	// modal 需要读此字段作为默认勾选状态。
 	ReferralDefaultForAllUsers bool
+
+	// 风控中心功能开关
+	RiskControlEnabled bool `json:"risk_control_enabled"`
+}
+
+type LoginAgreementDocument struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	ContentMD string `json:"content_md"`
 }
 
 type WeChatConnectOAuthConfig struct {
@@ -394,11 +424,27 @@ type OverloadCooldownSettings struct {
 	CooldownMinutes int `json:"cooldown_minutes"`
 }
 
+// RateLimit429CooldownSettings 429默认回避配置
+type RateLimit429CooldownSettings struct {
+	// Enabled 是否在无法解析上游重置时间时应用默认429回避
+	Enabled bool `json:"enabled"`
+	// CooldownSeconds 默认回避时长（秒）
+	CooldownSeconds int `json:"cooldown_seconds"`
+}
+
 // DefaultOverloadCooldownSettings 返回默认的过载冷却配置（启用，10分钟）
 func DefaultOverloadCooldownSettings() *OverloadCooldownSettings {
 	return &OverloadCooldownSettings{
 		Enabled:         true,
 		CooldownMinutes: 10,
+	}
+}
+
+// DefaultRateLimit429CooldownSettings 返回默认的429回避配置（启用，5秒）
+func DefaultRateLimit429CooldownSettings() *RateLimit429CooldownSettings {
+	return &RateLimit429CooldownSettings{
+		Enabled:         true,
+		CooldownSeconds: 5,
 	}
 }
 

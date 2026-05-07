@@ -71,6 +71,19 @@ func validMetadataUserID() string {
 	return "user_" + strings.Repeat("a", 64) + "_account__session_12345678-1234-1234-1234-123456789012"
 }
 
+// incompleteStreamSettingServiceWithFailoverOn 构造 kill switch ON 的 SettingService。
+// handleIncompleteStreamFailure 默认 OFF 立即 return；测试需要显式开启才能验证副作用。
+//
+// 同时清空 gatewayForwardingCache 全局缓存，避免其它测试先把 incFailover=false 缓存进
+// atomic.Value 后污染本测试（cache TTL 60s，单次 go test 全跑会复用）。
+func incompleteStreamSettingServiceWithFailoverOn() *SettingService {
+	gatewayForwardingSF.Forget("gateway_forwarding")
+	gatewayForwardingCache.Store((*cachedGatewayForwardingSettings)(nil))
+	return NewSettingService(&settingRepoStub{values: map[string]string{
+		SettingKeyEnableIncompleteStreamFailover: "true",
+	}}, nil)
+}
+
 // makeGinContextWithRecorder 构造一个能记录 SSE 写入的 gin.Context。
 // 通过 httptest.ResponseRecorder 同时验证：
 //  1. 写入的内容
@@ -118,7 +131,7 @@ func TestHandleIncompleteStreamFailure_UnbindStickyOnTrueIncomplete(t *testing.T
 		Stream:         true,
 		MetadataUserID: validMetadataUserID(),
 	}
-	svc := &GatewayService{cache: cache}
+	svc := &GatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, _ := makeGinContextWithRecorder(t)
 
@@ -144,7 +157,7 @@ func TestHandleIncompleteStreamFailure_SkipOnClientDisconnect(t *testing.T) {
 		Stream:         true,
 		MetadataUserID: validMetadataUserID(),
 	}
-	svc := &GatewayService{cache: cache}
+	svc := &GatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, _ := makeGinContextWithRecorder(t)
 
@@ -163,7 +176,7 @@ func TestHandleIncompleteStreamFailure_NilGuards(t *testing.T) {
 	cache := &stubIncompleteStreamCache{}
 	groupID := int64(1)
 	parsed := &ParsedRequest{GroupID: &groupID, Model: "m"}
-	svc := &GatewayService{cache: cache}
+	svc := &GatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 1}
 	matchErr := fmt.Errorf("stream usage incomplete: missing terminal event")
 	c, _ := makeGinContextWithRecorder(t)
@@ -181,7 +194,7 @@ func TestHandleIncompleteStreamFailure_SkipNonMatchingError(t *testing.T) {
 	cache := &stubIncompleteStreamCache{}
 	groupID := int64(1)
 	parsed := &ParsedRequest{GroupID: &groupID, Model: "m", MetadataUserID: "u"}
-	svc := &GatewayService{cache: cache}
+	svc := &GatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 1}
 	c, _ := makeGinContextWithRecorder(t)
 
@@ -241,7 +254,7 @@ func TestHandleIncompleteStreamFailure_EmitsErrorEventBeforeUnbind(t *testing.T)
 		Stream:         true,
 		MetadataUserID: validMetadataUserID(),
 	}
-	svc := &GatewayService{cache: cache}
+	svc := &GatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, w := makeGinContextWithRecorder(t)
 
@@ -302,7 +315,7 @@ func TestHandleIncompleteStreamFailure_HandsErrorToPolicyTrigger(t *testing.T) {
 		Stream:         true,
 		MetadataUserID: validMetadataUserID(),
 	}
-	svc := &GatewayService{cache: cache}
+	svc := &GatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, _ := makeGinContextWithRecorder(t)
 
@@ -332,7 +345,7 @@ func TestHandleIncompleteStreamFailure_SkipsPolicyTriggerOnDisconnect(t *testing
 		Stream:         true,
 		MetadataUserID: validMetadataUserID(),
 	}
-	svc := &GatewayService{cache: cache}
+	svc := &GatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, _ := makeGinContextWithRecorder(t)
 

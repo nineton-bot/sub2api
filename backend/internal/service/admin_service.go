@@ -32,6 +32,7 @@ type AdminService interface {
 	UpdateUser(ctx context.Context, id int64, input *UpdateUserInput) (*User, error)
 	DeleteUser(ctx context.Context, id int64) error
 	UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error)
+	BatchUpdateConcurrency(ctx context.Context, userIDs []int64, value int, mode string) (int, error)
 	GetUserAPIKeys(ctx context.Context, userID int64, page, pageSize int, sortBy, sortOrder string) ([]APIKey, int64, error)
 	GetUserUsageStats(ctx context.Context, userID int64, period string) (any, error)
 	GetUserRPMStatus(ctx context.Context, userID int64) (*UserRPMStatus, error)
@@ -192,11 +193,14 @@ type CreateGroupInput struct {
 	WeeklyRequestLimit  *int
 	MonthlyRequestLimit *int
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	ImagePrice1K    *float64
-	ImagePrice2K    *float64
-	ImagePrice4K    *float64
-	ClaudeCodeOnly  bool   // 仅允许 Claude Code 客户端
-	FallbackGroupID *int64 // 降级分组 ID
+	AllowImageGeneration bool
+	ImageRateIndependent bool
+	ImageRateMultiplier  *float64
+	ImagePrice1K         *float64
+	ImagePrice2K         *float64
+	ImagePrice4K         *float64
+	ClaudeCodeOnly       bool   // 仅允许 Claude Code 客户端
+	FallbackGroupID      *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -240,11 +244,14 @@ type UpdateGroupInput struct {
 	WeeklyRequestLimitProvided  bool
 	MonthlyRequestLimitProvided bool
 	// 图片生成计费配置（仅 antigravity 平台使用）
-	ImagePrice1K    *float64
-	ImagePrice2K    *float64
-	ImagePrice4K    *float64
-	ClaudeCodeOnly  *bool  // 仅允许 Claude Code 客户端
-	FallbackGroupID *int64 // 降级分组 ID
+	AllowImageGeneration *bool
+	ImageRateIndependent *bool
+	ImageRateMultiplier  *float64
+	ImagePrice1K         *float64
+	ImagePrice2K         *float64
+	ImagePrice4K         *float64
+	ClaudeCodeOnly       *bool  // 仅允许 Claude Code 客户端
+	FallbackGroupID      *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -829,6 +836,39 @@ func (s *adminServiceImpl) DeleteUser(ctx context.Context, id int64) error {
 	return nil
 }
 
+func (s *adminServiceImpl) BatchUpdateConcurrency(ctx context.Context, userIDs []int64, value int, mode string) (int, error) {
+	cleaned := make([]int64, 0, len(userIDs))
+	for _, uid := range userIDs {
+		if uid > 0 {
+			cleaned = append(cleaned, uid)
+		}
+	}
+	if len(cleaned) == 0 {
+		return 0, nil
+	}
+
+	var affected int
+	var err error
+	switch mode {
+	case "set":
+		affected, err = s.userRepo.BatchSetConcurrency(ctx, cleaned, value)
+	case "add":
+		affected, err = s.userRepo.BatchAddConcurrency(ctx, cleaned, value)
+	default:
+		return 0, errors.New("invalid mode: must be 'set' or 'add'")
+	}
+	if err != nil {
+		return 0, err
+	}
+
+	if s.authCacheInvalidator != nil {
+		for _, uid := range cleaned {
+			s.authCacheInvalidator.InvalidateAuthCacheByUserID(ctx, uid)
+		}
+	}
+	return affected, nil
+}
+
 func (s *adminServiceImpl) UpdateUserBalance(ctx context.Context, userID int64, balance float64, operation string, notes string) (*User, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -996,12 +1036,12 @@ func (s *adminServiceImpl) GetUserBalanceHistory(ctx context.Context, userID int
 	if err != nil {
 		return nil, 0, 0, err
 	}
-	// Aggregate total recharged amount (only once, regardless of type filter)
+	total := result.Total
 	totalRecharged, err := s.redeemCodeRepo.SumPositiveBalanceByUser(ctx, userID)
 	if err != nil {
 		return nil, 0, 0, err
 	}
-	return codes, result.Total, totalRecharged, nil
+	return codes, total, totalRecharged, nil
 }
 
 func (s *adminServiceImpl) BindUserAuthIdentity(ctx context.Context, userID int64, input AdminBindAuthIdentityInput) (*AdminBoundAuthIdentity, error) {
@@ -1405,6 +1445,13 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	imagePrice1K := normalizePrice(input.ImagePrice1K)
 	imagePrice2K := normalizePrice(input.ImagePrice2K)
 	imagePrice4K := normalizePrice(input.ImagePrice4K)
+	imageRateMultiplier := 1.0
+	if input.ImageRateMultiplier != nil {
+		if *input.ImageRateMultiplier < 0 {
+			return nil, errors.New("image_rate_multiplier must be >= 0")
+		}
+		imageRateMultiplier = *input.ImageRateMultiplier
+	}
 
 	// 校验降级分组
 	if input.FallbackGroupID != nil {
@@ -1479,6 +1526,9 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		DailyRequestLimit:               dailyRequestLimit,
 		WeeklyRequestLimit:              weeklyRequestLimit,
 		MonthlyRequestLimit:             monthlyRequestLimit,
+		AllowImageGeneration:            input.AllowImageGeneration,
+		ImageRateIndependent:            input.ImageRateIndependent,
+		ImageRateMultiplier:             imageRateMultiplier,
 		ImagePrice1K:                    imagePrice1K,
 		ImagePrice2K:                    imagePrice2K,
 		ImagePrice4K:                    imagePrice4K,
@@ -1777,6 +1827,18 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		}
 	}
 	// 图片生成计费配置：负数表示清除（使用默认价格）
+	if input.AllowImageGeneration != nil {
+		group.AllowImageGeneration = *input.AllowImageGeneration
+	}
+	if input.ImageRateIndependent != nil {
+		group.ImageRateIndependent = *input.ImageRateIndependent
+	}
+	if input.ImageRateMultiplier != nil {
+		if *input.ImageRateMultiplier < 0 {
+			return nil, errors.New("image_rate_multiplier must be >= 0")
+		}
+		group.ImageRateMultiplier = *input.ImageRateMultiplier
+	}
 	if input.ImagePrice1K != nil {
 		group.ImagePrice1K = normalizePrice(input.ImagePrice1K)
 	}

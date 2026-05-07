@@ -39,7 +39,7 @@ func makeOpenAITestContext(t *testing.T, sessionID string, groupID int64) (*gin.
 // OpenAI 路径上 "missing terminal event" 错误能正确解 sticky。
 func TestOpenAIHandleIncompleteStreamFailure_UnbindStickyOnTrueIncomplete(t *testing.T) {
 	cache := &stubIncompleteStreamCache{}
-	svc := &OpenAIGatewayService{cache: cache}
+	svc := &OpenAIGatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, _ := makeOpenAITestContext(t, "sess-incomplete-1", 42)
 
@@ -65,7 +65,7 @@ func TestOpenAIHandleIncompleteStreamFailure_UnbindStickyOnTrueIncomplete(t *tes
 // 同样能解 sticky（这是和 Anthropic 路径不同的额外字符串）。
 func TestOpenAIHandleIncompleteStreamFailure_UnbindStickyOnUpstreamStreamEnded(t *testing.T) {
 	cache := &stubIncompleteStreamCache{}
-	svc := &OpenAIGatewayService{cache: cache}
+	svc := &OpenAIGatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 99}
 	c, _ := makeOpenAITestContext(t, "sess-incomplete-2", 7)
 
@@ -86,7 +86,7 @@ func TestOpenAIHandleIncompleteStreamFailure_UnbindStickyOnUpstreamStreamEnded(t
 // disconnect / timeout / context canceled 等客户端侧成因不应触发解 sticky。
 func TestOpenAIHandleIncompleteStreamFailure_SkipOnClientDisconnect(t *testing.T) {
 	cache := &stubIncompleteStreamCache{}
-	svc := &OpenAIGatewayService{cache: cache}
+	svc := &OpenAIGatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, _ := makeOpenAITestContext(t, "sess-skip-1", 42)
 
@@ -109,7 +109,7 @@ func TestOpenAIHandleIncompleteStreamFailure_SkipOnClientDisconnect(t *testing.T
 // TestOpenAIHandleIncompleteStreamFailure_NilGuards 验证 nil 守卫不 panic 也不解 sticky。
 func TestOpenAIHandleIncompleteStreamFailure_NilGuards(t *testing.T) {
 	cache := &stubIncompleteStreamCache{}
-	svc := &OpenAIGatewayService{cache: cache}
+	svc := &OpenAIGatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 1}
 	matchErr := fmt.Errorf("stream usage incomplete: missing terminal event")
 	c, _ := makeOpenAITestContext(t, "sess-nil-guard", 1)
@@ -128,7 +128,7 @@ func TestOpenAIHandleIncompleteStreamFailure_NilGuards(t *testing.T) {
 // 不匹配的错误（500、429 等）一律不动作。
 func TestOpenAIHandleIncompleteStreamFailure_SkipNonMatchingError(t *testing.T) {
 	cache := &stubIncompleteStreamCache{}
-	svc := &OpenAIGatewayService{cache: cache}
+	svc := &OpenAIGatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 1}
 	c, _ := makeOpenAITestContext(t, "sess-non-match", 1)
 
@@ -147,7 +147,7 @@ func TestOpenAIHandleIncompleteStreamFailure_SkipNonMatchingError(t *testing.T) 
 // 流式请求触发后客户端收到 SSE error event，sticky 也被解绑。
 func TestOpenAIHandleIncompleteStreamFailure_EmitsErrorEventBeforeUnbind(t *testing.T) {
 	cache := &stubIncompleteStreamCache{}
-	svc := &OpenAIGatewayService{cache: cache}
+	svc := &OpenAIGatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, w := makeOpenAITestContext(t, "sess-emit-1", 42)
 
@@ -170,7 +170,7 @@ func TestOpenAIHandleIncompleteStreamFailure_EmitsErrorEventBeforeUnbind(t *test
 // 但 sticky 仍要解（buffered 路径下用户下次请求依然会被 sticky 钉死）。
 func TestOpenAIHandleIncompleteStreamFailure_NoSSEBytesWhenBuffered(t *testing.T) {
 	cache := &stubIncompleteStreamCache{}
-	svc := &OpenAIGatewayService{cache: cache}
+	svc := &OpenAIGatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, w := makeOpenAITestContext(t, "sess-buffered", 42)
 
@@ -212,7 +212,7 @@ func withStubOpenaiPolicyTrigger(t *testing.T, returnTriggered bool) *policyCall
 func TestOpenAIHandleIncompleteStreamFailure_HandsErrorToPolicyTrigger(t *testing.T) {
 	capture := withStubOpenaiPolicyTrigger(t, true)
 	cache := &stubIncompleteStreamCache{}
-	svc := &OpenAIGatewayService{cache: cache}
+	svc := &OpenAIGatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, _ := makeOpenAITestContext(t, "sess-policy-1", 42)
 
@@ -236,7 +236,7 @@ func TestOpenAIHandleIncompleteStreamFailure_HandsErrorToPolicyTrigger(t *testin
 func TestOpenAIHandleIncompleteStreamFailure_SkipsPolicyTriggerOnDisconnect(t *testing.T) {
 	capture := withStubOpenaiPolicyTrigger(t, false)
 	cache := &stubIncompleteStreamCache{}
-	svc := &OpenAIGatewayService{cache: cache}
+	svc := &OpenAIGatewayService{cache: cache, settingService: incompleteStreamSettingServiceWithFailoverOn()}
 	account := &Account{ID: 98}
 	c, _ := makeOpenAITestContext(t, "sess-policy-skip", 42)
 

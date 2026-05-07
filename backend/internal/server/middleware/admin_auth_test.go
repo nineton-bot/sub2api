@@ -198,6 +198,9 @@ func (s *stubUserRepo) UpdateConcurrency(ctx context.Context, id int64, amount i
 	panic("unexpected UpdateConcurrency call")
 }
 
+func (s *stubUserRepo) BatchSetConcurrency(context.Context, []int64, int) (int, error) { return 0, nil }
+func (s *stubUserRepo) BatchAddConcurrency(context.Context, []int64, int) (int, error) { return 0, nil }
+
 func (s *stubUserRepo) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	panic("unexpected ExistsByEmail call")
 }
@@ -232,4 +235,8 @@ func (s *stubUserRepo) EnableTotp(ctx context.Context, userID int64) error {
 
 func (s *stubUserRepo) DisableTotp(ctx context.Context, userID int64) error {
 	panic("unexpected DisableTotp call")
+}
+
+func (s *stubUserRepo) UpdateReferralUsable(ctx context.Context, id int64, delta float64) error {
+	panic("unexpected UpdateReferralUsable call")
 }

@@ -322,12 +322,19 @@ func TestAPIContracts(t *testing.T) {
 						"is_exclusive": false,
 						"status": "active",
 						"subscription_type": "standard",
+						"subscription_meter": "",
 						"daily_limit_usd": null,
 						"weekly_limit_usd": null,
 						"monthly_limit_usd": null,
+						"daily_request_limit": null,
+						"weekly_request_limit": null,
+						"monthly_request_limit": null,
 						"image_price_1k": null,
 						"image_price_2k": null,
 						"image_price_4k": null,
+						"allow_image_generation": false,
+						"image_rate_independent": false,
+						"image_rate_multiplier": 0,
 						"claude_code_only": false,
 						"allow_messages_dispatch": false,
 						"fallback_group_id": null,
@@ -385,6 +392,9 @@ func TestAPIContracts(t *testing.T) {
 						"daily_usage_usd": 1.23,
 						"weekly_usage_usd": 2.34,
 						"monthly_usage_usd": 3.45,
+						"daily_request_count": 0,
+						"weekly_request_count": 0,
+						"monthly_request_count": 0,
 						"created_at": "2025-01-02T03:04:05Z",
 						"updated_at": "2025-01-02T03:04:05Z"
 					}
@@ -475,6 +485,7 @@ func TestAPIContracts(t *testing.T) {
 				"message": "success",
 				"data": {
 					"total_requests": 2,
+					"total_request_quota_requests": 0,
 					"total_input_tokens": 15,
 					"total_output_tokens": 35,
 					"total_cache_tokens": 3,
@@ -682,6 +693,16 @@ func TestAPIContracts(t *testing.T) {
 						"oidc_connect_userinfo_email_path": "",
 						"oidc_connect_userinfo_id_path": "",
 						"oidc_connect_userinfo_username_path": "",
+						"github_oauth_enabled": false,
+						"github_oauth_client_id": "",
+						"github_oauth_client_secret_configured": false,
+						"github_oauth_redirect_url": "",
+						"github_oauth_frontend_redirect_url": "/auth/oauth/callback",
+						"google_oauth_enabled": false,
+						"google_oauth_client_id": "",
+						"google_oauth_client_secret_configured": false,
+						"google_oauth_redirect_url": "",
+						"google_oauth_frontend_redirect_url": "/auth/oauth/callback",
 						"ops_monitoring_enabled": false,
 						"ops_realtime_monitoring_enabled": true,
 						"ops_query_mode_default": "auto",
@@ -697,6 +718,16 @@ func TestAPIContracts(t *testing.T) {
 					"auth_source_default_email_subscriptions": [],
 					"auth_source_default_email_grant_on_signup": false,
 					"auth_source_default_email_grant_on_first_bind": false,
+					"auth_source_default_github_balance": 0,
+					"auth_source_default_github_concurrency": 5,
+					"auth_source_default_github_subscriptions": [],
+					"auth_source_default_github_grant_on_signup": false,
+					"auth_source_default_github_grant_on_first_bind": false,
+					"auth_source_default_google_balance": 0,
+					"auth_source_default_google_concurrency": 5,
+					"auth_source_default_google_subscriptions": [],
+					"auth_source_default_google_grant_on_signup": false,
+					"auth_source_default_google_grant_on_first_bind": false,
 					"auth_source_default_linuxdo_balance": 0,
 					"auth_source_default_linuxdo_concurrency": 5,
 					"auth_source_default_linuxdo_subscriptions": [],
@@ -715,10 +746,6 @@ func TestAPIContracts(t *testing.T) {
 					"force_email_on_third_party_signup": false,
 					"default_concurrency": 5,
 					"default_balance": 1.25,
-					"affiliate_rebate_rate": 20,
-					"affiliate_rebate_freeze_hours": 0,
-					"affiliate_rebate_duration_days": 0,
-					"affiliate_rebate_per_invitee_cap": 0,
 					"default_user_rpm_limit": 0,
 					"default_subscriptions": [],
 					"enable_model_fallback": false,
@@ -789,7 +816,21 @@ func TestAPIContracts(t *testing.T) {
 					"channel_monitor_enabled": true,
 					"channel_monitor_default_interval_seconds": 60,
 					"available_channels_enabled": false,
-					"affiliate_enabled": false,
+					"risk_control_enabled": false,
+					"enable_incomplete_stream_failover": false,
+					"referral_enabled": false,
+					"referral_commission_rate": 0.1,
+					"referral_referee_bonus_amount": 2,
+					"referral_default_for_all_users": true,
+					"login_agreement_enabled": false,
+					"login_agreement_mode": "modal",
+					"login_agreement_updated_at": "2026-03-31",
+					"login_agreement_documents": [
+						{"id": "terms", "title": "服务条款", "content_md": ""},
+						{"id": "usage-policy", "title": "使用政策", "content_md": ""},
+						{"id": "supported-regions", "title": "支持的国家和地区", "content_md": ""},
+						{"id": "service-specific-terms", "title": "服务特定条款", "content_md": ""}
+					],
 					"wechat_connect_enabled": false,
 					"wechat_connect_app_id": "",
 					"wechat_connect_app_secret_configured": false,
@@ -895,6 +936,16 @@ func TestAPIContracts(t *testing.T) {
 					"oidc_connect_userinfo_email_path": "",
 					"oidc_connect_userinfo_id_path": "",
 					"oidc_connect_userinfo_username_path": "",
+					"github_oauth_enabled": false,
+					"github_oauth_client_id": "",
+					"github_oauth_client_secret_configured": false,
+					"github_oauth_redirect_url": "",
+					"github_oauth_frontend_redirect_url": "/auth/oauth/callback",
+					"google_oauth_enabled": false,
+					"google_oauth_client_id": "",
+					"google_oauth_client_secret_configured": false,
+					"google_oauth_redirect_url": "",
+					"google_oauth_frontend_redirect_url": "/auth/oauth/callback",
 					"site_name": "Sub2API",
 					"site_logo": "",
 					"site_subtitle": "Subscription to API Conversion Platform",
@@ -911,10 +962,6 @@ func TestAPIContracts(t *testing.T) {
 					"custom_endpoints": [],
 					"default_concurrency": 0,
 					"default_balance": 0,
-					"affiliate_rebate_rate": 20,
-					"affiliate_rebate_freeze_hours": 0,
-					"affiliate_rebate_duration_days": 0,
-					"affiliate_rebate_per_invitee_cap": 0,
 					"default_user_rpm_limit": 0,
 					"default_subscriptions": [],
 					"enable_model_fallback": false,
@@ -980,7 +1027,21 @@ func TestAPIContracts(t *testing.T) {
 					"channel_monitor_enabled": true,
 					"channel_monitor_default_interval_seconds": 60,
 					"available_channels_enabled": false,
-					"affiliate_enabled": false,
+					"risk_control_enabled": false,
+					"enable_incomplete_stream_failover": false,
+					"referral_enabled": false,
+					"referral_commission_rate": 0.1,
+					"referral_referee_bonus_amount": 2,
+					"referral_default_for_all_users": true,
+					"login_agreement_enabled": false,
+					"login_agreement_mode": "modal",
+					"login_agreement_updated_at": "2026-03-31",
+					"login_agreement_documents": [
+						{"id": "terms", "title": "服务条款", "content_md": ""},
+						{"id": "usage-policy", "title": "使用政策", "content_md": ""},
+						{"id": "supported-regions", "title": "支持的国家和地区", "content_md": ""},
+						{"id": "service-specific-terms", "title": "服务特定条款", "content_md": ""}
+					],
 					"wechat_connect_enabled": true,
 					"wechat_connect_app_id": "wx-open-config",
 					"wechat_connect_app_secret_configured": true,
@@ -1002,6 +1063,16 @@ func TestAPIContracts(t *testing.T) {
 					"auth_source_default_email_subscriptions": [],
 					"auth_source_default_email_grant_on_signup": false,
 					"auth_source_default_email_grant_on_first_bind": false,
+					"auth_source_default_github_balance": 0,
+					"auth_source_default_github_concurrency": 5,
+					"auth_source_default_github_subscriptions": [],
+					"auth_source_default_github_grant_on_signup": false,
+					"auth_source_default_github_grant_on_first_bind": false,
+					"auth_source_default_google_balance": 0,
+					"auth_source_default_google_concurrency": 5,
+					"auth_source_default_google_subscriptions": [],
+					"auth_source_default_google_grant_on_signup": false,
+					"auth_source_default_google_grant_on_first_bind": false,
 					"auth_source_default_linuxdo_balance": 0,
 					"auth_source_default_linuxdo_concurrency": 5,
 					"auth_source_default_linuxdo_subscriptions": [],
@@ -1127,7 +1198,7 @@ func newContractDeps(t *testing.T) *contractDeps {
 	settingService := service.NewSettingService(settingRepo, cfg)
 
 	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
-	authHandler := handler.NewAuthHandler(cfg, nil, userService, settingService, nil, redeemService, nil)
+	authHandler := handler.NewAuthHandler(cfg, nil, userService, settingService, nil, redeemService, nil, nil)
 	apiKeyHandler := handler.NewAPIKeyHandler(apiKeyService)
 	usageHandler := handler.NewUsageHandler(usageService, apiKeyService)
 	adminSettingHandler := adminhandler.NewSettingHandler(settingService, nil, nil, nil, nil, nil)
@@ -1291,6 +1362,9 @@ func (r *stubUserRepo) UpdateConcurrency(ctx context.Context, id int64, amount i
 	return errors.New("not implemented")
 }
 
+func (r *stubUserRepo) BatchSetConcurrency(context.Context, []int64, int) (int, error) { return 0, nil }
+func (r *stubUserRepo) BatchAddConcurrency(context.Context, []int64, int) (int, error) { return 0, nil }
+
 func (r *stubUserRepo) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	return false, errors.New("not implemented")
 }
@@ -1336,6 +1410,10 @@ func (r *stubUserRepo) EnableTotp(ctx context.Context, userID int64) error {
 }
 
 func (r *stubUserRepo) DisableTotp(ctx context.Context, userID int64) error {
+	return errors.New("not implemented")
+}
+
+func (r *stubUserRepo) UpdateReferralUsable(ctx context.Context, id int64, delta float64) error {
 	return errors.New("not implemented")
 }
 

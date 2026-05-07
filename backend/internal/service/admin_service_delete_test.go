@@ -131,6 +131,9 @@ func (s *userRepoStub) UpdateConcurrency(ctx context.Context, id int64, amount i
 	panic("unexpected UpdateConcurrency call")
 }
 
+func (s *userRepoStub) BatchSetConcurrency(context.Context, []int64, int) (int, error) { return 0, nil }
+func (s *userRepoStub) BatchAddConcurrency(context.Context, []int64, int) (int, error) { return 0, nil }
+
 func (s *userRepoStub) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	if s.existsErr != nil {
 		return false, s.existsErr
@@ -168,6 +171,10 @@ func (s *userRepoStub) EnableTotp(ctx context.Context, userID int64) error {
 
 func (s *userRepoStub) DisableTotp(ctx context.Context, userID int64) error {
 	panic("unexpected DisableTotp call")
+}
+
+func (s *userRepoStub) UpdateReferralUsable(ctx context.Context, id int64, delta float64) error {
+	panic("unexpected UpdateReferralUsable call")
 }
 
 type groupRepoStub struct {
