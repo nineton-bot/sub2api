@@ -307,7 +307,6 @@
 
         <EmailOAuthButtons
           :disabled="registrationActionDisabled"
-          :aff-code="formData.aff_code"
           :github-enabled="githubOAuthEnabled"
           :google-enabled="googleOAuthEnabled"
           :show-divider="false"
@@ -316,20 +315,17 @@
         <LinuxDoOAuthSection
           v-if="linuxdoOAuthEnabled"
           :disabled="registrationActionDisabled"
-          :aff-code="formData.aff_code"
           :show-divider="false"
         />
         <WechatOAuthSection
           v-if="wechatOAuthEnabled"
           :disabled="registrationActionDisabled"
-          :aff-code="formData.aff_code"
           :show-divider="false"
         />
         <OidcOAuthSection
           v-if="oidcOAuthEnabled"
           :disabled="registrationActionDisabled"
           :provider-name="oidcOAuthProviderName"
-          :aff-code="formData.aff_code"
           :show-divider="false"
         />
       </div>
