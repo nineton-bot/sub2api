@@ -601,6 +601,18 @@
                 </button>
               </template>
 
+              <!-- Invoice Config — gated by master invoice_enabled -->
+              <template v-if="appStore.cachedPublicSettings?.invoice_enabled">
+                <div class="my-1 border-t border-gray-100 dark:border-dark-700"></div>
+                <button
+                  @click="handleInvoiceConfig(user); closeActionMenu()"
+                  class="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
+                >
+                  <Icon name="dollar" size="sm" class="text-emerald-500" :stroke-width="2" />
+                  {{ t('admin.users.invoiceConfig.menuItem') }}
+                </button>
+              </template>
+
               <div class="my-1 border-t border-gray-100 dark:border-dark-700"></div>
 
               <!-- Delete (not for admin) -->
@@ -628,6 +640,7 @@
     <GroupReplaceModal :show="showGroupReplaceModal" :user="groupReplaceUser" :old-group="groupReplaceOldGroup" :all-groups="allGroups" @close="closeGroupReplaceModal" @success="loadUsers" />
     <UserAttributesConfigModal :show="showAttributesModal" @close="handleAttributesModalClose" />
     <UserReferralConfigModal :show="showReferralConfigModal" :user="referralConfigUser" @close="closeReferralConfigModal" @success="loadUsers" />
+    <UserInvoiceConfigModal :show="showInvoiceConfigModal" :user="invoiceConfigUser" @close="closeInvoiceConfigModal" />
   </AppLayout>
 </template>
 
@@ -662,6 +675,7 @@ import UserBalanceModal from '@/components/admin/user/UserBalanceModal.vue'
 import UserBalanceHistoryModal from '@/components/admin/user/UserBalanceHistoryModal.vue'
 import GroupReplaceModal from '@/components/admin/user/GroupReplaceModal.vue'
 import UserReferralConfigModal from '@/components/admin/user/UserReferralConfigModal.vue'
+import UserInvoiceConfigModal from '@/components/admin/user/UserInvoiceConfigModal.vue'
 
 const appStore = useAppStore()
 
@@ -1416,6 +1430,20 @@ const handleReferralConfig = (user: AdminUser) => {
 const closeReferralConfigModal = () => {
   showReferralConfigModal.value = false
   referralConfigUser.value = null
+}
+
+// Invoice config (per-user override)
+const showInvoiceConfigModal = ref(false)
+const invoiceConfigUser = ref<AdminUser | null>(null)
+
+const handleInvoiceConfig = (user: AdminUser) => {
+  invoiceConfigUser.value = user
+  showInvoiceConfigModal.value = true
+}
+
+const closeInvoiceConfigModal = () => {
+  showInvoiceConfigModal.value = false
+  invoiceConfigUser.value = null
 }
 
 // Handle deposit from balance history modal

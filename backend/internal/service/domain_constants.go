@@ -389,6 +389,21 @@ const (
 	// 默认 true（保持 V1 行为）。
 	SettingKeyReferralDefaultForAllUsers = "referral_default_for_all_users"
 
+	// =========================
+	// Invoice (发票)
+	// =========================
+
+	// SettingKeyInvoiceEnabled 发票功能总开关（默认 false）。
+	// 关闭时所有用户和管理员的发票菜单/接口全部隐藏短路。
+	SettingKeyInvoiceEnabled = "invoice_enabled"
+
+	// SettingKeyInvoiceDefaultForAllUsers 发票默认可见性。
+	// 总开关 invoice_enabled 为 ON 前提下生效：
+	//   ON  = 全部用户默认可见「我的发票」
+	//   OFF = 仅管理员在用户列表显式启用 (users.invoice_enabled=true) 的用户可见
+	// 默认 false（白名单制）。
+	SettingKeyInvoiceDefaultForAllUsers = "invoice_default_for_all_users"
+
 	// SettingKeyEnableAnthropicCacheTTL1hInjection 是否对 Anthropic OAuth/SetupToken 请求体注入 1h cache_control ttl（默认 false）
 	SettingKeyEnableAnthropicCacheTTL1hInjection = "enable_anthropic_cache_ttl_1h_injection"
 

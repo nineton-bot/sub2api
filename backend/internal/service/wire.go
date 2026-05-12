@@ -527,7 +527,15 @@ var ProviderSet = wire.NewSet(
 	ProvideChannelMonitorService,
 	ProvideChannelMonitorRunner,
 	NewChannelMonitorRequestTemplateService,
+	NewInvoiceService,
+	ProvideInvoicePDFStore,
+	wire.Bind(new(InvoicePDFStore), new(*LocalInvoicePDFStore)),
 )
+
+// ProvideInvoicePDFStore 根据配置创建 PDF 存储实现。V1 仅本地磁盘。
+func ProvideInvoicePDFStore(cfg *config.Config) *LocalInvoicePDFStore {
+	return NewLocalInvoicePDFStore(cfg.Invoice.PDFDir)
+}
 
 // ProvidePaymentConfigService wraps NewPaymentConfigService to accept the named
 // payment.EncryptionKey type instead of raw []byte, avoiding Wire ambiguity.

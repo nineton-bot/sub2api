@@ -185,6 +185,11 @@ func RpmLimit(v int) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldRpmLimit, v))
 }
 
+// InvoiceEnabled applies equality check predicate on the "invoice_enabled" field. It's identical to InvoiceEnabledEQ.
+func InvoiceEnabled(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldInvoiceEnabled, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldCreatedAt, v))
@@ -1520,6 +1525,16 @@ func RpmLimitLTE(v int) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldRpmLimit, v))
 }
 
+// InvoiceEnabledEQ applies the EQ predicate on the "invoice_enabled" field.
+func InvoiceEnabledEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldInvoiceEnabled, v))
+}
+
+// InvoiceEnabledNEQ applies the NEQ predicate on the "invoice_enabled" field.
+func InvoiceEnabledNEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldInvoiceEnabled, v))
+}
+
 // HasAPIKeys applies the HasEdge predicate on the "api_keys" edge.
 func HasAPIKeys() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
@@ -1742,6 +1757,29 @@ func HasPaymentOrders() predicate.User {
 func HasPaymentOrdersWith(preds ...predicate.PaymentOrder) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := newPaymentOrdersStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasInvoices applies the HasEdge predicate on the "invoices" edge.
+func HasInvoices() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, InvoicesTable, InvoicesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasInvoicesWith applies the HasEdge predicate on the "invoices" edge with a given conditions (other predicates).
+func HasInvoicesWith(preds ...predicate.Invoice) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newInvoicesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

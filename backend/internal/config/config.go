@@ -91,6 +91,19 @@ type Config struct {
 	Gemini                  GeminiConfig                  `mapstructure:"gemini"`
 	Update                  UpdateConfig                  `mapstructure:"update"`
 	Idempotency             IdempotencyConfig             `mapstructure:"idempotency"`
+	Invoice                 InvoiceConfig                 `mapstructure:"invoice"`
+}
+
+// InvoiceConfig 发票模块配置
+type InvoiceConfig struct {
+	// PDFDir 本地 PDF 文件存储根目录（仅 storage=local 时使用）
+	PDFDir string `mapstructure:"pdf_dir"`
+	// PDFMaxBytes 单个 PDF 最大字节数（默认 8 MiB）
+	PDFMaxBytes int64 `mapstructure:"pdf_max_bytes"`
+	// WindowDays 可开票订单的支付时间窗口（默认 180 天）
+	WindowDays int `mapstructure:"window_days"`
+	// MaxOrders 单次申请最多关联的订单数（防滥用，默认 50）
+	MaxOrders int `mapstructure:"max_orders"`
 }
 
 type LogConfig struct {
@@ -1474,6 +1487,12 @@ func setDefaults() {
 	viper.SetDefault("billing.circuit_breaker.failure_threshold", 5)
 	viper.SetDefault("billing.circuit_breaker.reset_timeout_seconds", 30)
 	viper.SetDefault("billing.circuit_breaker.half_open_requests", 3)
+
+	// Invoice
+	viper.SetDefault("invoice.pdf_dir", "./data/invoices")
+	viper.SetDefault("invoice.pdf_max_bytes", int64(8*1024*1024))
+	viper.SetDefault("invoice.window_days", 180)
+	viper.SetDefault("invoice.max_orders", 50)
 
 	// Turnstile
 	viper.SetDefault("turnstile.required", false)

@@ -263,6 +263,10 @@ func registerUserManagementRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		// Per-user referral override (V2)
 		users.GET("/:id/referral-config", h.Admin.Referral.GetUserReferralConfig)
 		users.PUT("/:id/referral-config", h.Admin.Referral.UpsertUserReferralConfig)
+
+		// Per-user invoice override
+		users.GET("/:id/invoice-config", h.Admin.Invoice.GetUserInvoiceConfig)
+		users.PUT("/:id/invoice-config", h.Admin.Invoice.SetUserInvoiceConfig)
 	}
 }
 

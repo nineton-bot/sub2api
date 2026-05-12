@@ -514,6 +514,10 @@ export interface SystemSettings {
    */
   referral_default_for_all_users: boolean;
 
+  // 发票
+  invoice_enabled: boolean;
+  invoice_default_for_all_users: boolean;
+
   // Balance & quota notification
   balance_low_notify_enabled: boolean;
   balance_low_notify_threshold: number;
@@ -707,6 +711,10 @@ export interface UpdateSettingsRequest {
   referral_commission_rate?: number;
   referral_referee_bonus_amount?: number;
   referral_default_for_all_users?: boolean;
+
+  // 发票
+  invoice_enabled?: boolean;
+  invoice_default_for_all_users?: boolean;
 
   // Balance & quota notification
   balance_low_notify_enabled?: boolean;

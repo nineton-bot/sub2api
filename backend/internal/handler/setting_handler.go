@@ -75,6 +75,8 @@ func (h *SettingHandler) GetPublicSettings(c *gin.Context) {
 		ReferralEnabled:                  settings.ReferralEnabled,
 		ReferralRefereeBonusAmount:       settings.ReferralRefereeBonusAmount,
 		ReferralDefaultForAllUsers:       settings.ReferralDefaultForAllUsers,
+		InvoiceEnabled:                   settings.InvoiceEnabled,
+		InvoiceDefaultForAllUsers:        settings.InvoiceDefaultForAllUsers,
 		Version:                          h.version,
 		BalanceLowNotifyEnabled:          settings.BalanceLowNotifyEnabled,
 		AccountQuotaNotifyEnabled:        settings.AccountQuotaNotifyEnabled,

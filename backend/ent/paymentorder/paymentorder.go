@@ -72,6 +72,10 @@ const (
 	FieldRefundRequestReason = "refund_request_reason"
 	// FieldRefundRequestedBy holds the string denoting the refund_requested_by field in the database.
 	FieldRefundRequestedBy = "refund_requested_by"
+	// FieldInvoiceStatus holds the string denoting the invoice_status field in the database.
+	FieldInvoiceStatus = "invoice_status"
+	// FieldInvoiceID holds the string denoting the invoice_id field in the database.
+	FieldInvoiceID = "invoice_id"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
 	FieldExpiresAt = "expires_at"
 	// FieldPaidAt holds the string denoting the paid_at field in the database.
@@ -137,6 +141,8 @@ var Columns = []string{
 	FieldRefundRequestedAt,
 	FieldRefundRequestReason,
 	FieldRefundRequestedBy,
+	FieldInvoiceStatus,
+	FieldInvoiceID,
 	FieldExpiresAt,
 	FieldPaidAt,
 	FieldCompletedAt,
@@ -194,6 +200,10 @@ var (
 	DefaultForceRefund bool
 	// RefundRequestedByValidator is a validator for the "refund_requested_by" field. It is called by the builders before save.
 	RefundRequestedByValidator func(string) error
+	// DefaultInvoiceStatus holds the default value on creation for the "invoice_status" field.
+	DefaultInvoiceStatus string
+	// InvoiceStatusValidator is a validator for the "invoice_status" field. It is called by the builders before save.
+	InvoiceStatusValidator func(string) error
 	// ClientIPValidator is a validator for the "client_ip" field. It is called by the builders before save.
 	ClientIPValidator func(string) error
 	// SrcHostValidator is a validator for the "src_host" field. It is called by the builders before save.
@@ -352,6 +362,16 @@ func ByRefundRequestReason(opts ...sql.OrderTermOption) OrderOption {
 // ByRefundRequestedBy orders the results by the refund_requested_by field.
 func ByRefundRequestedBy(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRefundRequestedBy, opts...).ToFunc()
+}
+
+// ByInvoiceStatus orders the results by the invoice_status field.
+func ByInvoiceStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInvoiceStatus, opts...).ToFunc()
+}
+
+// ByInvoiceID orders the results by the invoice_id field.
+func ByInvoiceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInvoiceID, opts...).ToFunc()
 }
 
 // ByExpiresAt orders the results by the expires_at field.

@@ -197,6 +197,10 @@ type SystemSettings struct {
 	// V2：推广页默认可见性（仅在 ReferralEnabled 为 true 时才生效）。
 	// true = 全员默认可见；false = 仅 admin 在单用户 override 中显式启用才可见。
 	ReferralDefaultForAllUsers bool
+
+	// 发票（默认关闭）
+	InvoiceEnabled             bool // 主开关：全站发票功能
+	InvoiceDefaultForAllUsers  bool // 主开关 ON 时的默认可见性；false=白名单制（user.invoice_enabled）
 }
 
 type DefaultSubscriptionSetting struct {
@@ -267,6 +271,10 @@ type PublicSettings struct {
 	// ReferralDefaultForAllUsers V2：推广页默认可见性。管理员面板上的单用户 override
 	// modal 需要读此字段作为默认勾选状态。
 	ReferralDefaultForAllUsers bool
+
+	// 发票（仅暴露主开关；per-user 可见性由独立 endpoint 校验）
+	InvoiceEnabled            bool
+	InvoiceDefaultForAllUsers bool
 
 	// 风控中心功能开关
 	RiskControlEnabled bool `json:"risk_control_enabled"`

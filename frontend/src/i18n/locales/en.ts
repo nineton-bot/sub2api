@@ -374,6 +374,8 @@ export default {
     buySubscription: 'Recharge / Subscription',
     docs: 'Docs',
     myOrders: 'My Orders',
+    invoices: 'My Invoices',
+    invoiceManagement: 'Invoices',
     orderManagement: 'Orders',
     paymentDashboard: 'Payment Dashboard',
     paymentConfig: 'Payment Config',
@@ -1077,6 +1079,60 @@ export default {
     }
   },
 
+  // Invoices
+  invoices: {
+    title: 'My Invoices',
+    description: 'Apply for, view, and download invoices',
+    apply: 'Apply for Invoice',
+    applyTitle: 'Apply for Invoice',
+    cancel: 'Cancel',
+    confirmCancel: 'Cancel this invoice application? Selected orders will be released.',
+    empty: 'No invoices yet',
+    fields: {
+      titleSection: 'Invoice Header',
+      title: 'Invoice Title',
+      titlePlaceholder: 'Enter invoice title',
+      taxNo: 'Tax ID',
+      taxNoPlaceholder: 'Tax ID / Unified Social Credit Code',
+      contactEmail: 'Contact Email',
+      emailPlaceholder: 'Receive email (optional)',
+      notes: 'Notes',
+      notesPlaceholder: 'Notes (optional)',
+      selectOrders: 'Select Orders',
+      submit: 'Submit',
+      invoiceNo: 'Invoice No.',
+      status: 'Status',
+      amount: 'Amount',
+      submittedAt: 'Submitted',
+      actions: 'Actions',
+      orderNo: 'Order No.',
+      product: 'Description',
+    },
+    titleType: {
+      personal: 'Personal',
+      business: 'Business',
+    },
+    eligibleOrders: {
+      empty: 'No invoiceable orders (completed orders within 6 months that have not been invoiced)',
+      totalAmount: '{count} order(s) selected · Total',
+    },
+    status: {
+      pending: 'Pending',
+      approved: 'Approved',
+      issued: 'Issued',
+      rejected: 'Rejected',
+      voided: 'Voided',
+    },
+    detail: {
+      title: 'Invoice Detail',
+      notFound: 'Invoice not found',
+      items: 'Order Items',
+      reviewNotes: 'Review Notes',
+      issuedAt: 'Issued At',
+      downloadPdf: 'Download PDF',
+    },
+  },
+
   // Redeem
   redeem: {
     title: 'Redeem Code',
@@ -1349,6 +1405,61 @@ export default {
 
   // Admin
   admin: {
+    // Invoices
+    invoices: {
+      title: 'Invoices',
+      description: 'Review user invoice applications and upload issued PDFs',
+      filters: {
+        status: 'Status',
+        email: 'User Email',
+        all: 'All',
+      },
+      actions: {
+        approve: 'Approve',
+        reject: 'Reject',
+        uploadPdf: 'Upload PDF',
+        replacePdf: 'Replace PDF',
+        markIssued: 'Mark Issued',
+        void: 'Void',
+        view: 'View',
+        downloadPdf: 'Download',
+      },
+      dialogs: {
+        reject: {
+          title: 'Reject Invoice',
+          reasonLabel: 'Rejection Reason',
+          reasonRequired: 'Please enter a rejection reason',
+          confirm: 'Confirm Reject',
+        },
+        upload: {
+          title: 'Upload Invoice PDF',
+          fileLabel: 'PDF File',
+          invoiceNoLabel: 'Invoice Number',
+          invoiceNoPlaceholder: 'Optional; auto-generated when blank',
+          sizeTip: 'Max 8 MiB, PDF only',
+          confirm: 'Upload & Mark Issued',
+          uploading: 'Uploading…',
+        },
+        void: {
+          title: 'Void Invoice',
+          reasonLabel: 'Void Reason',
+          reasonRequired: 'Please enter a void reason',
+          warningIssued: 'This invoice has been issued. Voiding releases the orders, but PDFs already delivered to the user cannot be revoked.',
+          confirm: 'Confirm Void',
+        },
+        markIssued: {
+          note: 'Records the invoice number only without uploading a PDF. Use when the paper invoice was issued offline or via a third-party system.',
+        },
+      },
+      toast: {
+        approved: 'Approved',
+        rejected: 'Rejected',
+        uploaded: 'Uploaded and issued',
+        marked: 'Marked as issued',
+        voided: 'Voided',
+      },
+    },
+
     // Dashboard
     dashboard: {
       title: 'Admin Dashboard',
@@ -1902,6 +2013,13 @@ export default {
         withdrawalAllowed: 'Allow withdrawal',
         withdrawalAllowedHint: 'When on, the user can request to withdraw usable commission from the referral page',
         notes: 'Notes (admin-only)'
+      },
+      invoiceConfig: {
+        menuItem: 'Invoice settings',
+        title: 'Invoice configuration',
+        enabled: 'Allow this user to request invoices',
+        enabledHint: 'When on, the user sees "My Invoices" in the sidebar after logging in and can submit applications. When off, the menu is hidden.',
+        defaultForAllOnNote: 'Global setting "Default Enabled for All Users" is currently ON, so all users already have access. This per-user toggle has no effect. To use whitelist mode, turn it off in System Settings → Payment → Invoice Settings.'
       },
       // Balance History
       balanceHistory: 'Recharge History',
@@ -5277,6 +5395,14 @@ export default {
         refereeBonusHint: 'Amount (in ¥) credited to the invitee after their first successful recharge or subscription. Set to 0 to disable the bonus.',
         defaultForAllUsers: 'Default Visible to All Users',
         defaultForAllUsersHint: 'When on, every user sees the Referrals page and accrues commissions by default; when off, only users explicitly enabled by an admin can see it.'
+      },
+      invoice: {
+        title: 'Invoice Settings',
+        description: 'Control whether the invoice feature is available and which users can see "My Invoices"',
+        enable: 'Enable Invoicing',
+        enableHint: 'Master switch. When off, invoice menus and APIs are hidden site-wide. When on, the user / admin invoice menus become available.',
+        defaultForAllUsers: 'Default Enabled for All Users',
+        defaultForAllUsersHint: 'On = every user sees "My Invoices" by default. Off = whitelist mode; only users explicitly enabled by an admin (User Management → User List → More → Invoice Settings) can see it.'
       },
       turnstile: {
         title: 'Cloudflare Turnstile',

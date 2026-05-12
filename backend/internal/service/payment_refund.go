@@ -187,6 +187,14 @@ func (s *PaymentService) validateRefundRequest(ctx context.Context, oid, uid int
 	if o.Status != OrderStatusCompleted {
 		return nil, infraerrors.BadRequest("INVALID_STATUS", "only completed orders can request refund")
 	}
+	// 拒绝已开/正在申请发票的订单退款。详见 invoice_service.go 状态机说明。
+	// 反规范化字段 invoice_status 由 InvoiceService 维护：
+	//   '' → 无活跃发票（可退款）
+	//   pending / issued → 被发票占用（不可退款，需先联系客服作废发票）
+	if o.InvoiceStatus != "" {
+		return nil, infraerrors.Conflict("ORDER_LOCKED_BY_INVOICE",
+			"该订单已开发票或正在申请发票，不可退款；如需退款请先联系客服作废发票")
+	}
 	// Check provider instance allows user refund
 	inst, err := s.getRefundOrderProviderInstance(ctx, o)
 	if err != nil || inst == nil {
@@ -206,6 +214,17 @@ func (s *PaymentService) PrepareRefund(ctx context.Context, oid int64, amt float
 	ok := []string{OrderStatusCompleted, OrderStatusRefundRequested, OrderStatusRefundFailed}
 	if !psSliceContains(ok, o.Status) {
 		return nil, nil, infraerrors.BadRequest("INVALID_STATUS", "order status does not allow refund")
+	}
+	// 已开/正在申请发票的订单不可退款（force=true 可绕过，记录在 audit log）
+	// 详见 invoice_service.go 状态机说明。force 路径仅供管理员在线下与客户协商作废发票后使用。
+	if o.InvoiceStatus != "" && !force {
+		return nil, nil, infraerrors.Conflict("ORDER_LOCKED_BY_INVOICE",
+			"该订单已开发票或正在申请发票，请先在「发票管理」中作废发票后再退款；如必须强制退款，请使用 force=true")
+	}
+	if o.InvoiceStatus != "" && force {
+		s.writeAuditLog(ctx, oid, "REFUND_FORCE_BYPASS_INVOICE_LOCK",
+			fmt.Sprintf("invoice_id:%v invoice_status:%s", o.InvoiceID, o.InvoiceStatus),
+			map[string]any{"force": true})
 	}
 	// Check provider instance allows admin refund
 	inst, instErr := s.getRefundOrderProviderInstance(ctx, o)

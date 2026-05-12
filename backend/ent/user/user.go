@@ -67,6 +67,8 @@ const (
 	FieldTotalRecharged = "total_recharged"
 	// FieldRpmLimit holds the string denoting the rpm_limit field in the database.
 	FieldRpmLimit = "rpm_limit"
+	// FieldInvoiceEnabled holds the string denoting the invoice_enabled field in the database.
+	FieldInvoiceEnabled = "invoice_enabled"
 	// EdgeAPIKeys holds the string denoting the api_keys edge name in mutations.
 	EdgeAPIKeys = "api_keys"
 	// EdgeRedeemCodes holds the string denoting the redeem_codes edge name in mutations.
@@ -87,6 +89,8 @@ const (
 	EdgePromoCodeUsages = "promo_code_usages"
 	// EdgePaymentOrders holds the string denoting the payment_orders edge name in mutations.
 	EdgePaymentOrders = "payment_orders"
+	// EdgeInvoices holds the string denoting the invoices edge name in mutations.
+	EdgeInvoices = "invoices"
 	// EdgeAuthIdentities holds the string denoting the auth_identities edge name in mutations.
 	EdgeAuthIdentities = "auth_identities"
 	// EdgePendingAuthSessions holds the string denoting the pending_auth_sessions edge name in mutations.
@@ -163,6 +167,13 @@ const (
 	PaymentOrdersInverseTable = "payment_orders"
 	// PaymentOrdersColumn is the table column denoting the payment_orders relation/edge.
 	PaymentOrdersColumn = "user_id"
+	// InvoicesTable is the table that holds the invoices relation/edge.
+	InvoicesTable = "invoices"
+	// InvoicesInverseTable is the table name for the Invoice entity.
+	// It exists in this package in order to avoid circular dependency with the "invoice" package.
+	InvoicesInverseTable = "invoices"
+	// InvoicesColumn is the table column denoting the invoices relation/edge.
+	InvoicesColumn = "user_id"
 	// AuthIdentitiesTable is the table that holds the auth_identities relation/edge.
 	AuthIdentitiesTable = "auth_identities"
 	// AuthIdentitiesInverseTable is the table name for the AuthIdentity entity.
@@ -215,6 +226,7 @@ var Columns = []string{
 	FieldBalanceNotifyExtraEmails,
 	FieldTotalRecharged,
 	FieldRpmLimit,
+	FieldInvoiceEnabled,
 }
 
 var (
@@ -289,6 +301,8 @@ var (
 	DefaultTotalRecharged float64
 	// DefaultRpmLimit holds the default value on creation for the "rpm_limit" field.
 	DefaultRpmLimit int
+	// DefaultInvoiceEnabled holds the default value on creation for the "invoice_enabled" field.
+	DefaultInvoiceEnabled bool
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -427,6 +441,11 @@ func ByTotalRecharged(opts ...sql.OrderTermOption) OrderOption {
 // ByRpmLimit orders the results by the rpm_limit field.
 func ByRpmLimit(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRpmLimit, opts...).ToFunc()
+}
+
+// ByInvoiceEnabled orders the results by the invoice_enabled field.
+func ByInvoiceEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInvoiceEnabled, opts...).ToFunc()
 }
 
 // ByAPIKeysCount orders the results by api_keys count.
@@ -569,6 +588,20 @@ func ByPaymentOrders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByInvoicesCount orders the results by invoices count.
+func ByInvoicesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newInvoicesStep(), opts...)
+	}
+}
+
+// ByInvoices orders the results by invoices terms.
+func ByInvoices(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newInvoicesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByAuthIdentitiesCount orders the results by auth_identities count.
 func ByAuthIdentitiesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -678,6 +711,13 @@ func newPaymentOrdersStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PaymentOrdersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PaymentOrdersTable, PaymentOrdersColumn),
+	)
+}
+func newInvoicesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(InvoicesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, InvoicesTable, InvoicesColumn),
 	)
 }
 func newAuthIdentitiesStep() *sqlgraph.Step {

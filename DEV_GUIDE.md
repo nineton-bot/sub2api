@@ -221,6 +221,33 @@ git add ent/       # 生成的文件也要提交
 
 ---
 
+## 四点五、发票系统 (Invoices)
+
+发票申请 → 管理员审核 → 上传 PDF 流程，5 态状态机（pending/approved/issued/rejected/voided）。详见 plan 文件 `1-1000-2-3-pure-squid.md`。
+
+**关键约束**：
+- 仅最近 180 天的 `COMPLETED` 订单可开票（`backend/internal/config/config.go` 的 `InvoiceConfig.WindowDays` 可调）
+- 同一订单只能被一张活跃发票占用（DB 唯一索引 `idx_invoice_items_active_order` 兜底）
+- **已开发票订单不允许退款**：`payment_refund.go` 的 `validateRefundRequest` 校验 `invoice_status != ''`，admin 路径可用 `force=true` 绕过（写审计日志）
+- PDF 存储抽象：`InvoicePDFStore` interface（`invoice_pdf_store.go`），V1 仅本地磁盘 `LocalInvoicePDFStore`
+
+**接入第三方自动开票**（诺诺 / 百望 / 航信等）：
+1. 实现 `InvoiceProvider` interface（`invoice_provider.go`），返回 `InvoiceProviderResult{InvoiceNo, PDFData, PDFName, Payload}`
+2. 在 `wire.go` 的 `ProvideInvoiceProviderRegistry` 注册新 provider
+3. 在 `AdminUploadPDF` / `AdminMarkIssued` 根据 `invoice.provider` 字段分支调用 `registry.Get(name).Issue(ctx, req)`
+4. 管理员后台允许选择 provider（在创建/编辑发票时下拉）
+
+**核心文件清单**：
+- Schema：`backend/ent/schema/{invoice,invoice_item}.go`、`payment_order.go`（追加 `invoice_status`/`invoice_id`）
+- 迁移：`backend/migrations/142_invoices.sql`
+- Service：`backend/internal/service/{invoice_service,invoice_pdf_store,invoice_provider}.go`
+- Handler：`backend/internal/handler/invoice_handler.go`、`backend/internal/handler/admin/invoice_handler.go`
+- Routes：`backend/internal/server/routes/invoice.go`
+- 前端用户端：`frontend/src/views/user/InvoicesView.vue` + `frontend/src/components/invoice/`
+- 前端管理员：`frontend/src/views/admin/InvoicesView.vue` + `frontend/src/components/admin/invoice/`
+
+---
+
 ## 五、后续开发待办
 
 ### TODO 1：账号级配额限制支持“请求次数”计量

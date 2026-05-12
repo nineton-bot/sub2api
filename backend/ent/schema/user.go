@@ -131,6 +131,13 @@ func (User) Fields() []ent.Field {
 		// 用户级每分钟请求数上限（0 = 不限制）。仅当所在分组未设置 rpm_limit 时作为兜底生效。
 		field.Int("rpm_limit").
 			Default(0),
+
+		// 单用户发票可见性 override。
+		// 仅当全局 invoice_enabled=true 且 invoice_default_for_all_users=false 时生效；
+		// true = 该用户能看到「我的发票」并可申请；false = 不可见。
+		// 全局 invoice_default_for_all_users=true 时此字段被忽略（全员可见）。
+		field.Bool("invoice_enabled").
+			Default(false),
 	}
 }
 
@@ -147,6 +154,7 @@ func (User) Edges() []ent.Edge {
 		edge.To("attribute_values", UserAttributeValue.Type),
 		edge.To("promo_code_usages", PromoCodeUsage.Type),
 		edge.To("payment_orders", PaymentOrder.Type),
+		edge.To("invoices", Invoice.Type),
 		edge.To("auth_identities", AuthIdentity.Type).
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("pending_auth_sessions", PendingAuthSession.Type),

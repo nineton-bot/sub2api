@@ -374,6 +374,8 @@ export default {
     buySubscription: '充值/订阅',
     docs: '文档',
     myOrders: '我的订单',
+    invoices: '我的发票',
+    invoiceManagement: '发票管理',
     orderManagement: '订单管理',
     paymentDashboard: '支付概览',
     paymentConfig: '支付配置',
@@ -1081,6 +1083,60 @@ export default {
     }
   },
 
+  // Invoices (用户端发票)
+  invoices: {
+    title: '我的发票',
+    description: '申请、查看和下载发票',
+    apply: '申请开票',
+    applyTitle: '申请发票',
+    cancel: '取消申请',
+    confirmCancel: '确定要取消该发票申请吗？已选订单将被释放。',
+    empty: '暂无发票',
+    fields: {
+      titleSection: '开票信息',
+      title: '发票抬头',
+      titlePlaceholder: '请输入发票抬头',
+      taxNo: '税号',
+      taxNoPlaceholder: '请输入税号 / 统一社会信用代码',
+      contactEmail: '接收邮箱',
+      emailPlaceholder: '接收邮箱（可选）',
+      notes: '备注',
+      notesPlaceholder: '备注（可选）',
+      selectOrders: '选择订单',
+      submit: '提交申请',
+      invoiceNo: '发票编号',
+      status: '状态',
+      amount: '金额',
+      submittedAt: '申请时间',
+      actions: '操作',
+      orderNo: '订单号',
+      product: '描述',
+    },
+    titleType: {
+      personal: '个人',
+      business: '企业',
+    },
+    eligibleOrders: {
+      empty: '当前没有可开票的订单（半年内、状态为已完成、且未开过票的订单）',
+      totalAmount: '已选 {count} 笔订单 · 合计',
+    },
+    status: {
+      pending: '待审核',
+      approved: '已通过',
+      issued: '已开具',
+      rejected: '已驳回',
+      voided: '已作废',
+    },
+    detail: {
+      title: '发票详情',
+      notFound: '未找到发票',
+      items: '订单明细',
+      reviewNotes: '审核备注',
+      issuedAt: '开具时间',
+      downloadPdf: '下载 PDF',
+    },
+  },
+
   // Redeem
   redeem: {
     title: '兑换码',
@@ -1353,6 +1409,61 @@ export default {
 
   // Admin
   admin: {
+    // Invoices (管理员后台发票审核)
+    invoices: {
+      title: '发票管理',
+      description: '审核用户发票申请、上传开具的发票 PDF',
+      filters: {
+        status: '状态',
+        email: '用户邮箱',
+        all: '全部',
+      },
+      actions: {
+        approve: '通过',
+        reject: '驳回',
+        uploadPdf: '上传 PDF',
+        replacePdf: '替换 PDF',
+        markIssued: '标记已开具',
+        void: '作废',
+        view: '查看',
+        downloadPdf: '下载 PDF',
+      },
+      dialogs: {
+        reject: {
+          title: '驳回发票',
+          reasonLabel: '驳回原因',
+          reasonRequired: '请填写驳回原因',
+          confirm: '确认驳回',
+        },
+        upload: {
+          title: '上传发票 PDF',
+          fileLabel: '选择 PDF 文件',
+          invoiceNoLabel: '发票号',
+          invoiceNoPlaceholder: '可选；为空时系统自动生成占位号',
+          sizeTip: '单个文件最大 8 MiB，仅支持 PDF',
+          confirm: '上传并标记已开具',
+          uploading: '上传中…',
+        },
+        void: {
+          title: '作废发票',
+          reasonLabel: '作废原因',
+          reasonRequired: '请填写作废原因',
+          warningIssued: '该发票已开具，作废后将释放占用订单，但已下发给用户的 PDF 不会被撤回。',
+          confirm: '确认作废',
+        },
+        markIssued: {
+          note: '仅记录发票号、不上传 PDF。适用于线下已开过纸票或第三方系统已出票的场景。',
+        },
+      },
+      toast: {
+        approved: '已通过',
+        rejected: '已驳回',
+        uploaded: '已上传并开具',
+        marked: '已标记开具',
+        voided: '已作废',
+      },
+    },
+
     // Dashboard
     dashboard: {
       title: '管理控制台',
@@ -1959,6 +2070,13 @@ export default {
         withdrawalAllowed: '允许提现',
         withdrawalAllowedHint: '开启后该用户可从「我的推广」申请将可使用佣金提现',
         notes: '备注（仅管理员可见）'
+      },
+      invoiceConfig: {
+        menuItem: '发票设置',
+        title: '发票配置',
+        enabled: '允许该用户开发票',
+        enabledHint: '开启后该用户登录后能在侧栏看到「我的发票」并提交申请；关闭则隐藏',
+        defaultForAllOnNote: '当前全局策略为「默认对全部用户开发票」，所有用户都已可见，此处单用户开关不生效。如需白名单制，请到「系统设置 → 支付设置 → 发票配置」关闭该选项。'
       },
       // 余额变动记录
       balanceHistory: '充值记录',
@@ -5440,6 +5558,14 @@ export default {
         refereeBonusHint: '被邀请人首次充值或订阅履约成功后到账的赠金金额（¥）。设置为 0 则不发放',
         defaultForAllUsers: '默认对全部用户可见',
         defaultForAllUsersHint: '开启后所有用户默认可见「我的推广」并自动累积佣金；关闭后仅管理员在用户返佣设置中显式启用的用户可见'
+      },
+      invoice: {
+        title: '发票配置',
+        description: '控制是否启用发票申请功能，以及哪些用户可以看到「我的发票」菜单',
+        enable: '启用开发票',
+        enableHint: '总开关。关闭时全站不显示发票相关菜单和接口；开启后用户/管理员后台对应菜单生效',
+        defaultForAllUsers: '默认对全部用户开发票',
+        defaultForAllUsersHint: '开启 = 所有用户登录后都能看到「我的发票」；关闭 = 白名单制，仅管理员在「用户管理 → 用户列表 → 更多 → 发票设置」中显式启用的用户可见'
       },
       turnstile: {
         title: 'Cloudflare Turnstile',

@@ -263,6 +263,9 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		ReferralCommissionRate:     settings.ReferralCommissionRate,
 		ReferralRefereeBonusAmount: settings.ReferralRefereeBonusAmount,
 		ReferralDefaultForAllUsers: settings.ReferralDefaultForAllUsers,
+
+		InvoiceEnabled:            settings.InvoiceEnabled,
+		InvoiceDefaultForAllUsers: settings.InvoiceDefaultForAllUsers,
 	}
 
 	// OpenAI fast policy (stored under a dedicated setting key)
@@ -565,6 +568,10 @@ type UpdateSettingsRequest struct {
 	ReferralCommissionRate     *float64 `json:"referral_commission_rate"`
 	ReferralRefereeBonusAmount *float64 `json:"referral_referee_bonus_amount"`
 	ReferralDefaultForAllUsers *bool    `json:"referral_default_for_all_users"`
+
+	// 发票（指针类型 → 允许部分更新）
+	InvoiceEnabled            *bool `json:"invoice_enabled"`
+	InvoiceDefaultForAllUsers *bool `json:"invoice_default_for_all_users"`
 
 	// 风控中心功能开关
 	RiskControlEnabled *bool `json:"risk_control_enabled"`
@@ -1482,6 +1489,18 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.ReferralDefaultForAllUsers
 		}(),
+		InvoiceEnabled: func() bool {
+			if req.InvoiceEnabled != nil {
+				return *req.InvoiceEnabled
+			}
+			return previousSettings.InvoiceEnabled
+		}(),
+		InvoiceDefaultForAllUsers: func() bool {
+			if req.InvoiceDefaultForAllUsers != nil {
+				return *req.InvoiceDefaultForAllUsers
+			}
+			return previousSettings.InvoiceDefaultForAllUsers
+		}(),
 		RiskControlEnabled: func() bool {
 			if req.RiskControlEnabled != nil {
 				return *req.RiskControlEnabled
@@ -1767,6 +1786,9 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		ReferralCommissionRate:     updatedSettings.ReferralCommissionRate,
 		ReferralRefereeBonusAmount: updatedSettings.ReferralRefereeBonusAmount,
 		ReferralDefaultForAllUsers: updatedSettings.ReferralDefaultForAllUsers,
+
+		InvoiceEnabled:            updatedSettings.InvoiceEnabled,
+		InvoiceDefaultForAllUsers: updatedSettings.InvoiceDefaultForAllUsers,
 
 		RiskControlEnabled: updatedSettings.RiskControlEnabled,
 	}

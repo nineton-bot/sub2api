@@ -595,6 +595,22 @@ const OrderListIcon = {
     )
 }
 
+// ReceiptIcon — used for "我的发票/发票管理" menu: invoice document
+const ReceiptIcon = {
+  render: () =>
+    h(
+      'svg',
+      { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.5' },
+      [
+        h('path', {
+          'stroke-linecap': 'round',
+          'stroke-linejoin': 'round',
+          d: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2zM9 7h1'
+        })
+      ]
+    )
+}
+
 const ChevronDoubleRightIcon = {
   render: () =>
     h(
@@ -683,6 +699,12 @@ const flagPayment = makeSidebarFlag(FeatureFlags.payment)
 const flagAvailableChannels = makeSidebarFlag(FeatureFlags.availableChannels)
 const flagReferral = () =>
   !!appStore.cachedPublicSettings?.referral_enabled && appStore.referralEligible === true
+// 发票可见性：全局开关 invoice_enabled=true 且当前用户的 eligibility=true。
+// 真值表见 backend InvoiceService.IsVisibleForUser。
+const flagInvoice = () =>
+  !!appStore.cachedPublicSettings?.invoice_enabled && appStore.invoiceEligible === true
+// 管理员发票管理菜单仅看全局开关；per-user 不影响 admin 后台访问。
+const flagAdminInvoice = () => !!appStore.cachedPublicSettings?.invoice_enabled
 const flagRiskControl = makeSidebarFlag(FeatureFlags.riskControl)
 const flagOpsMonitoring = () => adminSettingsStore.opsMonitoringEnabled
 const flagAdminPayment = () => adminSettingsStore.paymentEnabled
@@ -705,6 +727,7 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
     { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
     { path: '/purchase', label: t('nav.buySubscription'), icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
     { path: '/orders', label: t('nav.myOrders'), icon: OrderListIcon, hideInSimpleMode: true, featureFlag: flagPayment },
+    { path: '/invoices', label: t('nav.invoices'), icon: ReceiptIcon, hideInSimpleMode: true, featureFlag: flagInvoice },
     { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/referral', label: t('nav.referral'), icon: RewardIcon, hideInSimpleMode: true, featureFlag: flagReferral },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
@@ -784,6 +807,7 @@ const adminNavItems = computed((): NavItem[] => {
         { path: '/admin/orders/plans', label: t('nav.paymentPlans'), icon: CreditCardIcon },
       ],
     },
+    { path: '/admin/invoices', label: t('nav.invoiceManagement'), icon: ReceiptIcon, hideInSimpleMode: true, featureFlag: flagAdminInvoice },
     { path: '/admin/usage', label: t('nav.usage'), icon: ChartIcon },
     { path: '/admin/referral', label: t('nav.adminReferral'), icon: ShareIcon, hideInSimpleMode: true }
   ]

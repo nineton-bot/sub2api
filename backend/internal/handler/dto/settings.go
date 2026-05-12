@@ -204,6 +204,10 @@ type SystemSettings struct {
 	// true=全员默认可见；false=仅 admin 显式启用才可见。
 	ReferralDefaultForAllUsers bool `json:"referral_default_for_all_users"`
 
+	// Invoice (发票)
+	InvoiceEnabled            bool `json:"invoice_enabled"`
+	InvoiceDefaultForAllUsers bool `json:"invoice_default_for_all_users"`
+
 	// Balance low notification
 	BalanceLowNotifyEnabled     bool               `json:"balance_low_notify_enabled"`
 	BalanceLowNotifyThreshold   float64            `json:"balance_low_notify_threshold"`
@@ -275,6 +279,8 @@ type PublicSettings struct {
 	ReferralEnabled                  bool                     `json:"referral_enabled"`
 	ReferralRefereeBonusAmount       float64                  `json:"referral_referee_bonus_amount"`
 	ReferralDefaultForAllUsers       bool                     `json:"referral_default_for_all_users"`
+	InvoiceEnabled                   bool                     `json:"invoice_enabled"`
+	InvoiceDefaultForAllUsers        bool                     `json:"invoice_default_for_all_users"`
 	Version                          string                   `json:"version"`
 	BalanceLowNotifyEnabled          bool                     `json:"balance_low_notify_enabled"`
 	AccountQuotaNotifyEnabled        bool                     `json:"account_quota_notify_enabled"`

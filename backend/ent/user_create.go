@@ -15,6 +15,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
 	"github.com/Wei-Shaw/sub2api/ent/group"
+	"github.com/Wei-Shaw/sub2api/ent/invoice"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/pendingauthsession"
 	"github.com/Wei-Shaw/sub2api/ent/promocodeusage"
@@ -381,6 +382,20 @@ func (_c *UserCreate) SetNillableRpmLimit(v *int) *UserCreate {
 	return _c
 }
 
+// SetInvoiceEnabled sets the "invoice_enabled" field.
+func (_c *UserCreate) SetInvoiceEnabled(v bool) *UserCreate {
+	_c.mutation.SetInvoiceEnabled(v)
+	return _c
+}
+
+// SetNillableInvoiceEnabled sets the "invoice_enabled" field if the given value is not nil.
+func (_c *UserCreate) SetNillableInvoiceEnabled(v *bool) *UserCreate {
+	if v != nil {
+		_c.SetInvoiceEnabled(*v)
+	}
+	return _c
+}
+
 // AddAPIKeyIDs adds the "api_keys" edge to the APIKey entity by IDs.
 func (_c *UserCreate) AddAPIKeyIDs(ids ...int64) *UserCreate {
 	_c.mutation.AddAPIKeyIDs(ids...)
@@ -531,6 +546,21 @@ func (_c *UserCreate) AddPaymentOrders(v ...*PaymentOrder) *UserCreate {
 	return _c.AddPaymentOrderIDs(ids...)
 }
 
+// AddInvoiceIDs adds the "invoices" edge to the Invoice entity by IDs.
+func (_c *UserCreate) AddInvoiceIDs(ids ...int64) *UserCreate {
+	_c.mutation.AddInvoiceIDs(ids...)
+	return _c
+}
+
+// AddInvoices adds the "invoices" edges to the Invoice entity.
+func (_c *UserCreate) AddInvoices(v ...*Invoice) *UserCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddInvoiceIDs(ids...)
+}
+
 // AddAuthIdentityIDs adds the "auth_identities" edge to the AuthIdentity entity by IDs.
 func (_c *UserCreate) AddAuthIdentityIDs(ids ...int64) *UserCreate {
 	_c.mutation.AddAuthIdentityIDs(ids...)
@@ -668,6 +698,10 @@ func (_c *UserCreate) defaults() error {
 		v := user.DefaultRpmLimit
 		_c.mutation.SetRpmLimit(v)
 	}
+	if _, ok := _c.mutation.InvoiceEnabled(); !ok {
+		v := user.DefaultInvoiceEnabled
+		_c.mutation.SetInvoiceEnabled(v)
+	}
 	return nil
 }
 
@@ -761,6 +795,9 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.RpmLimit(); !ok {
 		return &ValidationError{Name: "rpm_limit", err: errors.New(`ent: missing required field "User.rpm_limit"`)}
+	}
+	if _, ok := _c.mutation.InvoiceEnabled(); !ok {
+		return &ValidationError{Name: "invoice_enabled", err: errors.New(`ent: missing required field "User.invoice_enabled"`)}
 	}
 	return nil
 }
@@ -892,6 +929,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RpmLimit(); ok {
 		_spec.SetField(user.FieldRpmLimit, field.TypeInt, value)
 		_node.RpmLimit = value
+	}
+	if value, ok := _c.mutation.InvoiceEnabled(); ok {
+		_spec.SetField(user.FieldInvoiceEnabled, field.TypeBool, value)
+		_node.InvoiceEnabled = value
 	}
 	if nodes := _c.mutation.APIKeysIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1050,6 +1091,22 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(paymentorder.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.InvoicesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.InvoicesTable,
+			Columns: []string{user.InvoicesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(invoice.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1528,6 +1585,18 @@ func (u *UserUpsert) UpdateRpmLimit() *UserUpsert {
 // AddRpmLimit adds v to the "rpm_limit" field.
 func (u *UserUpsert) AddRpmLimit(v int) *UserUpsert {
 	u.Add(user.FieldRpmLimit, v)
+	return u
+}
+
+// SetInvoiceEnabled sets the "invoice_enabled" field.
+func (u *UserUpsert) SetInvoiceEnabled(v bool) *UserUpsert {
+	u.Set(user.FieldInvoiceEnabled, v)
+	return u
+}
+
+// UpdateInvoiceEnabled sets the "invoice_enabled" field to the value that was provided on create.
+func (u *UserUpsert) UpdateInvoiceEnabled() *UserUpsert {
+	u.SetExcluded(user.FieldInvoiceEnabled)
 	return u
 }
 
@@ -2028,6 +2097,20 @@ func (u *UserUpsertOne) AddRpmLimit(v int) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateRpmLimit() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateRpmLimit()
+	})
+}
+
+// SetInvoiceEnabled sets the "invoice_enabled" field.
+func (u *UserUpsertOne) SetInvoiceEnabled(v bool) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetInvoiceEnabled(v)
+	})
+}
+
+// UpdateInvoiceEnabled sets the "invoice_enabled" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateInvoiceEnabled() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateInvoiceEnabled()
 	})
 }
 
@@ -2694,6 +2777,20 @@ func (u *UserUpsertBulk) AddRpmLimit(v int) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateRpmLimit() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateRpmLimit()
+	})
+}
+
+// SetInvoiceEnabled sets the "invoice_enabled" field.
+func (u *UserUpsertBulk) SetInvoiceEnabled(v bool) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetInvoiceEnabled(v)
+	})
+}
+
+// UpdateInvoiceEnabled sets the "invoice_enabled" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateInvoiceEnabled() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateInvoiceEnabled()
 	})
 }
 

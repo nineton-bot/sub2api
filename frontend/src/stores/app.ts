@@ -36,6 +36,9 @@ export const useAppStore = defineStore('app', () => {
   // Per-user referral eligibility (null = 未查询；boolean = 最新查询结果)
   const referralEligible = ref<boolean | null>(null)
 
+  // Per-user invoice eligibility (null = 未查询；boolean = 最新查询结果)
+  const invoiceEligible = ref<boolean | null>(null)
+
   // Version cache state
   const versionLoaded = ref<boolean>(false)
   const versionLoading = ref<boolean>(false)
@@ -356,6 +359,8 @@ export const useAppStore = defineStore('app', () => {
         referral_enabled: false,
         referral_referee_bonus_amount: 0,
         referral_default_for_all_users: false,
+        invoice_enabled: false,
+        invoice_default_for_all_users: false,
         version: siteVersion.value,
         balance_low_notify_enabled: false,
         account_quota_notify_enabled: false,
@@ -418,6 +423,35 @@ export const useAppStore = defineStore('app', () => {
   }
 
   /**
+   * Fetch per-user invoice eligibility (authenticated endpoint).
+   * Sidebar uses this to decide whether to show the "我的发票" entry.
+   *
+   * 真值表（与后端 InvoiceService.IsVisibleForUser 保持一致）：
+   *   global invoice_enabled = false              → false
+   *   global invoice_enabled = true && default_for_all_users = true → true
+   *   global invoice_enabled = true && default_for_all_users = false → user.invoice_enabled
+   */
+  async function fetchInvoiceEligibility(force = false): Promise<void> {
+    if (invoiceEligible.value !== null && !force) return
+    if (cachedPublicSettings.value?.invoice_enabled !== true) {
+      invoiceEligible.value = false
+      return
+    }
+    try {
+      const { default: invoiceAPI } = await import('@/api/invoices')
+      const resp = await invoiceAPI.eligibility()
+      invoiceEligible.value = resp.data.enabled
+    } catch (err) {
+      console.error('fetchInvoiceEligibility failed:', err)
+      invoiceEligible.value = false
+    }
+  }
+
+  function clearInvoiceEligibility(): void {
+    invoiceEligible.value = null
+  }
+
+  /**
    * Initialize settings from injected config (window.__APP_CONFIG__)
    * This is called synchronously before Vue app mounts to prevent flash
    * @returns true if config was found and applied, false otherwise
@@ -449,6 +483,7 @@ export const useAppStore = defineStore('app', () => {
     docUrl,
     cachedPublicSettings,
     referralEligible,
+    invoiceEligible,
 
     // Version state
     versionLoaded,
@@ -491,6 +526,10 @@ export const useAppStore = defineStore('app', () => {
 
     // Referral eligibility actions
     fetchReferralEligibility,
-    clearReferralEligibility
+    clearReferralEligibility,
+
+    // Invoice eligibility actions
+    fetchInvoiceEligibility,
+    clearInvoiceEligibility
   }
 })

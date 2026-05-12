@@ -131,6 +131,18 @@ func (PaymentOrder) Fields() []ent.Field {
 			Nillable().
 			MaxLen(20),
 
+		// 发票绑定（反规范化字段，由 InvoiceService 维护）
+		// invoice_status: '' | pending | issued
+		// rejected/voided 状态在 InvoiceService 释放订单时会清空这两个字段
+		field.String("invoice_status").
+			MaxLen(20).
+			Default("").
+			Comment("'' | pending | issued"),
+		field.Int64("invoice_id").
+			Optional().
+			Nillable().
+			Comment("当前活跃发票 id"),
+
 		// 时间节点
 		field.Time("expires_at").
 			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}),
@@ -195,5 +207,7 @@ func (PaymentOrder) Indexes() []ent.Index {
 		index.Fields("paid_at"),
 		index.Fields("payment_type", "paid_at"),
 		index.Fields("order_type"),
+		index.Fields("invoice_status").
+			Annotations(entsql.IndexWhere("invoice_status <> ''")),
 	}
 }

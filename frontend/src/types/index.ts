@@ -201,6 +201,8 @@ export interface PublicSettings {
   referral_enabled: boolean
   referral_referee_bonus_amount: number
   referral_default_for_all_users: boolean
+  invoice_enabled: boolean
+  invoice_default_for_all_users: boolean
   version: string
   balance_low_notify_enabled: boolean
   account_quota_notify_enabled: boolean

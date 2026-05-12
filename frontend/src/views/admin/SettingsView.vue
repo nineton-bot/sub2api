@@ -5281,6 +5281,46 @@
           </div>
         </div>
 
+        <!-- Invoice (发票) Settings -->
+        <div class="card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.invoice.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.invoice.description') }}
+            </p>
+          </div>
+          <div class="space-y-5 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="font-medium text-gray-900 dark:text-white">{{
+                  t('admin.settings.invoice.enable')
+                }}</label>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.invoice.enableHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.invoice_enabled" />
+            </div>
+
+            <div
+              v-if="form.invoice_enabled"
+              class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
+            >
+              <div>
+                <label class="font-medium text-gray-900 dark:text-white">{{
+                  t('admin.settings.invoice.defaultForAllUsers')
+                }}</label>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.invoice.defaultForAllUsersHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.invoice_default_for_all_users" />
+            </div>
+          </div>
+        </div>
+
           <!-- Provider Management -->
           <PaymentProviderList
             v-if="form.payment_enabled"
@@ -6198,6 +6238,8 @@ const form = reactive<SettingsForm>({
   referral_commission_rate: 0.10,
   referral_referee_bonus_amount: 2.00,
   referral_default_for_all_users: true,
+  invoice_enabled: false,
+  invoice_default_for_all_users: false,
 });
 
 const authSourceDefaults = reactive<AuthSourceDefaultsState>(
@@ -7299,6 +7341,8 @@ async function saveSettings() {
       referral_commission_rate: Math.max(0, Math.min(1, Number(form.referral_commission_rate) || 0)),
       referral_referee_bonus_amount: Math.max(0, Number(form.referral_referee_bonus_amount) || 0),
       referral_default_for_all_users: !!form.referral_default_for_all_users,
+      invoice_enabled: !!form.invoice_enabled,
+      invoice_default_for_all_users: !!form.invoice_default_for_all_users,
     };
 
     // 仅当 openai_fast_policy_settings 已成功从后端加载时才回写，

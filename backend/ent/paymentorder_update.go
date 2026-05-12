@@ -566,6 +566,47 @@ func (_u *PaymentOrderUpdate) ClearRefundRequestedBy() *PaymentOrderUpdate {
 	return _u
 }
 
+// SetInvoiceStatus sets the "invoice_status" field.
+func (_u *PaymentOrderUpdate) SetInvoiceStatus(v string) *PaymentOrderUpdate {
+	_u.mutation.SetInvoiceStatus(v)
+	return _u
+}
+
+// SetNillableInvoiceStatus sets the "invoice_status" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableInvoiceStatus(v *string) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetInvoiceStatus(*v)
+	}
+	return _u
+}
+
+// SetInvoiceID sets the "invoice_id" field.
+func (_u *PaymentOrderUpdate) SetInvoiceID(v int64) *PaymentOrderUpdate {
+	_u.mutation.ResetInvoiceID()
+	_u.mutation.SetInvoiceID(v)
+	return _u
+}
+
+// SetNillableInvoiceID sets the "invoice_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableInvoiceID(v *int64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetInvoiceID(*v)
+	}
+	return _u
+}
+
+// AddInvoiceID adds value to the "invoice_id" field.
+func (_u *PaymentOrderUpdate) AddInvoiceID(v int64) *PaymentOrderUpdate {
+	_u.mutation.AddInvoiceID(v)
+	return _u
+}
+
+// ClearInvoiceID clears the value of the "invoice_id" field.
+func (_u *PaymentOrderUpdate) ClearInvoiceID() *PaymentOrderUpdate {
+	_u.mutation.ClearInvoiceID()
+	return _u
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_u *PaymentOrderUpdate) SetExpiresAt(v time.Time) *PaymentOrderUpdate {
 	_u.mutation.SetExpiresAt(v)
@@ -823,6 +864,11 @@ func (_u *PaymentOrderUpdate) check() error {
 			return &ValidationError{Name: "refund_requested_by", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.refund_requested_by": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.InvoiceStatus(); ok {
+		if err := paymentorder.InvoiceStatusValidator(v); err != nil {
+			return &ValidationError{Name: "invoice_status", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.invoice_status": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ClientIP(); ok {
 		if err := paymentorder.ClientIPValidator(v); err != nil {
 			return &ValidationError{Name: "client_ip", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.client_ip": %w`, err)}
@@ -1000,6 +1046,18 @@ func (_u *PaymentOrderUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.RefundRequestedByCleared() {
 		_spec.ClearField(paymentorder.FieldRefundRequestedBy, field.TypeString)
+	}
+	if value, ok := _u.mutation.InvoiceStatus(); ok {
+		_spec.SetField(paymentorder.FieldInvoiceStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.InvoiceID(); ok {
+		_spec.SetField(paymentorder.FieldInvoiceID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedInvoiceID(); ok {
+		_spec.AddField(paymentorder.FieldInvoiceID, field.TypeInt64, value)
+	}
+	if _u.mutation.InvoiceIDCleared() {
+		_spec.ClearField(paymentorder.FieldInvoiceID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(paymentorder.FieldExpiresAt, field.TypeTime, value)
@@ -1629,6 +1687,47 @@ func (_u *PaymentOrderUpdateOne) ClearRefundRequestedBy() *PaymentOrderUpdateOne
 	return _u
 }
 
+// SetInvoiceStatus sets the "invoice_status" field.
+func (_u *PaymentOrderUpdateOne) SetInvoiceStatus(v string) *PaymentOrderUpdateOne {
+	_u.mutation.SetInvoiceStatus(v)
+	return _u
+}
+
+// SetNillableInvoiceStatus sets the "invoice_status" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableInvoiceStatus(v *string) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetInvoiceStatus(*v)
+	}
+	return _u
+}
+
+// SetInvoiceID sets the "invoice_id" field.
+func (_u *PaymentOrderUpdateOne) SetInvoiceID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetInvoiceID()
+	_u.mutation.SetInvoiceID(v)
+	return _u
+}
+
+// SetNillableInvoiceID sets the "invoice_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableInvoiceID(v *int64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetInvoiceID(*v)
+	}
+	return _u
+}
+
+// AddInvoiceID adds value to the "invoice_id" field.
+func (_u *PaymentOrderUpdateOne) AddInvoiceID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.AddInvoiceID(v)
+	return _u
+}
+
+// ClearInvoiceID clears the value of the "invoice_id" field.
+func (_u *PaymentOrderUpdateOne) ClearInvoiceID() *PaymentOrderUpdateOne {
+	_u.mutation.ClearInvoiceID()
+	return _u
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_u *PaymentOrderUpdateOne) SetExpiresAt(v time.Time) *PaymentOrderUpdateOne {
 	_u.mutation.SetExpiresAt(v)
@@ -1899,6 +1998,11 @@ func (_u *PaymentOrderUpdateOne) check() error {
 			return &ValidationError{Name: "refund_requested_by", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.refund_requested_by": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.InvoiceStatus(); ok {
+		if err := paymentorder.InvoiceStatusValidator(v); err != nil {
+			return &ValidationError{Name: "invoice_status", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.invoice_status": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ClientIP(); ok {
 		if err := paymentorder.ClientIPValidator(v); err != nil {
 			return &ValidationError{Name: "client_ip", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.client_ip": %w`, err)}
@@ -2093,6 +2197,18 @@ func (_u *PaymentOrderUpdateOne) sqlSave(ctx context.Context) (_node *PaymentOrd
 	}
 	if _u.mutation.RefundRequestedByCleared() {
 		_spec.ClearField(paymentorder.FieldRefundRequestedBy, field.TypeString)
+	}
+	if value, ok := _u.mutation.InvoiceStatus(); ok {
+		_spec.SetField(paymentorder.FieldInvoiceStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.InvoiceID(); ok {
+		_spec.SetField(paymentorder.FieldInvoiceID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedInvoiceID(); ok {
+		_spec.AddField(paymentorder.FieldInvoiceID, field.TypeInt64, value)
+	}
+	if _u.mutation.InvoiceIDCleared() {
+		_spec.ClearField(paymentorder.FieldInvoiceID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(paymentorder.FieldExpiresAt, field.TypeTime, value)

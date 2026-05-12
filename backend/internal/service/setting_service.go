@@ -628,6 +628,8 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyReferralEnabled,
 		SettingKeyReferralRefereeBonusAmount,
 		SettingKeyReferralDefaultForAllUsers,
+		SettingKeyInvoiceEnabled,
+		SettingKeyInvoiceDefaultForAllUsers,
 		SettingKeyRiskControlEnabled,
 	}
 
@@ -751,6 +753,9 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 			}
 			return v == "true"
 		}(),
+
+		InvoiceEnabled:            settings[SettingKeyInvoiceEnabled] == "true",
+		InvoiceDefaultForAllUsers: settings[SettingKeyInvoiceDefaultForAllUsers] == "true",
 
 		RiskControlEnabled: settings[SettingKeyRiskControlEnabled] == "true",
 	}, nil
@@ -912,6 +917,10 @@ type PublicSettingsInjectionPayload struct {
 	ReferralRefereeBonusAmount float64 `json:"referral_referee_bonus_amount"`
 	ReferralDefaultForAllUsers bool    `json:"referral_default_for_all_users"`
 
+	// Invoice
+	InvoiceEnabled            bool `json:"invoice_enabled"`
+	InvoiceDefaultForAllUsers bool `json:"invoice_default_for_all_users"`
+
 	RiskControlEnabled bool `json:"risk_control_enabled"`
 }
 
@@ -966,6 +975,8 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		ReferralEnabled:                  settings.ReferralEnabled,
 		ReferralRefereeBonusAmount:       settings.ReferralRefereeBonusAmount,
 		ReferralDefaultForAllUsers:       settings.ReferralDefaultForAllUsers,
+		InvoiceEnabled:                   settings.InvoiceEnabled,
+		InvoiceDefaultForAllUsers:        settings.InvoiceDefaultForAllUsers,
 		Version:                          s.version,
 		BalanceLowNotifyEnabled:          settings.BalanceLowNotifyEnabled,
 		AccountQuotaNotifyEnabled:        settings.AccountQuotaNotifyEnabled,
@@ -1621,6 +1632,10 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyReferralRefereeBonusAmount] = strconv.FormatFloat(bonus, 'f', -1, 64)
 	updates[SettingKeyReferralDefaultForAllUsers] = strconv.FormatBool(settings.ReferralDefaultForAllUsers)
 
+	// 发票
+	updates[SettingKeyInvoiceEnabled] = strconv.FormatBool(settings.InvoiceEnabled)
+	updates[SettingKeyInvoiceDefaultForAllUsers] = strconv.FormatBool(settings.InvoiceDefaultForAllUsers)
+
 	return updates, nil
 }
 
@@ -2047,6 +2062,25 @@ func (s *SettingService) IsReferralDefaultForAllUsers(ctx context.Context) bool 
 	return value == "true"
 }
 
+// IsInvoiceEnabled 全局发票总开关（默认 false）。
+func (s *SettingService) IsInvoiceEnabled(ctx context.Context) bool {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyInvoiceEnabled)
+	if err != nil {
+		return false
+	}
+	return value == "true"
+}
+
+// IsInvoiceDefaultForAllUsers 发票默认可见性（默认 false=白名单制）。
+// 仅在 IsInvoiceEnabled=true 时有意义。
+func (s *SettingService) IsInvoiceDefaultForAllUsers(ctx context.Context) bool {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyInvoiceDefaultForAllUsers)
+	if err != nil {
+		return false
+	}
+	return value == "true"
+}
+
 // IsPasswordResetEnabled 检查是否启用密码重置功能
 // 要求：必须同时开启邮件验证
 func (s *SettingService) IsPasswordResetEnabled(ctx context.Context) bool {
@@ -2401,6 +2435,10 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		// V2：推广页默认可见性。种子为 "true" 保持 V1 行为（全员可见）；
 		// 管理员可关闭进入白名单模式（仅 user_referral_configs.enabled=true 的用户可见）。
 		SettingKeyReferralDefaultForAllUsers: "true",
+
+		// 发票（默认完全关闭；管理员主动启用后再决定是否全员开放）
+		SettingKeyInvoiceEnabled:            "false",
+		SettingKeyInvoiceDefaultForAllUsers: "false",
 	}
 
 	return s.settingRepo.SetMultiple(ctx, defaults)
@@ -2803,6 +2841,10 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	} else {
 		result.ReferralDefaultForAllUsers = true
 	}
+
+	// 发票：均默认 false（白名单制）
+	result.InvoiceEnabled = settings[SettingKeyInvoiceEnabled] == "true"
+	result.InvoiceDefaultForAllUsers = settings[SettingKeyInvoiceDefaultForAllUsers] == "true"
 
 	return result
 }

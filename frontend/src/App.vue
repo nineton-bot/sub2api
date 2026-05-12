@@ -72,6 +72,10 @@ watch(
       appStore.fetchReferralEligibility(true).catch((err) => {
         console.error('fetchReferralEligibility (auth watch) failed:', err)
       })
+      // Re-fetch per-user invoice eligibility
+      appStore.fetchInvoiceEligibility(true).catch((err) => {
+        console.error('fetchInvoiceEligibility (auth watch) failed:', err)
+      })
 
       // Register visibility change listener
       document.addEventListener('visibilitychange', onVisibilityChange)
@@ -80,6 +84,7 @@ watch(
       subscriptionStore.clear()
       announcementStore.reset()
       appStore.clearReferralEligibility()
+      appStore.clearInvoiceEligibility()
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   },
@@ -117,6 +122,9 @@ onMounted(async () => {
   if (authStore.isAuthenticated) {
     appStore.fetchReferralEligibility(true).catch((err) => {
       console.error('fetchReferralEligibility (boot) failed:', err)
+    })
+    appStore.fetchInvoiceEligibility(true).catch((err) => {
+      console.error('fetchInvoiceEligibility (boot) failed:', err)
     })
   }
 
