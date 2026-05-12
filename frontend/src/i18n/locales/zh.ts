@@ -6855,6 +6855,7 @@ export default {
       payInNewWindow: '请在新窗口中完成支付',
       payInNewWindowHint: '支付页面已在新窗口打开，请在新窗口中完成支付后返回此页面',
       openPayWindow: '重新打开支付页面',
+      popupBlockedHint: '若未自动弹出新窗口，可能被浏览器拦截，点击上方按钮可手动打开',
       expiresIn: '剩余支付时间',
       expired: '订单已过期',
       expiredDesc: '订单已超时，请重新创建订单',

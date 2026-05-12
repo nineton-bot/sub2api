@@ -108,6 +108,7 @@
           <button v-if="payUrl" class="btn btn-secondary text-sm" @click="reopenPopup">
             {{ t('payment.qr.openPayWindow') }}
           </button>
+          <p v-if="payUrl" class="text-center text-xs text-gray-400 dark:text-gray-500">{{ t('payment.qr.popupBlockedHint') }}</p>
         </div>
       </div>
       <div class="card p-4 text-center">
