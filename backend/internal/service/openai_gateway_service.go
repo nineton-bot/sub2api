@@ -336,7 +336,6 @@ type OpenAIGatewayService struct {
 	channelService        *ChannelService
 	balanceNotifyService  *BalanceNotifyService
 	settingService        *SettingService
-	referralService       *ReferralService // 用于消费扣费后异步释放充值型佣金
 
 	openaiWSPoolOnce              sync.Once
 	openaiWSStateStoreOnce        sync.Once
@@ -378,7 +377,6 @@ func NewOpenAIGatewayService(
 	channelService *ChannelService,
 	balanceNotifyService *BalanceNotifyService,
 	settingService *SettingService,
-	referralService *ReferralService,
 ) *OpenAIGatewayService {
 	svc := &OpenAIGatewayService{
 		accountRepo:         accountRepo,
@@ -410,7 +408,6 @@ func NewOpenAIGatewayService(
 		channelService:        channelService,
 		balanceNotifyService:  balanceNotifyService,
 		settingService:        settingService,
-		referralService:       referralService,
 		responseHeaderFilter:  compileResponseHeaderFilter(cfg),
 		codexSnapshotThrottle: newAccountWriteThrottle(openAICodexSnapshotPersistMinInterval),
 	}
@@ -516,7 +513,6 @@ func (s *OpenAIGatewayService) billingDeps() *billingDeps {
 		billingCacheService:  s.billingCacheService,
 		deferredService:      s.deferredService,
 		balanceNotifyService: s.balanceNotifyService,
-		referralService:      s.referralService,
 	}
 }
 
@@ -1995,16 +1991,7 @@ func (s *OpenAIGatewayService) handleFailoverSideEffects(ctx context.Context, re
 }
 
 // Forward forwards request to OpenAI API
-func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, body []byte) (result *OpenAIForwardResult, err error) {
-	// 当上游 SSE 截断（HTTP 200 但无 terminal event）时，主动给客户端发 error event
-	// 并解 sticky 绑定，让用户下一次请求自动回落到健康账号。
-	// handler 仅匹配 "missing terminal event" / "upstream stream ended without terminal event"
-	// 两条字符串，其他错误路径不受影响（详见 openai_incomplete_stream_failure.go）。
-	_, deferIsStream, _ := extractOpenAIRequestMetaFromBody(body)
-	defer func() {
-		s.handleIncompleteStreamFailure(ctx, c, account, body, deferIsStream, err)
-	}()
-
+func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, account *Account, body []byte) (*OpenAIForwardResult, error) {
 	startTime := time.Now()
 
 	restrictionResult := s.detectCodexClientRestriction(c, account)
@@ -5286,12 +5273,23 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	}
 	cost, err = s.calculateOpenAIRecordUsageCost(ctx, result, apiKey, billingModels, multiplier, imageMultiplier, tokens, serviceTier)
 	if err != nil {
-		return err
+		if !isUsagePricingUnavailableError(err) {
+			return err
+		}
+		logger.L().With(
+			zap.String("component", "service.openai_gateway"),
+			zap.Strings("billing_models", billingModels),
+			zap.String("requested_model", input.OriginalModel),
+			zap.String("mapped_model", input.ChannelMappedModel),
+			zap.String("upstream_model", result.UpstreamModel),
+			zap.Int64("api_key_id", apiKey.ID),
+			zap.Int64("account_id", account.ID),
+		).Warn("openai_usage.pricing_missing_record_zero_cost", zap.Error(err))
+		cost = &CostBreakdown{BillingMode: string(BillingModeToken)}
 	}
 
 	// Determine billing type
 	isSubscriptionBilling := subscription != nil && apiKey.Group != nil && apiKey.Group.IsSubscriptionType()
-	isRequestQuotaSubscription := isSubscriptionBilling && apiKey.Group != nil && apiKey.Group.IsRequestQuotaSubscription()
 	billingType := BillingTypeBalance
 	if isSubscriptionBilling {
 		billingType = BillingTypeSubscription
@@ -5397,16 +5395,15 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 
 	billingErr := func() error {
 		_, err := applyUsageBilling(ctx, requestID, usageLog, &postUsageBillingParams{
-			Cost:                       cost,
-			User:                       user,
-			APIKey:                     apiKey,
-			Account:                    account,
-			Subscription:               subscription,
-			RequestPayloadHash:         resolveUsageBillingPayloadFingerprint(ctx, input.RequestPayloadHash),
-			IsSubscriptionBill:         isSubscriptionBilling,
-			IsRequestQuotaSubscription: isRequestQuotaSubscription,
-			AccountRateMultiplier:      accountRateMultiplier,
-			APIKeyService:              input.APIKeyService,
+			Cost:                  cost,
+			User:                  user,
+			APIKey:                apiKey,
+			Account:               account,
+			Subscription:          subscription,
+			RequestPayloadHash:    resolveUsageBillingPayloadFingerprint(ctx, input.RequestPayloadHash),
+			IsSubscriptionBill:    isSubscriptionBilling,
+			AccountRateMultiplier: accountRateMultiplier,
+			APIKeyService:         input.APIKeyService,
 		}, s.billingDeps(), s.usageBillingRepo)
 		return err
 	}()
@@ -5452,6 +5449,17 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 		lastErr = errors.New("no non-empty billing model candidates")
 	}
 	return nil, fmt.Errorf("calculate OpenAI usage cost failed for billing models %s: %w", strings.Join(billingModels, ","), lastErr)
+}
+
+func isUsagePricingUnavailableError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, ErrModelPricingUnavailable) {
+		return true
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "no pricing available") || strings.Contains(msg, "pricing not found")
 }
 
 func (s *OpenAIGatewayService) calculateOpenAIRecordUsageTokenCost(

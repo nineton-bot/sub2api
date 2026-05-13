@@ -44,10 +44,11 @@ const (
 
 // Redeem type constants
 const (
-	RedeemTypeBalance      = domain.RedeemTypeBalance
-	RedeemTypeConcurrency  = domain.RedeemTypeConcurrency
-	RedeemTypeSubscription = domain.RedeemTypeSubscription
-	RedeemTypeInvitation   = domain.RedeemTypeInvitation
+	RedeemTypeBalance          = domain.RedeemTypeBalance
+	RedeemTypeConcurrency      = domain.RedeemTypeConcurrency
+	RedeemTypeSubscription     = domain.RedeemTypeSubscription
+	RedeemTypeInvitation       = domain.RedeemTypeInvitation
+	RedeemTypeAffiliateBalance = "affiliate_balance"
 )
 
 // PromoCode status constants
@@ -406,6 +407,10 @@ const (
 
 	// SettingKeyEnableAnthropicCacheTTL1hInjection 是否对 Anthropic OAuth/SetupToken 请求体注入 1h cache_control ttl（默认 false）
 	SettingKeyEnableAnthropicCacheTTL1hInjection = "enable_anthropic_cache_ttl_1h_injection"
+	// SettingKeyRewriteMessageCacheControl 是否改写 messages[*].content[*].cache_control（默认 false）
+	SettingKeyRewriteMessageCacheControl = "rewrite_message_cache_control"
+	// SettingKeyAntigravityUserAgentVersion Antigravity 上游 User-Agent 版本号（空值使用环境变量/默认值）
+	SettingKeyAntigravityUserAgentVersion = "antigravity_user_agent_version"
 
 	// SettingKeyEnableIncompleteStreamFailover 是否在上游 SSE 截断（HTTP 200 但缺
 	// terminal event）时主动给客户端发 error event 并解 sticky 绑定，让用户下一次

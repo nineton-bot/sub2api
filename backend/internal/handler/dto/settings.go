@@ -154,11 +154,13 @@ type SystemSettings struct {
 	BackendModeEnabled bool `json:"backend_mode_enabled"`
 
 	// Gateway forwarding behavior
-	EnableFingerprintUnification       bool `json:"enable_fingerprint_unification"`
-	EnableMetadataPassthrough          bool `json:"enable_metadata_passthrough"`
-	EnableCCHSigning                   bool `json:"enable_cch_signing"`
-	EnableAnthropicCacheTTL1hInjection bool `json:"enable_anthropic_cache_ttl_1h_injection"`
-	EnableIncompleteStreamFailover     bool `json:"enable_incomplete_stream_failover"`
+	EnableFingerprintUnification       bool   `json:"enable_fingerprint_unification"`
+	EnableMetadataPassthrough          bool   `json:"enable_metadata_passthrough"`
+	EnableCCHSigning                   bool   `json:"enable_cch_signing"`
+	EnableAnthropicCacheTTL1hInjection bool   `json:"enable_anthropic_cache_ttl_1h_injection"`
+	EnableIncompleteStreamFailover     bool   `json:"enable_incomplete_stream_failover"`
+	RewriteMessageCacheControl         bool   `json:"rewrite_message_cache_control"`
+	AntigravityUserAgentVersion        string `json:"antigravity_user_agent_version"`
 
 	// Web Search Emulation
 	WebSearchEmulationEnabled bool `json:"web_search_emulation_enabled"`
