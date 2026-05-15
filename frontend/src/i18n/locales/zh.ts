@@ -764,10 +764,12 @@ export default {
         anthropicHint:
           '示例采用 Anthropic Messages 风格配置，适合关联 Anthropic 分组的 API 密钥。你可以将 anthropic-compatible-model 替换为分组支持的实际模型，例如 qwen3-coder-next 或 qwen3.5-plus。'
       },
-      anthropic: {
-        availableModelsTitle: '可配置模型列表',
-        availableModelsHint:
-          '将 settings.json 中 ANTHROPIC_MODEL（或终端 export 的同名变量）替换为以下任一模型 ID 即可切换模型。'
+      modelPanel: {
+        title: '可用模型列表',
+        note: '建议使用 Anthropic 协议接入，兼容性最好。',
+        copyHint: '点击任意模型名称即可复制',
+        pill: '可用模型',
+        collapse: '收起'
       }
     },
     customKeyLabel: '自定义密钥',

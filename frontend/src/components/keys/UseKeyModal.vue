@@ -5,7 +5,7 @@
     width="wide"
     @close="emit('close')"
   >
-    <div ref="contentRootRef" class="space-y-4">
+    <div class="space-y-4">
       <!-- No Group Assigned Warning -->
       <div v-if="!platform" class="flex items-start gap-3 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
         <svg class="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -117,6 +117,68 @@
             {{ platformNote }}
           </p>
         </div>
+
+        <!-- 可用模型浮层（仅 anthropic + domestic_anthropic） -->
+        <div
+          v-if="isDomesticAnthropic"
+          class="pointer-events-none sticky bottom-0 z-30 h-0"
+        >
+          <!-- 展开态：可用模型列表面板 -->
+          <Transition name="model-panel">
+            <div
+              v-if="modelPanelExpanded"
+              class="model-anchor pointer-events-auto absolute bottom-3 right-0 w-72 overflow-hidden rounded-xl border border-primary-200 bg-white shadow-2xl dark:border-primary-800 dark:bg-dark-800"
+            >
+              <div class="flex items-center justify-between gap-2 border-b border-gray-100 px-3 py-2 dark:border-dark-700">
+                <span class="flex items-center gap-1.5 text-sm font-semibold text-gray-800 dark:text-gray-100">
+                  <Icon name="grid" size="sm" class="text-primary-500" />
+                  {{ t('keys.useKeyModal.modelPanel.title') }}
+                </span>
+                <button
+                  @click="collapseModelPanel"
+                  :title="t('keys.useKeyModal.modelPanel.collapse')"
+                  class="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-dark-700 dark:hover:text-gray-200"
+                >
+                  <Icon name="chevronDown" size="sm" />
+                </button>
+              </div>
+              <!-- 整个 note + 列表为单一滚动区，overscroll-contain 阻止滚动穿透到底层弹窗 -->
+              <div class="max-h-72 overflow-y-auto overscroll-contain">
+                <p class="px-3 pt-2 text-xs leading-relaxed text-primary-600 dark:text-primary-400">
+                  {{ t('keys.useKeyModal.modelPanel.note') }}
+                </p>
+                <p class="px-3 pb-1 pt-1 text-[11px] text-gray-400 dark:text-dark-500">
+                  {{ t('keys.useKeyModal.modelPanel.copyHint') }}
+                </p>
+                <div class="space-y-1 px-2 pb-2">
+                  <button
+                    v-for="model in DOMESTIC_ANTHROPIC_MODELS"
+                    :key="model.id"
+                    @click="copyModelName(model.id)"
+                    class="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left font-mono text-xs transition-colors"
+                    :class="copiedModel === model.id
+                      ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                      : 'text-gray-700 hover:bg-primary-50 dark:text-gray-200 dark:hover:bg-dark-700'"
+                  >
+                    <span class="truncate">{{ model.id }}</span>
+                    <Icon :name="copiedModel === model.id ? 'check' : 'copy'" size="xs" class="flex-shrink-0" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Transition>
+          <!-- 收起态：角标按钮 -->
+          <Transition name="model-pill">
+            <button
+              v-if="!modelPanelExpanded"
+              @click="expandModelPanel"
+              class="model-anchor pointer-events-auto absolute bottom-3 right-0 flex items-center gap-1.5 rounded-full border border-primary-200 bg-white px-3 py-1.5 text-xs font-medium text-primary-600 shadow-lg transition-colors hover:bg-primary-50 dark:border-primary-800 dark:bg-dark-800 dark:text-primary-400 dark:hover:bg-dark-700"
+            >
+              <Icon name="grid" size="sm" />
+              {{ t('keys.useKeyModal.modelPanel.pill') }}
+            </button>
+          </Transition>
+        </div>
       </template>
     </div>
 
@@ -134,7 +196,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, watch, nextTick, type Component } from 'vue'
+import { ref, computed, h, watch, onUnmounted, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -142,21 +204,35 @@ import { useClipboard } from '@/composables/useClipboard'
 import type { GroupPlatform, GroupConfigTemplate } from '@/types'
 
 // 国产 Anthropic 协议模型（config_template = domestic_anthropic）
-// 同时用于 openclaw models 列表和 Claude Code 可配置模型说明
+// 单一数据源：同时驱动「可用模型」浮层、OpenClaw 与 OpenCode 配置示例的模型清单
+// 取阿里云百炼 Token Plan ∪ Coding Plan 模型，并补充小米 MiMo 模型；按系列分组排列
 const DOMESTIC_ANTHROPIC_MODELS = [
+  // 通义千问 Qwen
   { id: 'qwen3.6-plus', name: 'qwen3.6-plus', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 65536 },
+  { id: 'qwen3.6-flash', name: 'qwen3.6-flash', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 32768 },
   { id: 'qwen3.5-plus', name: 'qwen3.5-plus', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1000000, maxTokens: 65536 },
   { id: 'qwen3-max-2026-01-23', name: 'qwen3-max-2026-01-23', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 65536 },
   { id: 'qwen3-coder-plus', name: 'qwen3-coder-plus', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 65536 },
   { id: 'qwen3-coder-next', name: 'qwen3-coder-next', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 65536 },
+  // DeepSeek
+  { id: 'deepseek-v4-pro', name: 'deepseek-v4-pro', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 163840, maxTokens: 32768 },
+  { id: 'deepseek-v4-flash', name: 'deepseek-v4-flash', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 163840, maxTokens: 16384 },
   { id: 'deepseek-v3.2', name: 'deepseek-v3.2', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 131072, maxTokens: 32768 },
+  // MiniMax
   { id: 'MiniMax-M2.7', name: 'MiniMax-M2.7', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 131072 },
   { id: 'MiniMax-M2.7-highspeed', name: 'MiniMax-M2.7-highspeed', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 131072 },
   { id: 'MiniMax-M2.5', name: 'MiniMax-M2.5', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 204800, maxTokens: 131072 },
+  // 智谱 GLM
   { id: 'glm-5.1', name: 'glm-5.1', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 202752, maxTokens: 16384 },
   { id: 'glm-5', name: 'glm-5', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 202752, maxTokens: 16384 },
+  // Kimi
   { id: 'kimi-k2.6', name: 'kimi-k2.6', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
   { id: 'kimi-k2.5', name: 'kimi-k2.5', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+  // 小米 MiMo
+  { id: 'mimo-v2.5-pro', name: 'mimo-v2.5-pro', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+  { id: 'mimo-v2-pro', name: 'mimo-v2-pro', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+  { id: 'mimo-v2.5', name: 'mimo-v2.5', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
+  { id: 'mimo-v2-omni', name: 'mimo-v2-omni', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 },
 ]
 
 interface Props {
@@ -194,15 +270,22 @@ const { copyToClipboard: clipboardCopy } = useClipboard()
 const copiedIndex = ref<number | null>(null)
 const activeTab = ref<string>('unix')
 const activeClientTab = ref<string>('claude')
-const contentRootRef = ref<HTMLElement | null>(null)
+
+// 可用模型浮层状态（仅 anthropic + domestic_anthropic 生效）
+const MODEL_PANEL_AUTO_COLLAPSE_MS = 5000
+const isDomesticAnthropic = computed(
+  () => props.platform === 'anthropic' && props.configTemplate === 'domestic_anthropic'
+)
+const modelPanelExpanded = ref(false)
+const copiedModel = ref<string | null>(null)
+let modelPanelTimer: ReturnType<typeof setTimeout> | undefined
+let copiedModelTimer: ReturnType<typeof setTimeout> | undefined
 
 // Reset tabs when platform changes
 const defaultClientTab = computed(() => {
   switch (props.platform) {
     case 'openai':
-      return 'openclaw'
-    case 'anthropic':
-      return 'openclaw'
+      return 'codex'
     case 'gemini':
       return 'gemini'
     case 'antigravity':
@@ -217,49 +300,60 @@ watch(() => props.platform, () => {
   activeClientTab.value = defaultClientTab.value
 }, { immediate: true })
 
-// For domestic_anthropic + Claude Code tab the third code block (model list) lives
-// below the fold. Nudge the modal-body scroll down briefly so users see there's
-// more content, then snap back to the top.
-function findScrollParent(el: HTMLElement | null): HTMLElement | null {
-  let node: HTMLElement | null = el?.parentElement ?? null
-  while (node) {
-    const style = window.getComputedStyle(node)
-    if (/auto|scroll/.test(style.overflowY) && node.scrollHeight > node.clientHeight) {
-      return node
-    }
-    node = node.parentElement
-  }
-  return null
-}
-
-function runScrollHint() {
-  const root = contentRootRef.value
-  if (!root) return
-  const scroller = findScrollParent(root)
-  if (!scroller) return
-  const maxScroll = scroller.scrollHeight - scroller.clientHeight
-  if (maxScroll <= 8) return
-  const target = Math.min(160, maxScroll)
-  scroller.scrollTo({ top: target, behavior: 'smooth' })
-  window.setTimeout(() => {
-    scroller.scrollTo({ top: 0, behavior: 'smooth' })
-  }, 900)
-}
-
-// Reset shell tab when client changes, and fire the scroll hint only when the
-// user switches INTO the Claude Code tab (the Claude tab layout reads as if
-// the content ends above the fold, so we nudge-and-restore to reveal the
-// third code block listing domestic models).
-watch(activeClientTab, async (tab) => {
+// Reset shell tab when switching client tabs.
+watch(activeClientTab, () => {
   activeTab.value = 'unix'
-  if (!props.show) return
-  const shouldHint =
-    props.platform === 'anthropic' &&
-    props.configTemplate === 'domestic_anthropic' &&
-    tab === 'claude'
-  if (!shouldHint) return
-  await nextTick()
-  window.setTimeout(runScrollHint, 350)
+})
+
+function clearModelPanelTimer() {
+  if (modelPanelTimer !== undefined) {
+    clearTimeout(modelPanelTimer)
+    modelPanelTimer = undefined
+  }
+}
+
+// 打开引导弹窗时自动展开「可用模型」浮层，5 秒无操作后收起为角标按钮。
+watch(
+  () => props.show,
+  (visible) => {
+    clearModelPanelTimer()
+    if (visible && isDomesticAnthropic.value) {
+      modelPanelExpanded.value = true
+      modelPanelTimer = setTimeout(() => {
+        modelPanelExpanded.value = false
+      }, MODEL_PANEL_AUTO_COLLAPSE_MS)
+    } else {
+      modelPanelExpanded.value = false
+    }
+  },
+  { immediate: true }
+)
+
+function expandModelPanel() {
+  clearModelPanelTimer()
+  modelPanelExpanded.value = true
+}
+
+function collapseModelPanel() {
+  clearModelPanelTimer()
+  modelPanelExpanded.value = false
+}
+
+async function copyModelName(model: string) {
+  clearModelPanelTimer()
+  const success = await clipboardCopy(model, t('keys.copied'))
+  if (success) {
+    copiedModel.value = model
+    if (copiedModelTimer !== undefined) clearTimeout(copiedModelTimer)
+    copiedModelTimer = setTimeout(() => {
+      copiedModel.value = null
+    }, 1500)
+  }
+}
+
+onUnmounted(() => {
+  clearModelPanelTimer()
+  if (copiedModelTimer !== undefined) clearTimeout(copiedModelTimer)
 })
 
 // Icon components
@@ -330,7 +424,6 @@ const clientTabs = computed((): TabConfig[] => {
   switch (props.platform) {
     case 'openai': {
       const tabs: TabConfig[] = [
-        { id: 'openclaw', label: t('keys.useKeyModal.cliTabs.openclaw'), icon: TerminalIcon },
         { id: 'codex', label: t('keys.useKeyModal.cliTabs.codexCli'), icon: TerminalIcon },
         { id: 'codex-ws', label: t('keys.useKeyModal.cliTabs.codexCliWs'), icon: TerminalIcon },
       ]
@@ -338,6 +431,7 @@ const clientTabs = computed((): TabConfig[] => {
         tabs.push({ id: 'claude', label: t('keys.useKeyModal.cliTabs.claudeCode'), icon: TerminalIcon })
       }
       tabs.push({ id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon })
+      tabs.push({ id: 'openclaw', label: t('keys.useKeyModal.cliTabs.openclaw'), icon: TerminalIcon })
       return tabs
     }
     case 'gemini':
@@ -353,9 +447,9 @@ const clientTabs = computed((): TabConfig[] => {
       ]
     default:
       return [
-        { id: 'openclaw', label: t('keys.useKeyModal.cliTabs.openclaw'), icon: TerminalIcon },
         { id: 'claude', label: t('keys.useKeyModal.cliTabs.claudeCode'), icon: TerminalIcon },
-        { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon }
+        { id: 'opencode', label: t('keys.useKeyModal.cliTabs.opencode'), icon: TerminalIcon },
+        { id: 'openclaw', label: t('keys.useKeyModal.cliTabs.openclaw'), icon: TerminalIcon }
       ]
   }
 })
@@ -537,9 +631,23 @@ function generateAnthropicFiles(baseUrl: string, apiKey: string): FileConfig[] {
   let path: string
   let content: string
 
-  const unixExtraModel = isDomestic ? `\nexport ANTHROPIC_MODEL="${domesticModel}"` : ''
-  const cmdExtraModel = isDomestic ? `\nset ANTHROPIC_MODEL=${domesticModel}` : ''
-  const psExtraModel = isDomestic ? `\n$env:ANTHROPIC_MODEL="${domesticModel}"` : ''
+  // 国产模型不带 haiku/sonnet/opus 别名，需把 Claude Code 内部各档位模型全部映射到国产模型
+  const domesticModelKeys = [
+    'ANTHROPIC_MODEL',
+    'ANTHROPIC_DEFAULT_HAIKU_MODEL',
+    'ANTHROPIC_DEFAULT_SONNET_MODEL',
+    'ANTHROPIC_DEFAULT_OPUS_MODEL',
+    'CLAUDE_CODE_SUBAGENT_MODEL',
+  ]
+  const unixExtraModel = isDomestic
+    ? '\n' + domesticModelKeys.map((k) => `export ${k}="${domesticModel}"`).join('\n')
+    : ''
+  const cmdExtraModel = isDomestic
+    ? '\n' + domesticModelKeys.map((k) => `set ${k}=${domesticModel}`).join('\n')
+    : ''
+  const psExtraModel = isDomestic
+    ? '\n' + domesticModelKeys.map((k) => `$env:${k}="${domesticModel}"`).join('\n')
+    : ''
 
   switch (activeTab.value) {
     case 'unix':
@@ -576,7 +684,10 @@ $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1${psExtraModel}`
     `    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"${isDomestic ? ',' : ''}`,
   ]
   if (isDomestic) {
-    vscodeEnvLines.push(`    "ANTHROPIC_MODEL": "${domesticModel}"`)
+    domesticModelKeys.forEach((k, i) => {
+      const comma = i < domesticModelKeys.length - 1 ? ',' : ''
+      vscodeEnvLines.push(`    "${k}": "${domesticModel}"${comma}`)
+    })
   }
   const vscodeContent = `{
   "env": {
@@ -584,21 +695,10 @@ ${vscodeEnvLines.join('\n')}
   }
 }`
 
-  const files: FileConfig[] = [
+  return [
     { path, content },
     { path: vscodeSettingsPath, content: vscodeContent, hint: 'VSCode Claude Code' },
   ]
-
-  if (isDomestic) {
-    const modelIds = DOMESTIC_ANTHROPIC_MODELS.map((m) => m.id).join('\n')
-    files.push({
-      path: t('keys.useKeyModal.anthropic.availableModelsTitle'),
-      content: modelIds,
-      hint: t('keys.useKeyModal.anthropic.availableModelsHint'),
-    })
-  }
-
-  return files
 }
 
 function generateGeminiCliContent(baseUrl: string, apiKey: string): FileConfig {
@@ -1117,6 +1217,22 @@ function generateOpenCodeConfig(platform: string, baseUrl: string, apiKey: strin
     provider[platform].models = geminiModels
   } else if (platform === 'anthropic') {
     provider[platform].npm = '@ai-sdk/anthropic'
+    // domestic_anthropic：注入国产模型清单（沿用 Anthropic 协议）
+    if (props.configTemplate === 'domestic_anthropic') {
+      provider[platform].models = Object.fromEntries(
+        DOMESTIC_ANTHROPIC_MODELS.map((m) => [
+          m.id,
+          {
+            name: m.name,
+            limit: { context: m.contextWindow, output: m.maxTokens },
+            modalities: {
+              input: m.input.includes('image') ? ['text', 'image'] : ['text'],
+              output: ['text'],
+            },
+          },
+        ])
+      )
+    }
   } else if (platform === 'antigravity-claude') {
     provider[platform].npm = '@ai-sdk/anthropic'
     provider[platform].name = 'Antigravity (Claude)'
@@ -1345,3 +1461,26 @@ const copyContent = async (content: string, index: number) => {
   }
 }
 </script>
+
+<style scoped>
+/* 浮层在角标与面板之间切换时，朝右下角缩放，呈现「收回 / 展开」动效 */
+.model-anchor {
+  transform-origin: bottom right;
+}
+.model-panel-enter-active,
+.model-panel-leave-active,
+.model-pill-enter-active,
+.model-pill-leave-active {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.model-panel-enter-from,
+.model-panel-leave-to {
+  opacity: 0;
+  transform: scale(0.55) translateY(12px);
+}
+.model-pill-enter-from,
+.model-pill-leave-to {
+  opacity: 0;
+  transform: scale(0.6);
+}
+</style>
