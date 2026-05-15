@@ -64,6 +64,7 @@
         </div>
       </div>
 
+
       <!-- Registration Disabled Message -->
       <div
         v-if="!registrationEnabled && settingsLoaded"
