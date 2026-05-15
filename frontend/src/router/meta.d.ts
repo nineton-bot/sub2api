@@ -56,6 +56,13 @@ declare module 'vue-router' {
     requiresRiskControl?: boolean
 
     /**
+     * 是否要求发票功能开关（invoice_enabled）已启用。
+     * 独立于 payment，发票模块允许部署在禁用支付的实例上。
+     * @default false
+     */
+    requiresInvoice?: boolean
+
+    /**
      * i18n key for the page title
      */
     titleKey?: string
