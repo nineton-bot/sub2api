@@ -159,6 +159,32 @@ func (h *InvoiceHandler) CancelInvoice(c *gin.Context) {
 	response.Success(c, gin.H{"message": "invoice cancelled"})
 }
 
+// RequestVoid 用户对 issued 发票发起作废申请。
+// POST /api/v1/invoices/:id/void-request  body: { "reason": "..." }
+func (h *InvoiceHandler) RequestVoid(c *gin.Context) {
+	subject, ok := requireAuth(c)
+	if !ok {
+		return
+	}
+	if !h.guardVisibility(c, subject.UserID) {
+		return
+	}
+	id, ok := parseInvoiceID(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	_ = c.ShouldBindJSON(&req)
+	dto, err := h.invoiceService.CreateVoidRequest(c.Request.Context(), subject.UserID, id, req.Reason)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, dto)
+}
+
 // DownloadInvoicePDF streams the issued PDF to the user.
 // GET /api/v1/invoices/:id/pdf
 func (h *InvoiceHandler) DownloadInvoicePDF(c *gin.Context) {

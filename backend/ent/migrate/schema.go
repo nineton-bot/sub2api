@@ -795,10 +795,15 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "user_email", Type: field.TypeString, Size: 255},
+		{Name: "application_no", Type: field.TypeString, Size: 32, Default: ""},
 		{Name: "title_type", Type: field.TypeString, Size: 20},
 		{Name: "title", Type: field.TypeString, Size: 200},
 		{Name: "tax_no", Type: field.TypeString, Size: 64, Default: ""},
 		{Name: "contact_email", Type: field.TypeString, Size: 255, Default: ""},
+		{Name: "buyer_address", Type: field.TypeString, Size: 200, Default: ""},
+		{Name: "buyer_phone", Type: field.TypeString, Size: 32, Default: ""},
+		{Name: "buyer_bank_name", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "buyer_bank_account", Type: field.TypeString, Size: 64, Default: ""},
 		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
 		{Name: "currency", Type: field.TypeString, Size: 8, Default: "CNY"},
 		{Name: "notes", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
@@ -814,8 +819,20 @@ var (
 		{Name: "pdf_size", Type: field.TypeInt64, Default: 0},
 		{Name: "pdf_sha256", Type: field.TypeString, Size: 64, Default: ""},
 		{Name: "pdf_original_name", Type: field.TypeString, Size: 255, Default: ""},
+		{Name: "invoice_kind", Type: field.TypeString, Size: 10, Default: "normal"},
+		{Name: "invoice_type_code", Type: field.TypeString, Size: 4, Default: ""},
 		{Name: "provider", Type: field.TypeString, Size: 30, Default: "manual"},
+		{Name: "provider_state", Type: field.TypeString, Size: 20, Default: "none"},
+		{Name: "provider_trace_id", Type: field.TypeString, Size: 128, Default: ""},
+		{Name: "provider_last_error", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "provider_retry_count", Type: field.TypeInt, Default: 0},
 		{Name: "provider_payload", Type: field.TypeJSON, Nullable: true, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "reverse_step", Type: field.TypeString, Size: 20, Default: ""},
+		{Name: "red_advice_num", Type: field.TypeString, Size: 100, Default: ""},
+		{Name: "red_confirm_num", Type: field.TypeString, Size: 60, Default: ""},
+		{Name: "reverse_trace_id", Type: field.TypeString, Size: 128, Default: ""},
+		{Name: "red_invoice_no", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "red_pdf_path", Type: field.TypeString, Size: 512, Default: ""},
 		{Name: "voided_by", Type: field.TypeInt64, Nullable: true},
 		{Name: "user_id", Type: field.TypeInt64},
 	}
@@ -827,7 +844,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "invoices_users_invoices",
-				Columns:    []*schema.Column{InvoicesColumns[26]},
+				Columns:    []*schema.Column{InvoicesColumns[43]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -836,20 +853,49 @@ var (
 			{
 				Name:    "invoice_user_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{InvoicesColumns[26], InvoicesColumns[11]},
+				Columns: []*schema.Column{InvoicesColumns[43], InvoicesColumns[16]},
 			},
 			{
 				Name:    "invoice_status_submitted_at",
 				Unique:  false,
-				Columns: []*schema.Column{InvoicesColumns[11], InvoicesColumns[12]},
+				Columns: []*schema.Column{InvoicesColumns[16], InvoicesColumns[17]},
 			},
 			{
 				Name:    "invoice_invoice_no",
 				Unique:  true,
-				Columns: []*schema.Column{InvoicesColumns[17]},
+				Columns: []*schema.Column{InvoicesColumns[22]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "invoice_no <> ''",
 				},
+			},
+			{
+				Name:    "invoice_application_no",
+				Unique:  true,
+				Columns: []*schema.Column{InvoicesColumns[4]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "application_no <> ''",
+				},
+			},
+			{
+				Name:    "invoice_provider_trace_id",
+				Unique:  true,
+				Columns: []*schema.Column{InvoicesColumns[32]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "provider_trace_id <> ''",
+				},
+			},
+			{
+				Name:    "invoice_reverse_trace_id",
+				Unique:  true,
+				Columns: []*schema.Column{InvoicesColumns[39]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "reverse_trace_id <> ''",
+				},
+			},
+			{
+				Name:    "invoice_provider_state",
+				Unique:  false,
+				Columns: []*schema.Column{InvoicesColumns[31]},
 			},
 		},
 	}
@@ -888,6 +934,42 @@ var (
 				Name:    "invoiceitem_payment_order_id",
 				Unique:  true,
 				Columns: []*schema.Column{InvoiceItemsColumns[1]},
+			},
+		},
+	}
+	// InvoiceVoidRequestsColumns holds the columns for the "invoice_void_requests" table.
+	InvoiceVoidRequestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "invoice_id", Type: field.TypeInt64},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "pending_review"},
+		{Name: "reason", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "admin_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "admin_notes", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "reviewed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+	}
+	// InvoiceVoidRequestsTable holds the schema information for the "invoice_void_requests" table.
+	InvoiceVoidRequestsTable = &schema.Table{
+		Name:       "invoice_void_requests",
+		Columns:    InvoiceVoidRequestsColumns,
+		PrimaryKey: []*schema.Column{InvoiceVoidRequestsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "invoicevoidrequest_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{InvoiceVoidRequestsColumns[3], InvoiceVoidRequestsColumns[5]},
+			},
+			{
+				Name:    "invoicevoidrequest_invoice_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{InvoiceVoidRequestsColumns[4], InvoiceVoidRequestsColumns[5]},
+			},
+			{
+				Name:    "invoicevoidrequest_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{InvoiceVoidRequestsColumns[5], InvoiceVoidRequestsColumns[1]},
 			},
 		},
 	}
@@ -1422,6 +1504,49 @@ var (
 				Name:    "referralwithdrawal_status_requested_at",
 				Unique:  false,
 				Columns: []*schema.Column{ReferralWithdrawalsColumns[8], ReferralWithdrawalsColumns[9]},
+			},
+		},
+	}
+	// RefundRequestsColumns holds the columns for the "refund_requests" table.
+	RefundRequestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "user_id", Type: field.TypeInt64},
+		{Name: "payment_order_id", Type: field.TypeString, Size: 64},
+		{Name: "invoice_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "awaiting_reverse"},
+		{Name: "reason", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "amount", Type: field.TypeFloat64, SchemaType: map[string]string{"postgres": "decimal(20,2)"}},
+		{Name: "admin_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "admin_notes", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "last_error", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+	}
+	// RefundRequestsTable holds the schema information for the "refund_requests" table.
+	RefundRequestsTable = &schema.Table{
+		Name:       "refund_requests",
+		Columns:    RefundRequestsColumns,
+		PrimaryKey: []*schema.Column{RefundRequestsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "refundrequest_user_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{RefundRequestsColumns[3], RefundRequestsColumns[6]},
+			},
+			{
+				Name:    "refundrequest_payment_order_id",
+				Unique:  false,
+				Columns: []*schema.Column{RefundRequestsColumns[4]},
+			},
+			{
+				Name:    "refundrequest_invoice_id",
+				Unique:  false,
+				Columns: []*schema.Column{RefundRequestsColumns[5]},
+			},
+			{
+				Name:    "refundrequest_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{RefundRequestsColumns[6], RefundRequestsColumns[1]},
 			},
 		},
 	}
@@ -1999,6 +2124,7 @@ var (
 		IdentityAdoptionDecisionsTable,
 		InvoicesTable,
 		InvoiceItemsTable,
+		InvoiceVoidRequestsTable,
 		PaymentAuditLogsTable,
 		PaymentOrdersTable,
 		PaymentProviderInstancesTable,
@@ -2011,6 +2137,7 @@ var (
 		ReferralCommissionReleaseLogsTable,
 		ReferralPendingBonusesTable,
 		ReferralWithdrawalsTable,
+		RefundRequestsTable,
 		SecuritySecretsTable,
 		SettingsTable,
 		SubscriptionPlansTable,
@@ -2094,6 +2221,9 @@ func init() {
 	InvoiceItemsTable.Annotation = &entsql.Annotation{
 		Table: "invoice_items",
 	}
+	InvoiceVoidRequestsTable.Annotation = &entsql.Annotation{
+		Table: "invoice_void_requests",
+	}
 	PaymentAuditLogsTable.Annotation = &entsql.Annotation{
 		Table: "payment_audit_logs",
 	}
@@ -2135,6 +2265,9 @@ func init() {
 	}
 	ReferralWithdrawalsTable.Annotation = &entsql.Annotation{
 		Table: "referral_withdrawals",
+	}
+	RefundRequestsTable.Annotation = &entsql.Annotation{
+		Table: "refund_requests",
 	}
 	SecuritySecretsTable.Annotation = &entsql.Annotation{
 		Table: "security_secrets",

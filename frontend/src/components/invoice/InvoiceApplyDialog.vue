@@ -34,6 +34,34 @@
           class="input w-full"
           :placeholder="t('invoices.fields.emailPlaceholder')"
         />
+
+        <!-- 购方补充信息（仅企业抬头可见，全部选填；不填默认开普票）-->
+        <template v-if="form.title_type === 'business'">
+          <input
+            v-model="form.buyer_address"
+            type="text"
+            class="input w-full"
+            placeholder="注册地址（选填）"
+          />
+          <input
+            v-model="form.buyer_phone"
+            type="text"
+            class="input w-full"
+            placeholder="注册电话（选填）"
+          />
+          <input
+            v-model="form.buyer_bank_name"
+            type="text"
+            class="input w-full"
+            placeholder="开户银行（选填）"
+          />
+          <input
+            v-model="form.buyer_bank_account"
+            type="text"
+            class="input w-full"
+            placeholder="银行账号（选填）"
+          />
+        </template>
       </div>
 
       <!-- 订单选择 -->
@@ -132,6 +160,10 @@ const form = reactive({
   tax_no: '',
   contact_email: '',
   notes: '',
+  buyer_address: '',
+  buyer_phone: '',
+  buyer_bank_name: '',
+  buyer_bank_account: '',
 })
 
 const eligibleOrders = ref<EligibleOrder[]>([])
@@ -192,6 +224,10 @@ function resetForm() {
   form.tax_no = ''
   form.contact_email = ''
   form.notes = ''
+  form.buyer_address = ''
+  form.buyer_phone = ''
+  form.buyer_bank_name = ''
+  form.buyer_bank_account = ''
   selectedIds.value = new Set()
   errorMsg.value = ''
 }
@@ -220,13 +256,18 @@ async function submit() {
   submitting.value = true
   errorMsg.value = ''
   try {
+    const isBusiness = form.title_type === 'business'
     await invoiceAPI.create({
       title_type: form.title_type,
       title: form.title.trim(),
-      tax_no: form.title_type === 'business' ? form.tax_no.trim() : '',
+      tax_no: isBusiness ? form.tax_no.trim() : '',
       contact_email: form.contact_email.trim(),
       notes: form.notes.trim(),
       order_ids: Array.from(selectedIds.value),
+      buyer_address: isBusiness ? form.buyer_address.trim() : '',
+      buyer_phone: isBusiness ? form.buyer_phone.trim() : '',
+      buyer_bank_name: isBusiness ? form.buyer_bank_name.trim() : '',
+      buyer_bank_account: isBusiness ? form.buyer_bank_account.trim() : '',
     })
     emit('submitted')
     onClose()

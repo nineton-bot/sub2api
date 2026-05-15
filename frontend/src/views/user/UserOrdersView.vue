@@ -69,7 +69,23 @@
           <label class="input-label">{{ t('payment.refundReason') }}</label>
           <textarea v-model="refundReason" rows="3" class="input mt-1 w-full" :placeholder="t('payment.refundReasonPlaceholder')" />
         </div>
-        <div class="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+
+        <!-- v3：已开发票订单的红冲提示 -->
+        <div v-if="orderHasInvoice(refundTarget)" class="space-y-2">
+          <div class="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300">
+            <Icon name="infoCircle" size="sm" class="mt-0.5 flex-shrink-0" />
+            <div class="space-y-1 leading-relaxed">
+              <p class="font-medium">该订单已开发票，退款将同步开具红字（红冲）发票，原蓝票即作废。</p>
+              <p>系统将自动向开票平台发起红冲，红冲成功后自动退款（约 1-3 分钟内）。请确认后再提交。</p>
+            </div>
+          </div>
+          <label class="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
+            <input v-model="refundReverseAck" type="checkbox" class="mt-0.5" />
+            <span>我已知晓退款将自动红冲发票，原发票作废不可恢复</span>
+          </label>
+        </div>
+
+        <div v-else class="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
           <Icon name="infoCircle" size="sm" class="mt-0.5 flex-shrink-0" />
           <p class="whitespace-pre-line leading-relaxed">{{ t('payment.refundPolicyTip') }}</p>
         </div>
@@ -77,7 +93,11 @@
       <template #footer>
         <div class="flex justify-end gap-3">
           <button class="btn btn-secondary" @click="refundTarget = null">{{ t('common.cancel') }}</button>
-          <button class="btn btn-primary" :disabled="actionLoading || !refundReason.trim()" @click="confirmRefund">{{ actionLoading ? t('common.processing') : t('payment.orders.requestRefund') }}</button>
+          <button
+            class="btn btn-primary"
+            :disabled="actionLoading || !refundReason.trim() || (orderHasInvoice(refundTarget) && !refundReverseAck)"
+            @click="confirmRefund"
+          >{{ actionLoading ? t('common.processing') : t('payment.orders.requestRefund') }}</button>
         </div>
       </template>
     </BaseDialog>
@@ -111,6 +131,13 @@ const currentFilter = ref('')
 const cancelTargetId = ref<number | null>(null)
 const refundTarget = ref<PaymentOrder | null>(null)
 const refundReason = ref('')
+// v3：已开票订单退款需用户主动勾选确认红冲
+const refundReverseAck = ref(false)
+
+function orderHasInvoice(o: PaymentOrder | null): boolean {
+  if (!o) return false
+  return o.invoice_status === 'issued' || o.invoice_status === 'pending'
+}
 const pagination = reactive({ page: 1, page_size: 20, total: 0 })
 
 const statusFilters = computed(() => [
@@ -158,7 +185,11 @@ async function confirmCancel() {
   }
 }
 
-function openRefundDialog(order: PaymentOrder) { refundTarget.value = order; refundReason.value = '' }
+function openRefundDialog(order: PaymentOrder) {
+  refundTarget.value = order
+  refundReason.value = ''
+  refundReverseAck.value = false
+}
 
 async function confirmRefund() {
   if (!refundTarget.value || !refundReason.value.trim()) return

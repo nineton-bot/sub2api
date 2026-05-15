@@ -6,8 +6,20 @@
     @close="onClose"
   >
     <div class="space-y-3">
+      <!-- 已开票（issued）+ 自动渠道 → 提示会触发真红冲 -->
       <div
-        v-if="warnIssued"
+        v-if="warnIssued && willAutoReverse"
+        class="rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-300"
+      >
+        <div class="font-medium">该发票已在开票平台出具，作废将自动调用红冲接口（不可恢复）</div>
+        <ul class="mt-1 list-disc pl-4 leading-relaxed">
+          <li>系统会向财云通发起红字信息单 + 红票申请</li>
+          <li>red 票成功后本地状态才会转为「已作废」</li>
+          <li>若关联的订单已开发票，订单将随红冲完成同步释放</li>
+        </ul>
+      </div>
+      <div
+        v-else-if="warnIssued"
         class="rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
       >
         {{ t('admin.invoices.dialogs.void.warningIssued') }}
@@ -51,6 +63,12 @@ const props = defineProps<{
   show: boolean
   invoiceId: number | null
   warnIssued?: boolean
+  /**
+   * 自动渠道（如 caiyuntong）issued 状态时 = true，
+   * 提示作废会真正触发开票平台的红冲流程（不可恢复）。
+   * manual 渠道或 approved 状态时 = false，作废仅本地标记。
+   */
+  willAutoReverse?: boolean
 }>()
 
 const emit = defineEmits<{

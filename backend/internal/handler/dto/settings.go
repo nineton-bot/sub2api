@@ -208,6 +208,12 @@ type SystemSettings struct {
 	InvoiceEnabled            bool `json:"invoice_enabled"`
 	InvoiceDefaultForAllUsers bool `json:"invoice_default_for_all_users"`
 
+	// 自动开票渠道（v3）
+	InvoiceDefaultProvider string                    `json:"invoice_default_provider"`
+	InvoiceCaiyuntong      InvoiceCaiyuntongSettings `json:"invoice_caiyuntong"`
+	InvoicePoller          InvoicePollerSettings     `json:"invoice_poller"`
+	InvoiceReverse         InvoiceReverseSettings    `json:"invoice_reverse"`
+
 	// Balance low notification
 	BalanceLowNotifyEnabled     bool               `json:"balance_low_notify_enabled"`
 	BalanceLowNotifyThreshold   float64            `json:"balance_low_notify_threshold"`
@@ -361,6 +367,39 @@ type OpenAIFastPolicyRule struct {
 // OpenAIFastPolicySettings OpenAI fast 策略配置 DTO
 type OpenAIFastPolicySettings struct {
 	Rules []OpenAIFastPolicyRule `json:"rules"`
+}
+
+// InvoiceCaiyuntongSettings DTO 镜像 service 层同名结构。
+// AccessKeySecret 响应时由 handler 用 "__masked__" 占位；前端原样回传时保留原密钥。
+type InvoiceCaiyuntongSettings struct {
+	Endpoint         string  `json:"endpoint"`
+	AccessKeyID      string  `json:"access_key_id"`
+	AccessKeySecret  string  `json:"access_key_secret"`
+	SellerTaxNum     string  `json:"seller_tax_num"`
+	SellerName       string  `json:"seller_name"`
+	SellerAddress    string  `json:"seller_address"`
+	SellerPhone      string  `json:"seller_phone"`
+	SellerBankName   string  `json:"seller_bank_name"`
+	SellerBankAcc    string  `json:"seller_bank_account"`
+	Drawer           string  `json:"drawer"`
+	Payee            string  `json:"payee"`
+	Reviewer         string  `json:"reviewer"`
+	TypeForNormal    string  `json:"type_normal"`
+	TypeForSpecial   string  `json:"type_special"`
+	GoodsCodeDefault string  `json:"goods_code_default"`
+	DefaultTaxRate   float64 `json:"default_tax_rate"`
+}
+
+type InvoicePollerSettings struct {
+	IntervalSeconds int `json:"interval_seconds"`
+	TimeoutMinutes  int `json:"timeout_minutes"`
+}
+
+type InvoiceReverseSettings struct {
+	PollerIntervalSeconds int    `json:"poller_interval_seconds"`
+	TimeoutMinutes        int    `json:"timeout_minutes"`
+	AutoOnUserRefund      bool   `json:"auto_on_user_refund"`
+	DefaultReason         string `json:"default_reason"`
 }
 
 // ParseCustomMenuItems parses a JSON string into a slice of CustomMenuItem.

@@ -521,13 +521,14 @@ var ProviderSet = wire.NewSet(
 	NewModelPricingResolver,
 	NewContentModerationService,
 	ProvidePaymentConfigService,
-	NewPaymentService,
+	ProvidePaymentService,
 	ProvidePaymentOrderExpiryService,
 	ProvideBalanceNotifyService,
 	ProvideChannelMonitorService,
 	ProvideChannelMonitorRunner,
 	NewChannelMonitorRequestTemplateService,
-	NewInvoiceService,
+	ProvideInvoiceService,
+	ProvideInvoiceRefundLinker,
 	ProvideInvoicePDFStore,
 	wire.Bind(new(InvoicePDFStore), new(*LocalInvoicePDFStore)),
 )
@@ -535,6 +536,49 @@ var ProviderSet = wire.NewSet(
 // ProvideInvoicePDFStore 根据配置创建 PDF 存储实现。V1 仅本地磁盘。
 func ProvideInvoicePDFStore(cfg *config.Config) *LocalInvoicePDFStore {
 	return NewLocalInvoicePDFStore(cfg.Invoice.PDFDir)
+}
+
+// ProvidePaymentService 构造 PaymentService 并注入 SettingService（v3 用于读取自动红冲开关）。
+func ProvidePaymentService(
+	entClient *dbent.Client,
+	registry *payment.Registry,
+	loadBalancer payment.LoadBalancer,
+	redeemService *RedeemService,
+	subscriptionSvc *SubscriptionService,
+	configService *PaymentConfigService,
+	userRepo UserRepository,
+	groupRepo GroupRepository,
+	referralService *ReferralService,
+	settingService *SettingService,
+) *PaymentService {
+	svc := NewPaymentService(entClient, registry, loadBalancer, redeemService, subscriptionSvc, configService, userRepo, groupRepo, referralService)
+	svc.SetSettingService(settingService)
+	return svc
+}
+
+// ProvideInvoiceService 构造 InvoiceService 并启动自动开票 / 自动红冲后台 worker。
+// 当 manual 渠道时 worker 会扫描发现没东西可做而休眠，对线上零影响。
+//
+// 注意：refundExecutor (= *PaymentService) 通过 setter 在 ProvideInvoiceRefundLinker 中注入，
+// 这样 wire 能解决 InvoiceService↔PaymentService 的双向依赖。
+func ProvideInvoiceService(entClient *dbent.Client, pdfStore InvoicePDFStore, cfg *config.Config, settingService *SettingService, emailService *EmailService) *InvoiceService {
+	svc := NewInvoiceService(entClient, pdfStore, cfg, settingService)
+	svc.SetEmailService(emailService)
+	svc.StartInvoiceWorkers()
+	return svc
+}
+
+// InvoiceRefundLinker 是一个 wire 占位类型：
+// 仅用于让 wire 在 PaymentService 与 InvoiceService 都构造完成后调用 SetRefundExecutor。
+type InvoiceRefundLinker struct{}
+
+// ProvideInvoiceRefundLinker 把 PaymentService 注入到 InvoiceService 作为 refund executor。
+// 返回值 InvoiceRefundLinker 本身没有用途，只是 wire 串联依赖的载体。
+func ProvideInvoiceRefundLinker(invoice *InvoiceService, payment *PaymentService) InvoiceRefundLinker {
+	if invoice != nil && payment != nil {
+		invoice.SetRefundExecutor(payment)
+	}
+	return InvoiceRefundLinker{}
 }
 
 // ProvidePaymentConfigService wraps NewPaymentConfigService to accept the named

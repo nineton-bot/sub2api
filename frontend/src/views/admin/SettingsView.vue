@@ -5318,6 +5318,188 @@
               </div>
               <Toggle v-model="form.invoice_default_for_all_users" />
             </div>
+
+            <!-- 自动开票渠道（v3） -->
+            <div
+              v-if="form.invoice_enabled"
+              class="space-y-5 border-t border-gray-100 pt-5 dark:border-dark-700"
+            >
+              <div>
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                  开票渠道
+                </h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  审批通过后由所选渠道自动开具发票。本期仅财云通可用，其他渠道规划中。
+                </p>
+              </div>
+
+              <!-- 默认渠道 -->
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    默认渠道
+                  </label>
+                  <select
+                    v-model="form.invoice_default_provider"
+                    class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white"
+                  >
+                    <option value="caiyuntong">财云通</option>
+                    <option value="manual">人工开票（应急通道）</option>
+                    <option value="nuonuo" disabled>诺诺网（规划中）</option>
+                    <option value="baiwang" disabled>百望云（规划中）</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 财云通接入凭据 -->
+              <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-700 dark:bg-dark-800/40">
+                <div class="mb-3 flex items-center justify-between">
+                  <h4 class="font-medium text-gray-900 dark:text-white">财云通 · 接入凭据</h4>
+                  <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                    api-dataservice.bigfintax.com
+                  </span>
+                </div>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">Base URL</label>
+                    <input
+                      v-model="form.invoice_caiyuntong.endpoint"
+                      type="text"
+                      placeholder="https://api-dataservice.bigfintax.com/"
+                      class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">销方税号</label>
+                    <input
+                      v-model="form.invoice_caiyuntong.seller_tax_num"
+                      type="text"
+                      placeholder="500102201007206608"
+                      class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">AccessKeyID</label>
+                    <input
+                      v-model="form.invoice_caiyuntong.access_key_id"
+                      type="text"
+                      placeholder="cqbh"
+                      class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">AccessKeySecret</label>
+                    <input
+                      v-model="form.invoice_caiyuntong.access_key_secret"
+                      type="password"
+                      placeholder="保存后显示为掩码，留空保留原值"
+                      autocomplete="new-password"
+                      class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 销方信息 -->
+              <div>
+                <h4 class="mb-3 font-medium text-gray-900 dark:text-white">销方信息</h4>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">销售方名称</label>
+                    <input v-model="form.invoice_caiyuntong.seller_name" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">销售方电话</label>
+                    <input v-model="form.invoice_caiyuntong.seller_phone" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="mb-1 block text-xs text-gray-500">销售方地址</label>
+                    <input v-model="form.invoice_caiyuntong.seller_address" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">开户行</label>
+                    <input v-model="form.invoice_caiyuntong.seller_bank_name" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">银行账号</label>
+                    <input v-model="form.invoice_caiyuntong.seller_bank_account" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">开票员</label>
+                    <input v-model="form.invoice_caiyuntong.drawer" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">收款员</label>
+                    <input v-model="form.invoice_caiyuntong.payee" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">复核人</label>
+                    <input v-model="form.invoice_caiyuntong.reviewer" type="text" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 票种代码映射 -->
+              <div>
+                <h4 class="mb-3 font-medium text-gray-900 dark:text-white">票种代码映射</h4>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">普票 → InvoiceType</label>
+                    <select v-model="form.invoice_caiyuntong.type_normal" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white">
+                      <option value="06">06 · 电子发票（普通发票，数电）</option>
+                      <option value="10">10 · 增值税电子普通发票</option>
+                      <option value="04">04 · 增值税普通发票</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">专票 → InvoiceType</label>
+                    <select v-model="form.invoice_caiyuntong.type_special" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white">
+                      <option value="05">05 · 电子发票（增值税专用发票，数电）</option>
+                      <option value="08">08 · 增值税电子专用发票</option>
+                      <option value="01">01 · 增值税专用发票</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">默认税收分类编码（可选）</label>
+                    <input v-model="form.invoice_caiyuntong.goods_code_default" type="text" placeholder="例 3040399000000000000（信息技术服务）" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">默认税率</label>
+                    <input v-model.number="form.invoice_caiyuntong.default_tax_rate" type="number" step="0.01" min="0" max="1" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- 轮询与红冲 -->
+              <div>
+                <h4 class="mb-3 font-medium text-gray-900 dark:text-white">轮询与红冲</h4>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">开票轮询间隔（秒）</label>
+                    <input v-model.number="form.invoice_poller.interval_seconds" type="number" min="10" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">开票超时（分钟）</label>
+                    <input v-model.number="form.invoice_poller.timeout_minutes" type="number" min="1" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">红冲轮询间隔（秒）</label>
+                    <input v-model.number="form.invoice_reverse.poller_interval_seconds" type="number" min="10" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">红冲超时（分钟）</label>
+                    <input v-model.number="form.invoice_reverse.timeout_minutes" type="number" min="1" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                  <div>
+                    <label class="font-medium text-gray-900 dark:text-white">退款触发自动红冲</label>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">关闭则用户退款被拒，需管理员先手工红冲</p>
+                  </div>
+                  <Toggle v-model="form.invoice_reverse.auto_on_user_refund" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -6240,6 +6422,37 @@ const form = reactive<SettingsForm>({
   referral_default_for_all_users: true,
   invoice_enabled: false,
   invoice_default_for_all_users: false,
+
+  // 自动开票渠道（v3）
+  invoice_default_provider: 'manual',
+  invoice_caiyuntong: {
+    endpoint: '',
+    access_key_id: '',
+    access_key_secret: '',
+    seller_tax_num: '',
+    seller_name: '',
+    seller_address: '',
+    seller_phone: '',
+    seller_bank_name: '',
+    seller_bank_account: '',
+    drawer: '',
+    payee: '',
+    reviewer: '',
+    type_normal: '06',
+    type_special: '05',
+    goods_code_default: '',
+    default_tax_rate: 0.06,
+  },
+  invoice_poller: {
+    interval_seconds: 30,
+    timeout_minutes: 10,
+  },
+  invoice_reverse: {
+    poller_interval_seconds: 30,
+    timeout_minutes: 15,
+    auto_on_user_refund: true,
+    default_reason: '01',
+  },
 });
 
 const authSourceDefaults = reactive<AuthSourceDefaultsState>(
@@ -7343,6 +7556,35 @@ async function saveSettings() {
       referral_default_for_all_users: !!form.referral_default_for_all_users,
       invoice_enabled: !!form.invoice_enabled,
       invoice_default_for_all_users: !!form.invoice_default_for_all_users,
+      invoice_default_provider: form.invoice_default_provider || 'manual',
+      invoice_caiyuntong: {
+        endpoint: (form.invoice_caiyuntong?.endpoint || '').trim(),
+        access_key_id: (form.invoice_caiyuntong?.access_key_id || '').trim(),
+        access_key_secret: form.invoice_caiyuntong?.access_key_secret || '',
+        seller_tax_num: (form.invoice_caiyuntong?.seller_tax_num || '').trim(),
+        seller_name: form.invoice_caiyuntong?.seller_name || '',
+        seller_address: form.invoice_caiyuntong?.seller_address || '',
+        seller_phone: form.invoice_caiyuntong?.seller_phone || '',
+        seller_bank_name: form.invoice_caiyuntong?.seller_bank_name || '',
+        seller_bank_account: form.invoice_caiyuntong?.seller_bank_account || '',
+        drawer: form.invoice_caiyuntong?.drawer || '',
+        payee: form.invoice_caiyuntong?.payee || '',
+        reviewer: form.invoice_caiyuntong?.reviewer || '',
+        type_normal: form.invoice_caiyuntong?.type_normal || '06',
+        type_special: form.invoice_caiyuntong?.type_special || '05',
+        goods_code_default: form.invoice_caiyuntong?.goods_code_default || '',
+        default_tax_rate: Number(form.invoice_caiyuntong?.default_tax_rate) || 0.06,
+      },
+      invoice_poller: {
+        interval_seconds: Math.max(10, Number(form.invoice_poller?.interval_seconds) || 30),
+        timeout_minutes: Math.max(1, Number(form.invoice_poller?.timeout_minutes) || 10),
+      },
+      invoice_reverse: {
+        poller_interval_seconds: Math.max(10, Number(form.invoice_reverse?.poller_interval_seconds) || 30),
+        timeout_minutes: Math.max(1, Number(form.invoice_reverse?.timeout_minutes) || 15),
+        auto_on_user_refund: !!form.invoice_reverse?.auto_on_user_refund,
+        default_reason: form.invoice_reverse?.default_reason || '01',
+      },
     };
 
     // 仅当 openai_fast_policy_settings 已成功从后端加载时才回写，

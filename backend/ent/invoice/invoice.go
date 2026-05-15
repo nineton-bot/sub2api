@@ -22,6 +22,8 @@ const (
 	FieldUserID = "user_id"
 	// FieldUserEmail holds the string denoting the user_email field in the database.
 	FieldUserEmail = "user_email"
+	// FieldApplicationNo holds the string denoting the application_no field in the database.
+	FieldApplicationNo = "application_no"
 	// FieldTitleType holds the string denoting the title_type field in the database.
 	FieldTitleType = "title_type"
 	// FieldTitle holds the string denoting the title field in the database.
@@ -30,6 +32,14 @@ const (
 	FieldTaxNo = "tax_no"
 	// FieldContactEmail holds the string denoting the contact_email field in the database.
 	FieldContactEmail = "contact_email"
+	// FieldBuyerAddress holds the string denoting the buyer_address field in the database.
+	FieldBuyerAddress = "buyer_address"
+	// FieldBuyerPhone holds the string denoting the buyer_phone field in the database.
+	FieldBuyerPhone = "buyer_phone"
+	// FieldBuyerBankName holds the string denoting the buyer_bank_name field in the database.
+	FieldBuyerBankName = "buyer_bank_name"
+	// FieldBuyerBankAccount holds the string denoting the buyer_bank_account field in the database.
+	FieldBuyerBankAccount = "buyer_bank_account"
 	// FieldAmount holds the string denoting the amount field in the database.
 	FieldAmount = "amount"
 	// FieldCurrency holds the string denoting the currency field in the database.
@@ -60,10 +70,34 @@ const (
 	FieldPdfSha256 = "pdf_sha256"
 	// FieldPdfOriginalName holds the string denoting the pdf_original_name field in the database.
 	FieldPdfOriginalName = "pdf_original_name"
+	// FieldInvoiceKind holds the string denoting the invoice_kind field in the database.
+	FieldInvoiceKind = "invoice_kind"
+	// FieldInvoiceTypeCode holds the string denoting the invoice_type_code field in the database.
+	FieldInvoiceTypeCode = "invoice_type_code"
 	// FieldProvider holds the string denoting the provider field in the database.
 	FieldProvider = "provider"
+	// FieldProviderState holds the string denoting the provider_state field in the database.
+	FieldProviderState = "provider_state"
+	// FieldProviderTraceID holds the string denoting the provider_trace_id field in the database.
+	FieldProviderTraceID = "provider_trace_id"
+	// FieldProviderLastError holds the string denoting the provider_last_error field in the database.
+	FieldProviderLastError = "provider_last_error"
+	// FieldProviderRetryCount holds the string denoting the provider_retry_count field in the database.
+	FieldProviderRetryCount = "provider_retry_count"
 	// FieldProviderPayload holds the string denoting the provider_payload field in the database.
 	FieldProviderPayload = "provider_payload"
+	// FieldReverseStep holds the string denoting the reverse_step field in the database.
+	FieldReverseStep = "reverse_step"
+	// FieldRedAdviceNum holds the string denoting the red_advice_num field in the database.
+	FieldRedAdviceNum = "red_advice_num"
+	// FieldRedConfirmNum holds the string denoting the red_confirm_num field in the database.
+	FieldRedConfirmNum = "red_confirm_num"
+	// FieldReverseTraceID holds the string denoting the reverse_trace_id field in the database.
+	FieldReverseTraceID = "reverse_trace_id"
+	// FieldRedInvoiceNo holds the string denoting the red_invoice_no field in the database.
+	FieldRedInvoiceNo = "red_invoice_no"
+	// FieldRedPdfPath holds the string denoting the red_pdf_path field in the database.
+	FieldRedPdfPath = "red_pdf_path"
 	// FieldVoidedBy holds the string denoting the voided_by field in the database.
 	FieldVoidedBy = "voided_by"
 	// EdgeUser holds the string denoting the user edge name in mutations.
@@ -95,10 +129,15 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldUserID,
 	FieldUserEmail,
+	FieldApplicationNo,
 	FieldTitleType,
 	FieldTitle,
 	FieldTaxNo,
 	FieldContactEmail,
+	FieldBuyerAddress,
+	FieldBuyerPhone,
+	FieldBuyerBankName,
+	FieldBuyerBankAccount,
 	FieldAmount,
 	FieldCurrency,
 	FieldNotes,
@@ -114,8 +153,20 @@ var Columns = []string{
 	FieldPdfSize,
 	FieldPdfSha256,
 	FieldPdfOriginalName,
+	FieldInvoiceKind,
+	FieldInvoiceTypeCode,
 	FieldProvider,
+	FieldProviderState,
+	FieldProviderTraceID,
+	FieldProviderLastError,
+	FieldProviderRetryCount,
 	FieldProviderPayload,
+	FieldReverseStep,
+	FieldRedAdviceNum,
+	FieldRedConfirmNum,
+	FieldReverseTraceID,
+	FieldRedInvoiceNo,
+	FieldRedPdfPath,
 	FieldVoidedBy,
 }
 
@@ -138,6 +189,10 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// UserEmailValidator is a validator for the "user_email" field. It is called by the builders before save.
 	UserEmailValidator func(string) error
+	// DefaultApplicationNo holds the default value on creation for the "application_no" field.
+	DefaultApplicationNo string
+	// ApplicationNoValidator is a validator for the "application_no" field. It is called by the builders before save.
+	ApplicationNoValidator func(string) error
 	// TitleTypeValidator is a validator for the "title_type" field. It is called by the builders before save.
 	TitleTypeValidator func(string) error
 	// TitleValidator is a validator for the "title" field. It is called by the builders before save.
@@ -150,6 +205,22 @@ var (
 	DefaultContactEmail string
 	// ContactEmailValidator is a validator for the "contact_email" field. It is called by the builders before save.
 	ContactEmailValidator func(string) error
+	// DefaultBuyerAddress holds the default value on creation for the "buyer_address" field.
+	DefaultBuyerAddress string
+	// BuyerAddressValidator is a validator for the "buyer_address" field. It is called by the builders before save.
+	BuyerAddressValidator func(string) error
+	// DefaultBuyerPhone holds the default value on creation for the "buyer_phone" field.
+	DefaultBuyerPhone string
+	// BuyerPhoneValidator is a validator for the "buyer_phone" field. It is called by the builders before save.
+	BuyerPhoneValidator func(string) error
+	// DefaultBuyerBankName holds the default value on creation for the "buyer_bank_name" field.
+	DefaultBuyerBankName string
+	// BuyerBankNameValidator is a validator for the "buyer_bank_name" field. It is called by the builders before save.
+	BuyerBankNameValidator func(string) error
+	// DefaultBuyerBankAccount holds the default value on creation for the "buyer_bank_account" field.
+	DefaultBuyerBankAccount string
+	// BuyerBankAccountValidator is a validator for the "buyer_bank_account" field. It is called by the builders before save.
+	BuyerBankAccountValidator func(string) error
 	// DefaultCurrency holds the default value on creation for the "currency" field.
 	DefaultCurrency string
 	// CurrencyValidator is a validator for the "currency" field. It is called by the builders before save.
@@ -184,10 +255,54 @@ var (
 	DefaultPdfOriginalName string
 	// PdfOriginalNameValidator is a validator for the "pdf_original_name" field. It is called by the builders before save.
 	PdfOriginalNameValidator func(string) error
+	// DefaultInvoiceKind holds the default value on creation for the "invoice_kind" field.
+	DefaultInvoiceKind string
+	// InvoiceKindValidator is a validator for the "invoice_kind" field. It is called by the builders before save.
+	InvoiceKindValidator func(string) error
+	// DefaultInvoiceTypeCode holds the default value on creation for the "invoice_type_code" field.
+	DefaultInvoiceTypeCode string
+	// InvoiceTypeCodeValidator is a validator for the "invoice_type_code" field. It is called by the builders before save.
+	InvoiceTypeCodeValidator func(string) error
 	// DefaultProvider holds the default value on creation for the "provider" field.
 	DefaultProvider string
 	// ProviderValidator is a validator for the "provider" field. It is called by the builders before save.
 	ProviderValidator func(string) error
+	// DefaultProviderState holds the default value on creation for the "provider_state" field.
+	DefaultProviderState string
+	// ProviderStateValidator is a validator for the "provider_state" field. It is called by the builders before save.
+	ProviderStateValidator func(string) error
+	// DefaultProviderTraceID holds the default value on creation for the "provider_trace_id" field.
+	DefaultProviderTraceID string
+	// ProviderTraceIDValidator is a validator for the "provider_trace_id" field. It is called by the builders before save.
+	ProviderTraceIDValidator func(string) error
+	// DefaultProviderLastError holds the default value on creation for the "provider_last_error" field.
+	DefaultProviderLastError string
+	// DefaultProviderRetryCount holds the default value on creation for the "provider_retry_count" field.
+	DefaultProviderRetryCount int
+	// DefaultReverseStep holds the default value on creation for the "reverse_step" field.
+	DefaultReverseStep string
+	// ReverseStepValidator is a validator for the "reverse_step" field. It is called by the builders before save.
+	ReverseStepValidator func(string) error
+	// DefaultRedAdviceNum holds the default value on creation for the "red_advice_num" field.
+	DefaultRedAdviceNum string
+	// RedAdviceNumValidator is a validator for the "red_advice_num" field. It is called by the builders before save.
+	RedAdviceNumValidator func(string) error
+	// DefaultRedConfirmNum holds the default value on creation for the "red_confirm_num" field.
+	DefaultRedConfirmNum string
+	// RedConfirmNumValidator is a validator for the "red_confirm_num" field. It is called by the builders before save.
+	RedConfirmNumValidator func(string) error
+	// DefaultReverseTraceID holds the default value on creation for the "reverse_trace_id" field.
+	DefaultReverseTraceID string
+	// ReverseTraceIDValidator is a validator for the "reverse_trace_id" field. It is called by the builders before save.
+	ReverseTraceIDValidator func(string) error
+	// DefaultRedInvoiceNo holds the default value on creation for the "red_invoice_no" field.
+	DefaultRedInvoiceNo string
+	// RedInvoiceNoValidator is a validator for the "red_invoice_no" field. It is called by the builders before save.
+	RedInvoiceNoValidator func(string) error
+	// DefaultRedPdfPath holds the default value on creation for the "red_pdf_path" field.
+	DefaultRedPdfPath string
+	// RedPdfPathValidator is a validator for the "red_pdf_path" field. It is called by the builders before save.
+	RedPdfPathValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Invoice queries.
@@ -218,6 +333,11 @@ func ByUserEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserEmail, opts...).ToFunc()
 }
 
+// ByApplicationNo orders the results by the application_no field.
+func ByApplicationNo(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldApplicationNo, opts...).ToFunc()
+}
+
 // ByTitleType orders the results by the title_type field.
 func ByTitleType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTitleType, opts...).ToFunc()
@@ -236,6 +356,26 @@ func ByTaxNo(opts ...sql.OrderTermOption) OrderOption {
 // ByContactEmail orders the results by the contact_email field.
 func ByContactEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContactEmail, opts...).ToFunc()
+}
+
+// ByBuyerAddress orders the results by the buyer_address field.
+func ByBuyerAddress(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBuyerAddress, opts...).ToFunc()
+}
+
+// ByBuyerPhone orders the results by the buyer_phone field.
+func ByBuyerPhone(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBuyerPhone, opts...).ToFunc()
+}
+
+// ByBuyerBankName orders the results by the buyer_bank_name field.
+func ByBuyerBankName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBuyerBankName, opts...).ToFunc()
+}
+
+// ByBuyerBankAccount orders the results by the buyer_bank_account field.
+func ByBuyerBankAccount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBuyerBankAccount, opts...).ToFunc()
 }
 
 // ByAmount orders the results by the amount field.
@@ -313,9 +453,69 @@ func ByPdfOriginalName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPdfOriginalName, opts...).ToFunc()
 }
 
+// ByInvoiceKind orders the results by the invoice_kind field.
+func ByInvoiceKind(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInvoiceKind, opts...).ToFunc()
+}
+
+// ByInvoiceTypeCode orders the results by the invoice_type_code field.
+func ByInvoiceTypeCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInvoiceTypeCode, opts...).ToFunc()
+}
+
 // ByProvider orders the results by the provider field.
 func ByProvider(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProvider, opts...).ToFunc()
+}
+
+// ByProviderState orders the results by the provider_state field.
+func ByProviderState(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderState, opts...).ToFunc()
+}
+
+// ByProviderTraceID orders the results by the provider_trace_id field.
+func ByProviderTraceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderTraceID, opts...).ToFunc()
+}
+
+// ByProviderLastError orders the results by the provider_last_error field.
+func ByProviderLastError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderLastError, opts...).ToFunc()
+}
+
+// ByProviderRetryCount orders the results by the provider_retry_count field.
+func ByProviderRetryCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderRetryCount, opts...).ToFunc()
+}
+
+// ByReverseStep orders the results by the reverse_step field.
+func ByReverseStep(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReverseStep, opts...).ToFunc()
+}
+
+// ByRedAdviceNum orders the results by the red_advice_num field.
+func ByRedAdviceNum(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRedAdviceNum, opts...).ToFunc()
+}
+
+// ByRedConfirmNum orders the results by the red_confirm_num field.
+func ByRedConfirmNum(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRedConfirmNum, opts...).ToFunc()
+}
+
+// ByReverseTraceID orders the results by the reverse_trace_id field.
+func ByReverseTraceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReverseTraceID, opts...).ToFunc()
+}
+
+// ByRedInvoiceNo orders the results by the red_invoice_no field.
+func ByRedInvoiceNo(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRedInvoiceNo, opts...).ToFunc()
+}
+
+// ByRedPdfPath orders the results by the red_pdf_path field.
+func ByRedPdfPath(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRedPdfPath, opts...).ToFunc()
 }
 
 // ByVoidedBy orders the results by the voided_by field.

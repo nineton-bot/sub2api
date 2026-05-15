@@ -109,13 +109,18 @@ const (
 )
 
 // CheckErrorPolicy 检查自定义错误码和临时不可调度规则。
-// 自定义错误码开启时覆盖后续所有逻辑（包括临时不可调度）。
+// 自定义错误码开启且命中时，停止账号调度；未命中时跳过禁用逻辑，但仍运行临时不可调度规则。
 func (s *RateLimitService) CheckErrorPolicy(ctx context.Context, account *Account, statusCode int, responseBody []byte) ErrorPolicyResult {
 	if account.IsCustomErrorCodesEnabled() {
 		if account.ShouldHandleErrorCode(statusCode) {
 			return ErrorPolicyMatched
 		}
+		// 错误码不在自定义列表中：跳过账号禁用逻辑，但仍运行临时不可调度规则，
+		// 确保持续出错的账号能被隔离，避免 sticky session 长期粘连到坏账号。
 		slog.Info("account_error_code_skipped", "account_id", account.ID, "status_code", statusCode)
+		if s.tryTempUnschedulable(ctx, account, statusCode, responseBody) {
+			return ErrorPolicyTempUnscheduled
+		}
 		return ErrorPolicySkipped
 	}
 	if account.IsPoolMode() {

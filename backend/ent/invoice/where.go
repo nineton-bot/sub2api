@@ -75,6 +75,11 @@ func UserEmail(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldEQ(FieldUserEmail, v))
 }
 
+// ApplicationNo applies equality check predicate on the "application_no" field. It's identical to ApplicationNoEQ.
+func ApplicationNo(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldApplicationNo, v))
+}
+
 // TitleType applies equality check predicate on the "title_type" field. It's identical to TitleTypeEQ.
 func TitleType(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldEQ(FieldTitleType, v))
@@ -93,6 +98,26 @@ func TaxNo(v string) predicate.Invoice {
 // ContactEmail applies equality check predicate on the "contact_email" field. It's identical to ContactEmailEQ.
 func ContactEmail(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldEQ(FieldContactEmail, v))
+}
+
+// BuyerAddress applies equality check predicate on the "buyer_address" field. It's identical to BuyerAddressEQ.
+func BuyerAddress(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldBuyerAddress, v))
+}
+
+// BuyerPhone applies equality check predicate on the "buyer_phone" field. It's identical to BuyerPhoneEQ.
+func BuyerPhone(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldBuyerPhone, v))
+}
+
+// BuyerBankName applies equality check predicate on the "buyer_bank_name" field. It's identical to BuyerBankNameEQ.
+func BuyerBankName(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldBuyerBankName, v))
+}
+
+// BuyerBankAccount applies equality check predicate on the "buyer_bank_account" field. It's identical to BuyerBankAccountEQ.
+func BuyerBankAccount(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldBuyerBankAccount, v))
 }
 
 // Amount applies equality check predicate on the "amount" field. It's identical to AmountEQ.
@@ -170,9 +195,69 @@ func PdfOriginalName(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldEQ(FieldPdfOriginalName, v))
 }
 
+// InvoiceKind applies equality check predicate on the "invoice_kind" field. It's identical to InvoiceKindEQ.
+func InvoiceKind(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldInvoiceKind, v))
+}
+
+// InvoiceTypeCode applies equality check predicate on the "invoice_type_code" field. It's identical to InvoiceTypeCodeEQ.
+func InvoiceTypeCode(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldInvoiceTypeCode, v))
+}
+
 // Provider applies equality check predicate on the "provider" field. It's identical to ProviderEQ.
 func Provider(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldEQ(FieldProvider, v))
+}
+
+// ProviderState applies equality check predicate on the "provider_state" field. It's identical to ProviderStateEQ.
+func ProviderState(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldProviderState, v))
+}
+
+// ProviderTraceID applies equality check predicate on the "provider_trace_id" field. It's identical to ProviderTraceIDEQ.
+func ProviderTraceID(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldProviderTraceID, v))
+}
+
+// ProviderLastError applies equality check predicate on the "provider_last_error" field. It's identical to ProviderLastErrorEQ.
+func ProviderLastError(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldProviderLastError, v))
+}
+
+// ProviderRetryCount applies equality check predicate on the "provider_retry_count" field. It's identical to ProviderRetryCountEQ.
+func ProviderRetryCount(v int) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldProviderRetryCount, v))
+}
+
+// ReverseStep applies equality check predicate on the "reverse_step" field. It's identical to ReverseStepEQ.
+func ReverseStep(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldReverseStep, v))
+}
+
+// RedAdviceNum applies equality check predicate on the "red_advice_num" field. It's identical to RedAdviceNumEQ.
+func RedAdviceNum(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldRedAdviceNum, v))
+}
+
+// RedConfirmNum applies equality check predicate on the "red_confirm_num" field. It's identical to RedConfirmNumEQ.
+func RedConfirmNum(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldRedConfirmNum, v))
+}
+
+// ReverseTraceID applies equality check predicate on the "reverse_trace_id" field. It's identical to ReverseTraceIDEQ.
+func ReverseTraceID(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldReverseTraceID, v))
+}
+
+// RedInvoiceNo applies equality check predicate on the "red_invoice_no" field. It's identical to RedInvoiceNoEQ.
+func RedInvoiceNo(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldRedInvoiceNo, v))
+}
+
+// RedPdfPath applies equality check predicate on the "red_pdf_path" field. It's identical to RedPdfPathEQ.
+func RedPdfPath(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldRedPdfPath, v))
 }
 
 // VoidedBy applies equality check predicate on the "voided_by" field. It's identical to VoidedByEQ.
@@ -343,6 +428,71 @@ func UserEmailEqualFold(v string) predicate.Invoice {
 // UserEmailContainsFold applies the ContainsFold predicate on the "user_email" field.
 func UserEmailContainsFold(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldContainsFold(FieldUserEmail, v))
+}
+
+// ApplicationNoEQ applies the EQ predicate on the "application_no" field.
+func ApplicationNoEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldApplicationNo, v))
+}
+
+// ApplicationNoNEQ applies the NEQ predicate on the "application_no" field.
+func ApplicationNoNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldApplicationNo, v))
+}
+
+// ApplicationNoIn applies the In predicate on the "application_no" field.
+func ApplicationNoIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldApplicationNo, vs...))
+}
+
+// ApplicationNoNotIn applies the NotIn predicate on the "application_no" field.
+func ApplicationNoNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldApplicationNo, vs...))
+}
+
+// ApplicationNoGT applies the GT predicate on the "application_no" field.
+func ApplicationNoGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldApplicationNo, v))
+}
+
+// ApplicationNoGTE applies the GTE predicate on the "application_no" field.
+func ApplicationNoGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldApplicationNo, v))
+}
+
+// ApplicationNoLT applies the LT predicate on the "application_no" field.
+func ApplicationNoLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldApplicationNo, v))
+}
+
+// ApplicationNoLTE applies the LTE predicate on the "application_no" field.
+func ApplicationNoLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldApplicationNo, v))
+}
+
+// ApplicationNoContains applies the Contains predicate on the "application_no" field.
+func ApplicationNoContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldApplicationNo, v))
+}
+
+// ApplicationNoHasPrefix applies the HasPrefix predicate on the "application_no" field.
+func ApplicationNoHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldApplicationNo, v))
+}
+
+// ApplicationNoHasSuffix applies the HasSuffix predicate on the "application_no" field.
+func ApplicationNoHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldApplicationNo, v))
+}
+
+// ApplicationNoEqualFold applies the EqualFold predicate on the "application_no" field.
+func ApplicationNoEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldApplicationNo, v))
+}
+
+// ApplicationNoContainsFold applies the ContainsFold predicate on the "application_no" field.
+func ApplicationNoContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldApplicationNo, v))
 }
 
 // TitleTypeEQ applies the EQ predicate on the "title_type" field.
@@ -603,6 +753,266 @@ func ContactEmailEqualFold(v string) predicate.Invoice {
 // ContactEmailContainsFold applies the ContainsFold predicate on the "contact_email" field.
 func ContactEmailContainsFold(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldContainsFold(FieldContactEmail, v))
+}
+
+// BuyerAddressEQ applies the EQ predicate on the "buyer_address" field.
+func BuyerAddressEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldBuyerAddress, v))
+}
+
+// BuyerAddressNEQ applies the NEQ predicate on the "buyer_address" field.
+func BuyerAddressNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldBuyerAddress, v))
+}
+
+// BuyerAddressIn applies the In predicate on the "buyer_address" field.
+func BuyerAddressIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldBuyerAddress, vs...))
+}
+
+// BuyerAddressNotIn applies the NotIn predicate on the "buyer_address" field.
+func BuyerAddressNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldBuyerAddress, vs...))
+}
+
+// BuyerAddressGT applies the GT predicate on the "buyer_address" field.
+func BuyerAddressGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldBuyerAddress, v))
+}
+
+// BuyerAddressGTE applies the GTE predicate on the "buyer_address" field.
+func BuyerAddressGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldBuyerAddress, v))
+}
+
+// BuyerAddressLT applies the LT predicate on the "buyer_address" field.
+func BuyerAddressLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldBuyerAddress, v))
+}
+
+// BuyerAddressLTE applies the LTE predicate on the "buyer_address" field.
+func BuyerAddressLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldBuyerAddress, v))
+}
+
+// BuyerAddressContains applies the Contains predicate on the "buyer_address" field.
+func BuyerAddressContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldBuyerAddress, v))
+}
+
+// BuyerAddressHasPrefix applies the HasPrefix predicate on the "buyer_address" field.
+func BuyerAddressHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldBuyerAddress, v))
+}
+
+// BuyerAddressHasSuffix applies the HasSuffix predicate on the "buyer_address" field.
+func BuyerAddressHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldBuyerAddress, v))
+}
+
+// BuyerAddressEqualFold applies the EqualFold predicate on the "buyer_address" field.
+func BuyerAddressEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldBuyerAddress, v))
+}
+
+// BuyerAddressContainsFold applies the ContainsFold predicate on the "buyer_address" field.
+func BuyerAddressContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldBuyerAddress, v))
+}
+
+// BuyerPhoneEQ applies the EQ predicate on the "buyer_phone" field.
+func BuyerPhoneEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldBuyerPhone, v))
+}
+
+// BuyerPhoneNEQ applies the NEQ predicate on the "buyer_phone" field.
+func BuyerPhoneNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldBuyerPhone, v))
+}
+
+// BuyerPhoneIn applies the In predicate on the "buyer_phone" field.
+func BuyerPhoneIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldBuyerPhone, vs...))
+}
+
+// BuyerPhoneNotIn applies the NotIn predicate on the "buyer_phone" field.
+func BuyerPhoneNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldBuyerPhone, vs...))
+}
+
+// BuyerPhoneGT applies the GT predicate on the "buyer_phone" field.
+func BuyerPhoneGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldBuyerPhone, v))
+}
+
+// BuyerPhoneGTE applies the GTE predicate on the "buyer_phone" field.
+func BuyerPhoneGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldBuyerPhone, v))
+}
+
+// BuyerPhoneLT applies the LT predicate on the "buyer_phone" field.
+func BuyerPhoneLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldBuyerPhone, v))
+}
+
+// BuyerPhoneLTE applies the LTE predicate on the "buyer_phone" field.
+func BuyerPhoneLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldBuyerPhone, v))
+}
+
+// BuyerPhoneContains applies the Contains predicate on the "buyer_phone" field.
+func BuyerPhoneContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldBuyerPhone, v))
+}
+
+// BuyerPhoneHasPrefix applies the HasPrefix predicate on the "buyer_phone" field.
+func BuyerPhoneHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldBuyerPhone, v))
+}
+
+// BuyerPhoneHasSuffix applies the HasSuffix predicate on the "buyer_phone" field.
+func BuyerPhoneHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldBuyerPhone, v))
+}
+
+// BuyerPhoneEqualFold applies the EqualFold predicate on the "buyer_phone" field.
+func BuyerPhoneEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldBuyerPhone, v))
+}
+
+// BuyerPhoneContainsFold applies the ContainsFold predicate on the "buyer_phone" field.
+func BuyerPhoneContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldBuyerPhone, v))
+}
+
+// BuyerBankNameEQ applies the EQ predicate on the "buyer_bank_name" field.
+func BuyerBankNameEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldBuyerBankName, v))
+}
+
+// BuyerBankNameNEQ applies the NEQ predicate on the "buyer_bank_name" field.
+func BuyerBankNameNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldBuyerBankName, v))
+}
+
+// BuyerBankNameIn applies the In predicate on the "buyer_bank_name" field.
+func BuyerBankNameIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldBuyerBankName, vs...))
+}
+
+// BuyerBankNameNotIn applies the NotIn predicate on the "buyer_bank_name" field.
+func BuyerBankNameNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldBuyerBankName, vs...))
+}
+
+// BuyerBankNameGT applies the GT predicate on the "buyer_bank_name" field.
+func BuyerBankNameGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldBuyerBankName, v))
+}
+
+// BuyerBankNameGTE applies the GTE predicate on the "buyer_bank_name" field.
+func BuyerBankNameGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldBuyerBankName, v))
+}
+
+// BuyerBankNameLT applies the LT predicate on the "buyer_bank_name" field.
+func BuyerBankNameLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldBuyerBankName, v))
+}
+
+// BuyerBankNameLTE applies the LTE predicate on the "buyer_bank_name" field.
+func BuyerBankNameLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldBuyerBankName, v))
+}
+
+// BuyerBankNameContains applies the Contains predicate on the "buyer_bank_name" field.
+func BuyerBankNameContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldBuyerBankName, v))
+}
+
+// BuyerBankNameHasPrefix applies the HasPrefix predicate on the "buyer_bank_name" field.
+func BuyerBankNameHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldBuyerBankName, v))
+}
+
+// BuyerBankNameHasSuffix applies the HasSuffix predicate on the "buyer_bank_name" field.
+func BuyerBankNameHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldBuyerBankName, v))
+}
+
+// BuyerBankNameEqualFold applies the EqualFold predicate on the "buyer_bank_name" field.
+func BuyerBankNameEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldBuyerBankName, v))
+}
+
+// BuyerBankNameContainsFold applies the ContainsFold predicate on the "buyer_bank_name" field.
+func BuyerBankNameContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldBuyerBankName, v))
+}
+
+// BuyerBankAccountEQ applies the EQ predicate on the "buyer_bank_account" field.
+func BuyerBankAccountEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldBuyerBankAccount, v))
+}
+
+// BuyerBankAccountNEQ applies the NEQ predicate on the "buyer_bank_account" field.
+func BuyerBankAccountNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldBuyerBankAccount, v))
+}
+
+// BuyerBankAccountIn applies the In predicate on the "buyer_bank_account" field.
+func BuyerBankAccountIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldBuyerBankAccount, vs...))
+}
+
+// BuyerBankAccountNotIn applies the NotIn predicate on the "buyer_bank_account" field.
+func BuyerBankAccountNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldBuyerBankAccount, vs...))
+}
+
+// BuyerBankAccountGT applies the GT predicate on the "buyer_bank_account" field.
+func BuyerBankAccountGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldBuyerBankAccount, v))
+}
+
+// BuyerBankAccountGTE applies the GTE predicate on the "buyer_bank_account" field.
+func BuyerBankAccountGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldBuyerBankAccount, v))
+}
+
+// BuyerBankAccountLT applies the LT predicate on the "buyer_bank_account" field.
+func BuyerBankAccountLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldBuyerBankAccount, v))
+}
+
+// BuyerBankAccountLTE applies the LTE predicate on the "buyer_bank_account" field.
+func BuyerBankAccountLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldBuyerBankAccount, v))
+}
+
+// BuyerBankAccountContains applies the Contains predicate on the "buyer_bank_account" field.
+func BuyerBankAccountContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldBuyerBankAccount, v))
+}
+
+// BuyerBankAccountHasPrefix applies the HasPrefix predicate on the "buyer_bank_account" field.
+func BuyerBankAccountHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldBuyerBankAccount, v))
+}
+
+// BuyerBankAccountHasSuffix applies the HasSuffix predicate on the "buyer_bank_account" field.
+func BuyerBankAccountHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldBuyerBankAccount, v))
+}
+
+// BuyerBankAccountEqualFold applies the EqualFold predicate on the "buyer_bank_account" field.
+func BuyerBankAccountEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldBuyerBankAccount, v))
+}
+
+// BuyerBankAccountContainsFold applies the ContainsFold predicate on the "buyer_bank_account" field.
+func BuyerBankAccountContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldBuyerBankAccount, v))
 }
 
 // AmountEQ applies the EQ predicate on the "amount" field.
@@ -1460,6 +1870,136 @@ func PdfOriginalNameContainsFold(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldContainsFold(FieldPdfOriginalName, v))
 }
 
+// InvoiceKindEQ applies the EQ predicate on the "invoice_kind" field.
+func InvoiceKindEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldInvoiceKind, v))
+}
+
+// InvoiceKindNEQ applies the NEQ predicate on the "invoice_kind" field.
+func InvoiceKindNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldInvoiceKind, v))
+}
+
+// InvoiceKindIn applies the In predicate on the "invoice_kind" field.
+func InvoiceKindIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldInvoiceKind, vs...))
+}
+
+// InvoiceKindNotIn applies the NotIn predicate on the "invoice_kind" field.
+func InvoiceKindNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldInvoiceKind, vs...))
+}
+
+// InvoiceKindGT applies the GT predicate on the "invoice_kind" field.
+func InvoiceKindGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldInvoiceKind, v))
+}
+
+// InvoiceKindGTE applies the GTE predicate on the "invoice_kind" field.
+func InvoiceKindGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldInvoiceKind, v))
+}
+
+// InvoiceKindLT applies the LT predicate on the "invoice_kind" field.
+func InvoiceKindLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldInvoiceKind, v))
+}
+
+// InvoiceKindLTE applies the LTE predicate on the "invoice_kind" field.
+func InvoiceKindLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldInvoiceKind, v))
+}
+
+// InvoiceKindContains applies the Contains predicate on the "invoice_kind" field.
+func InvoiceKindContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldInvoiceKind, v))
+}
+
+// InvoiceKindHasPrefix applies the HasPrefix predicate on the "invoice_kind" field.
+func InvoiceKindHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldInvoiceKind, v))
+}
+
+// InvoiceKindHasSuffix applies the HasSuffix predicate on the "invoice_kind" field.
+func InvoiceKindHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldInvoiceKind, v))
+}
+
+// InvoiceKindEqualFold applies the EqualFold predicate on the "invoice_kind" field.
+func InvoiceKindEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldInvoiceKind, v))
+}
+
+// InvoiceKindContainsFold applies the ContainsFold predicate on the "invoice_kind" field.
+func InvoiceKindContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldInvoiceKind, v))
+}
+
+// InvoiceTypeCodeEQ applies the EQ predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldInvoiceTypeCode, v))
+}
+
+// InvoiceTypeCodeNEQ applies the NEQ predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldInvoiceTypeCode, v))
+}
+
+// InvoiceTypeCodeIn applies the In predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldInvoiceTypeCode, vs...))
+}
+
+// InvoiceTypeCodeNotIn applies the NotIn predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldInvoiceTypeCode, vs...))
+}
+
+// InvoiceTypeCodeGT applies the GT predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldInvoiceTypeCode, v))
+}
+
+// InvoiceTypeCodeGTE applies the GTE predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldInvoiceTypeCode, v))
+}
+
+// InvoiceTypeCodeLT applies the LT predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldInvoiceTypeCode, v))
+}
+
+// InvoiceTypeCodeLTE applies the LTE predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldInvoiceTypeCode, v))
+}
+
+// InvoiceTypeCodeContains applies the Contains predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldInvoiceTypeCode, v))
+}
+
+// InvoiceTypeCodeHasPrefix applies the HasPrefix predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldInvoiceTypeCode, v))
+}
+
+// InvoiceTypeCodeHasSuffix applies the HasSuffix predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldInvoiceTypeCode, v))
+}
+
+// InvoiceTypeCodeEqualFold applies the EqualFold predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldInvoiceTypeCode, v))
+}
+
+// InvoiceTypeCodeContainsFold applies the ContainsFold predicate on the "invoice_type_code" field.
+func InvoiceTypeCodeContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldInvoiceTypeCode, v))
+}
+
 // ProviderEQ applies the EQ predicate on the "provider" field.
 func ProviderEQ(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldEQ(FieldProvider, v))
@@ -1525,6 +2065,241 @@ func ProviderContainsFold(v string) predicate.Invoice {
 	return predicate.Invoice(sql.FieldContainsFold(FieldProvider, v))
 }
 
+// ProviderStateEQ applies the EQ predicate on the "provider_state" field.
+func ProviderStateEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldProviderState, v))
+}
+
+// ProviderStateNEQ applies the NEQ predicate on the "provider_state" field.
+func ProviderStateNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldProviderState, v))
+}
+
+// ProviderStateIn applies the In predicate on the "provider_state" field.
+func ProviderStateIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldProviderState, vs...))
+}
+
+// ProviderStateNotIn applies the NotIn predicate on the "provider_state" field.
+func ProviderStateNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldProviderState, vs...))
+}
+
+// ProviderStateGT applies the GT predicate on the "provider_state" field.
+func ProviderStateGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldProviderState, v))
+}
+
+// ProviderStateGTE applies the GTE predicate on the "provider_state" field.
+func ProviderStateGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldProviderState, v))
+}
+
+// ProviderStateLT applies the LT predicate on the "provider_state" field.
+func ProviderStateLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldProviderState, v))
+}
+
+// ProviderStateLTE applies the LTE predicate on the "provider_state" field.
+func ProviderStateLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldProviderState, v))
+}
+
+// ProviderStateContains applies the Contains predicate on the "provider_state" field.
+func ProviderStateContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldProviderState, v))
+}
+
+// ProviderStateHasPrefix applies the HasPrefix predicate on the "provider_state" field.
+func ProviderStateHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldProviderState, v))
+}
+
+// ProviderStateHasSuffix applies the HasSuffix predicate on the "provider_state" field.
+func ProviderStateHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldProviderState, v))
+}
+
+// ProviderStateEqualFold applies the EqualFold predicate on the "provider_state" field.
+func ProviderStateEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldProviderState, v))
+}
+
+// ProviderStateContainsFold applies the ContainsFold predicate on the "provider_state" field.
+func ProviderStateContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldProviderState, v))
+}
+
+// ProviderTraceIDEQ applies the EQ predicate on the "provider_trace_id" field.
+func ProviderTraceIDEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldProviderTraceID, v))
+}
+
+// ProviderTraceIDNEQ applies the NEQ predicate on the "provider_trace_id" field.
+func ProviderTraceIDNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldProviderTraceID, v))
+}
+
+// ProviderTraceIDIn applies the In predicate on the "provider_trace_id" field.
+func ProviderTraceIDIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldProviderTraceID, vs...))
+}
+
+// ProviderTraceIDNotIn applies the NotIn predicate on the "provider_trace_id" field.
+func ProviderTraceIDNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldProviderTraceID, vs...))
+}
+
+// ProviderTraceIDGT applies the GT predicate on the "provider_trace_id" field.
+func ProviderTraceIDGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldProviderTraceID, v))
+}
+
+// ProviderTraceIDGTE applies the GTE predicate on the "provider_trace_id" field.
+func ProviderTraceIDGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldProviderTraceID, v))
+}
+
+// ProviderTraceIDLT applies the LT predicate on the "provider_trace_id" field.
+func ProviderTraceIDLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldProviderTraceID, v))
+}
+
+// ProviderTraceIDLTE applies the LTE predicate on the "provider_trace_id" field.
+func ProviderTraceIDLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldProviderTraceID, v))
+}
+
+// ProviderTraceIDContains applies the Contains predicate on the "provider_trace_id" field.
+func ProviderTraceIDContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldProviderTraceID, v))
+}
+
+// ProviderTraceIDHasPrefix applies the HasPrefix predicate on the "provider_trace_id" field.
+func ProviderTraceIDHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldProviderTraceID, v))
+}
+
+// ProviderTraceIDHasSuffix applies the HasSuffix predicate on the "provider_trace_id" field.
+func ProviderTraceIDHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldProviderTraceID, v))
+}
+
+// ProviderTraceIDEqualFold applies the EqualFold predicate on the "provider_trace_id" field.
+func ProviderTraceIDEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldProviderTraceID, v))
+}
+
+// ProviderTraceIDContainsFold applies the ContainsFold predicate on the "provider_trace_id" field.
+func ProviderTraceIDContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldProviderTraceID, v))
+}
+
+// ProviderLastErrorEQ applies the EQ predicate on the "provider_last_error" field.
+func ProviderLastErrorEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldProviderLastError, v))
+}
+
+// ProviderLastErrorNEQ applies the NEQ predicate on the "provider_last_error" field.
+func ProviderLastErrorNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldProviderLastError, v))
+}
+
+// ProviderLastErrorIn applies the In predicate on the "provider_last_error" field.
+func ProviderLastErrorIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldProviderLastError, vs...))
+}
+
+// ProviderLastErrorNotIn applies the NotIn predicate on the "provider_last_error" field.
+func ProviderLastErrorNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldProviderLastError, vs...))
+}
+
+// ProviderLastErrorGT applies the GT predicate on the "provider_last_error" field.
+func ProviderLastErrorGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldProviderLastError, v))
+}
+
+// ProviderLastErrorGTE applies the GTE predicate on the "provider_last_error" field.
+func ProviderLastErrorGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldProviderLastError, v))
+}
+
+// ProviderLastErrorLT applies the LT predicate on the "provider_last_error" field.
+func ProviderLastErrorLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldProviderLastError, v))
+}
+
+// ProviderLastErrorLTE applies the LTE predicate on the "provider_last_error" field.
+func ProviderLastErrorLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldProviderLastError, v))
+}
+
+// ProviderLastErrorContains applies the Contains predicate on the "provider_last_error" field.
+func ProviderLastErrorContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldProviderLastError, v))
+}
+
+// ProviderLastErrorHasPrefix applies the HasPrefix predicate on the "provider_last_error" field.
+func ProviderLastErrorHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldProviderLastError, v))
+}
+
+// ProviderLastErrorHasSuffix applies the HasSuffix predicate on the "provider_last_error" field.
+func ProviderLastErrorHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldProviderLastError, v))
+}
+
+// ProviderLastErrorEqualFold applies the EqualFold predicate on the "provider_last_error" field.
+func ProviderLastErrorEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldProviderLastError, v))
+}
+
+// ProviderLastErrorContainsFold applies the ContainsFold predicate on the "provider_last_error" field.
+func ProviderLastErrorContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldProviderLastError, v))
+}
+
+// ProviderRetryCountEQ applies the EQ predicate on the "provider_retry_count" field.
+func ProviderRetryCountEQ(v int) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldProviderRetryCount, v))
+}
+
+// ProviderRetryCountNEQ applies the NEQ predicate on the "provider_retry_count" field.
+func ProviderRetryCountNEQ(v int) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldProviderRetryCount, v))
+}
+
+// ProviderRetryCountIn applies the In predicate on the "provider_retry_count" field.
+func ProviderRetryCountIn(vs ...int) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldProviderRetryCount, vs...))
+}
+
+// ProviderRetryCountNotIn applies the NotIn predicate on the "provider_retry_count" field.
+func ProviderRetryCountNotIn(vs ...int) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldProviderRetryCount, vs...))
+}
+
+// ProviderRetryCountGT applies the GT predicate on the "provider_retry_count" field.
+func ProviderRetryCountGT(v int) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldProviderRetryCount, v))
+}
+
+// ProviderRetryCountGTE applies the GTE predicate on the "provider_retry_count" field.
+func ProviderRetryCountGTE(v int) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldProviderRetryCount, v))
+}
+
+// ProviderRetryCountLT applies the LT predicate on the "provider_retry_count" field.
+func ProviderRetryCountLT(v int) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldProviderRetryCount, v))
+}
+
+// ProviderRetryCountLTE applies the LTE predicate on the "provider_retry_count" field.
+func ProviderRetryCountLTE(v int) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldProviderRetryCount, v))
+}
+
 // ProviderPayloadIsNil applies the IsNil predicate on the "provider_payload" field.
 func ProviderPayloadIsNil() predicate.Invoice {
 	return predicate.Invoice(sql.FieldIsNull(FieldProviderPayload))
@@ -1533,6 +2308,396 @@ func ProviderPayloadIsNil() predicate.Invoice {
 // ProviderPayloadNotNil applies the NotNil predicate on the "provider_payload" field.
 func ProviderPayloadNotNil() predicate.Invoice {
 	return predicate.Invoice(sql.FieldNotNull(FieldProviderPayload))
+}
+
+// ReverseStepEQ applies the EQ predicate on the "reverse_step" field.
+func ReverseStepEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldReverseStep, v))
+}
+
+// ReverseStepNEQ applies the NEQ predicate on the "reverse_step" field.
+func ReverseStepNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldReverseStep, v))
+}
+
+// ReverseStepIn applies the In predicate on the "reverse_step" field.
+func ReverseStepIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldReverseStep, vs...))
+}
+
+// ReverseStepNotIn applies the NotIn predicate on the "reverse_step" field.
+func ReverseStepNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldReverseStep, vs...))
+}
+
+// ReverseStepGT applies the GT predicate on the "reverse_step" field.
+func ReverseStepGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldReverseStep, v))
+}
+
+// ReverseStepGTE applies the GTE predicate on the "reverse_step" field.
+func ReverseStepGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldReverseStep, v))
+}
+
+// ReverseStepLT applies the LT predicate on the "reverse_step" field.
+func ReverseStepLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldReverseStep, v))
+}
+
+// ReverseStepLTE applies the LTE predicate on the "reverse_step" field.
+func ReverseStepLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldReverseStep, v))
+}
+
+// ReverseStepContains applies the Contains predicate on the "reverse_step" field.
+func ReverseStepContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldReverseStep, v))
+}
+
+// ReverseStepHasPrefix applies the HasPrefix predicate on the "reverse_step" field.
+func ReverseStepHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldReverseStep, v))
+}
+
+// ReverseStepHasSuffix applies the HasSuffix predicate on the "reverse_step" field.
+func ReverseStepHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldReverseStep, v))
+}
+
+// ReverseStepEqualFold applies the EqualFold predicate on the "reverse_step" field.
+func ReverseStepEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldReverseStep, v))
+}
+
+// ReverseStepContainsFold applies the ContainsFold predicate on the "reverse_step" field.
+func ReverseStepContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldReverseStep, v))
+}
+
+// RedAdviceNumEQ applies the EQ predicate on the "red_advice_num" field.
+func RedAdviceNumEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldRedAdviceNum, v))
+}
+
+// RedAdviceNumNEQ applies the NEQ predicate on the "red_advice_num" field.
+func RedAdviceNumNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldRedAdviceNum, v))
+}
+
+// RedAdviceNumIn applies the In predicate on the "red_advice_num" field.
+func RedAdviceNumIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldRedAdviceNum, vs...))
+}
+
+// RedAdviceNumNotIn applies the NotIn predicate on the "red_advice_num" field.
+func RedAdviceNumNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldRedAdviceNum, vs...))
+}
+
+// RedAdviceNumGT applies the GT predicate on the "red_advice_num" field.
+func RedAdviceNumGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldRedAdviceNum, v))
+}
+
+// RedAdviceNumGTE applies the GTE predicate on the "red_advice_num" field.
+func RedAdviceNumGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldRedAdviceNum, v))
+}
+
+// RedAdviceNumLT applies the LT predicate on the "red_advice_num" field.
+func RedAdviceNumLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldRedAdviceNum, v))
+}
+
+// RedAdviceNumLTE applies the LTE predicate on the "red_advice_num" field.
+func RedAdviceNumLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldRedAdviceNum, v))
+}
+
+// RedAdviceNumContains applies the Contains predicate on the "red_advice_num" field.
+func RedAdviceNumContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldRedAdviceNum, v))
+}
+
+// RedAdviceNumHasPrefix applies the HasPrefix predicate on the "red_advice_num" field.
+func RedAdviceNumHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldRedAdviceNum, v))
+}
+
+// RedAdviceNumHasSuffix applies the HasSuffix predicate on the "red_advice_num" field.
+func RedAdviceNumHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldRedAdviceNum, v))
+}
+
+// RedAdviceNumEqualFold applies the EqualFold predicate on the "red_advice_num" field.
+func RedAdviceNumEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldRedAdviceNum, v))
+}
+
+// RedAdviceNumContainsFold applies the ContainsFold predicate on the "red_advice_num" field.
+func RedAdviceNumContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldRedAdviceNum, v))
+}
+
+// RedConfirmNumEQ applies the EQ predicate on the "red_confirm_num" field.
+func RedConfirmNumEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldRedConfirmNum, v))
+}
+
+// RedConfirmNumNEQ applies the NEQ predicate on the "red_confirm_num" field.
+func RedConfirmNumNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldRedConfirmNum, v))
+}
+
+// RedConfirmNumIn applies the In predicate on the "red_confirm_num" field.
+func RedConfirmNumIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldRedConfirmNum, vs...))
+}
+
+// RedConfirmNumNotIn applies the NotIn predicate on the "red_confirm_num" field.
+func RedConfirmNumNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldRedConfirmNum, vs...))
+}
+
+// RedConfirmNumGT applies the GT predicate on the "red_confirm_num" field.
+func RedConfirmNumGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldRedConfirmNum, v))
+}
+
+// RedConfirmNumGTE applies the GTE predicate on the "red_confirm_num" field.
+func RedConfirmNumGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldRedConfirmNum, v))
+}
+
+// RedConfirmNumLT applies the LT predicate on the "red_confirm_num" field.
+func RedConfirmNumLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldRedConfirmNum, v))
+}
+
+// RedConfirmNumLTE applies the LTE predicate on the "red_confirm_num" field.
+func RedConfirmNumLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldRedConfirmNum, v))
+}
+
+// RedConfirmNumContains applies the Contains predicate on the "red_confirm_num" field.
+func RedConfirmNumContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldRedConfirmNum, v))
+}
+
+// RedConfirmNumHasPrefix applies the HasPrefix predicate on the "red_confirm_num" field.
+func RedConfirmNumHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldRedConfirmNum, v))
+}
+
+// RedConfirmNumHasSuffix applies the HasSuffix predicate on the "red_confirm_num" field.
+func RedConfirmNumHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldRedConfirmNum, v))
+}
+
+// RedConfirmNumEqualFold applies the EqualFold predicate on the "red_confirm_num" field.
+func RedConfirmNumEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldRedConfirmNum, v))
+}
+
+// RedConfirmNumContainsFold applies the ContainsFold predicate on the "red_confirm_num" field.
+func RedConfirmNumContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldRedConfirmNum, v))
+}
+
+// ReverseTraceIDEQ applies the EQ predicate on the "reverse_trace_id" field.
+func ReverseTraceIDEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldReverseTraceID, v))
+}
+
+// ReverseTraceIDNEQ applies the NEQ predicate on the "reverse_trace_id" field.
+func ReverseTraceIDNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldReverseTraceID, v))
+}
+
+// ReverseTraceIDIn applies the In predicate on the "reverse_trace_id" field.
+func ReverseTraceIDIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldReverseTraceID, vs...))
+}
+
+// ReverseTraceIDNotIn applies the NotIn predicate on the "reverse_trace_id" field.
+func ReverseTraceIDNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldReverseTraceID, vs...))
+}
+
+// ReverseTraceIDGT applies the GT predicate on the "reverse_trace_id" field.
+func ReverseTraceIDGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldReverseTraceID, v))
+}
+
+// ReverseTraceIDGTE applies the GTE predicate on the "reverse_trace_id" field.
+func ReverseTraceIDGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldReverseTraceID, v))
+}
+
+// ReverseTraceIDLT applies the LT predicate on the "reverse_trace_id" field.
+func ReverseTraceIDLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldReverseTraceID, v))
+}
+
+// ReverseTraceIDLTE applies the LTE predicate on the "reverse_trace_id" field.
+func ReverseTraceIDLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldReverseTraceID, v))
+}
+
+// ReverseTraceIDContains applies the Contains predicate on the "reverse_trace_id" field.
+func ReverseTraceIDContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldReverseTraceID, v))
+}
+
+// ReverseTraceIDHasPrefix applies the HasPrefix predicate on the "reverse_trace_id" field.
+func ReverseTraceIDHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldReverseTraceID, v))
+}
+
+// ReverseTraceIDHasSuffix applies the HasSuffix predicate on the "reverse_trace_id" field.
+func ReverseTraceIDHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldReverseTraceID, v))
+}
+
+// ReverseTraceIDEqualFold applies the EqualFold predicate on the "reverse_trace_id" field.
+func ReverseTraceIDEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldReverseTraceID, v))
+}
+
+// ReverseTraceIDContainsFold applies the ContainsFold predicate on the "reverse_trace_id" field.
+func ReverseTraceIDContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldReverseTraceID, v))
+}
+
+// RedInvoiceNoEQ applies the EQ predicate on the "red_invoice_no" field.
+func RedInvoiceNoEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldRedInvoiceNo, v))
+}
+
+// RedInvoiceNoNEQ applies the NEQ predicate on the "red_invoice_no" field.
+func RedInvoiceNoNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldRedInvoiceNo, v))
+}
+
+// RedInvoiceNoIn applies the In predicate on the "red_invoice_no" field.
+func RedInvoiceNoIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldRedInvoiceNo, vs...))
+}
+
+// RedInvoiceNoNotIn applies the NotIn predicate on the "red_invoice_no" field.
+func RedInvoiceNoNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldRedInvoiceNo, vs...))
+}
+
+// RedInvoiceNoGT applies the GT predicate on the "red_invoice_no" field.
+func RedInvoiceNoGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldRedInvoiceNo, v))
+}
+
+// RedInvoiceNoGTE applies the GTE predicate on the "red_invoice_no" field.
+func RedInvoiceNoGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldRedInvoiceNo, v))
+}
+
+// RedInvoiceNoLT applies the LT predicate on the "red_invoice_no" field.
+func RedInvoiceNoLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldRedInvoiceNo, v))
+}
+
+// RedInvoiceNoLTE applies the LTE predicate on the "red_invoice_no" field.
+func RedInvoiceNoLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldRedInvoiceNo, v))
+}
+
+// RedInvoiceNoContains applies the Contains predicate on the "red_invoice_no" field.
+func RedInvoiceNoContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldRedInvoiceNo, v))
+}
+
+// RedInvoiceNoHasPrefix applies the HasPrefix predicate on the "red_invoice_no" field.
+func RedInvoiceNoHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldRedInvoiceNo, v))
+}
+
+// RedInvoiceNoHasSuffix applies the HasSuffix predicate on the "red_invoice_no" field.
+func RedInvoiceNoHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldRedInvoiceNo, v))
+}
+
+// RedInvoiceNoEqualFold applies the EqualFold predicate on the "red_invoice_no" field.
+func RedInvoiceNoEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldRedInvoiceNo, v))
+}
+
+// RedInvoiceNoContainsFold applies the ContainsFold predicate on the "red_invoice_no" field.
+func RedInvoiceNoContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldRedInvoiceNo, v))
+}
+
+// RedPdfPathEQ applies the EQ predicate on the "red_pdf_path" field.
+func RedPdfPathEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldRedPdfPath, v))
+}
+
+// RedPdfPathNEQ applies the NEQ predicate on the "red_pdf_path" field.
+func RedPdfPathNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldRedPdfPath, v))
+}
+
+// RedPdfPathIn applies the In predicate on the "red_pdf_path" field.
+func RedPdfPathIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldRedPdfPath, vs...))
+}
+
+// RedPdfPathNotIn applies the NotIn predicate on the "red_pdf_path" field.
+func RedPdfPathNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldRedPdfPath, vs...))
+}
+
+// RedPdfPathGT applies the GT predicate on the "red_pdf_path" field.
+func RedPdfPathGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldRedPdfPath, v))
+}
+
+// RedPdfPathGTE applies the GTE predicate on the "red_pdf_path" field.
+func RedPdfPathGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldRedPdfPath, v))
+}
+
+// RedPdfPathLT applies the LT predicate on the "red_pdf_path" field.
+func RedPdfPathLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldRedPdfPath, v))
+}
+
+// RedPdfPathLTE applies the LTE predicate on the "red_pdf_path" field.
+func RedPdfPathLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldRedPdfPath, v))
+}
+
+// RedPdfPathContains applies the Contains predicate on the "red_pdf_path" field.
+func RedPdfPathContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldRedPdfPath, v))
+}
+
+// RedPdfPathHasPrefix applies the HasPrefix predicate on the "red_pdf_path" field.
+func RedPdfPathHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldRedPdfPath, v))
+}
+
+// RedPdfPathHasSuffix applies the HasSuffix predicate on the "red_pdf_path" field.
+func RedPdfPathHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldRedPdfPath, v))
+}
+
+// RedPdfPathEqualFold applies the EqualFold predicate on the "red_pdf_path" field.
+func RedPdfPathEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldRedPdfPath, v))
+}
+
+// RedPdfPathContainsFold applies the ContainsFold predicate on the "red_pdf_path" field.
+func RedPdfPathContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldRedPdfPath, v))
 }
 
 // VoidedByEQ applies the EQ predicate on the "voided_by" field.

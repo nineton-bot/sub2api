@@ -16,11 +16,18 @@ import (
 //
 // 生命周期：
 //
-//	pending  -> approved -> issued                （正常审批 + 上传 PDF）
+//	pending  -> approved -> issued                （正常审批 + 自动开票或人工上传 PDF）
 //	pending  -> rejected                          （管理员驳回，订单释放）
 //	pending  -> voided                            （用户取消，订单释放）
 //	approved -> voided                            （管理员作废，订单释放）
-//	issued   -> voided                            （管理员作废，订单释放，PDF 文件保留作历史）
+//	issued   -> voided                            （红冲成功 / 管理员作废，订单释放，PDF 文件保留作历史）
+//
+// 子状态 provider_state 跟踪第三方平台异步处理：
+//
+//	开票方向：queued -> issuing -> success | failed
+//	红冲方向：reverse_pending -> reversing -> reverse_success | reverse_failed
+//
+// 数电票红冲走 reverse_step 子状态机：red_applying -> red_confirmed -> red_issuing -> red_done。
 //
 // rejected/voided 时事务内 hard-delete invoice_items 释放订单的 UNIQUE 约束。
 type Invoice struct {
@@ -46,6 +53,12 @@ func (Invoice) Fields() []ent.Field {
 			MaxLen(255).
 			Comment("申请时邮箱快照"),
 
+		// 申请单号：创建时生成，格式 APP-YYYYMMDD-{id6位}，全状态都有，供 UI 在未开具前展示稳定标识
+		field.String("application_no").
+			MaxLen(32).
+			Default("").
+			Comment("内部申请单号，创建后回填，与平台 invoice_no 区分"),
+
 		// 抬头
 		field.String("title_type").
 			MaxLen(20).
@@ -60,6 +73,24 @@ func (Invoice) Fields() []ent.Field {
 			MaxLen(255).
 			Default("").
 			Comment("收票邮箱（可选）"),
+
+		// 购方扩展信息（专票必填）。普票/个人可空。
+		field.String("buyer_address").
+			MaxLen(200).
+			Default("").
+			Comment("购方地址（专票必填）"),
+		field.String("buyer_phone").
+			MaxLen(32).
+			Default("").
+			Comment("购方电话（专票必填）"),
+		field.String("buyer_bank_name").
+			MaxLen(64).
+			Default("").
+			Comment("购方开户行（专票必填）"),
+		field.String("buyer_bank_account").
+			MaxLen(64).
+			Default("").
+			Comment("购方银行账号（专票必填）"),
 
 		// 金额
 		field.Float("amount").
@@ -124,14 +155,63 @@ func (Invoice) Fields() []ent.Field {
 			MaxLen(255).
 			Default(""),
 
+		// 票种（v3 新增）
+		field.String("invoice_kind").
+			MaxLen(10).
+			Default("normal").
+			Comment("normal 普票 | special 专票"),
+		field.String("invoice_type_code").
+			MaxLen(4).
+			Default("").
+			Comment("财云通 InvoiceType 枚举：04/10/01/08/05/06"),
+
 		// 第三方扩展
 		field.String("provider").
 			MaxLen(30).
 			Default("manual").
-			Comment("manual | nuonuo | baiwang | ..."),
+			Comment("manual | caiyuntong | nuonuo | baiwang | ..."),
+		field.String("provider_state").
+			MaxLen(20).
+			Default("none").
+			Comment("none | queued | issuing | success | failed | reverse_pending | reversing | reverse_success | reverse_failed"),
+		field.String("provider_trace_id").
+			MaxLen(128).
+			Default("").
+			Comment("蓝票 RequestID"),
+		field.String("provider_last_error").
+			SchemaType(map[string]string{dialect.Postgres: "text"}).
+			Default(""),
+		field.Int("provider_retry_count").
+			Default(0),
 		field.JSON("provider_payload", map[string]any{}).
 			Optional().
 			SchemaType(map[string]string{dialect.Postgres: "jsonb"}),
+
+		// 红冲（v3 新增）
+		field.String("reverse_step").
+			MaxLen(20).
+			Default("").
+			Comment("red_applying | red_confirmed | red_issuing | red_done"),
+		field.String("red_advice_num").
+			MaxLen(100).
+			Default("").
+			Comment("红字信息单编号（数电 Step 1 产物）"),
+		field.String("red_confirm_num").
+			MaxLen(60).
+			Default("").
+			Comment("红字信息单 uuid（数电 Step 2 产物）"),
+		field.String("reverse_trace_id").
+			MaxLen(128).
+			Default("").
+			Comment("红票 RequestID"),
+		field.String("red_invoice_no").
+			MaxLen(64).
+			Default("").
+			Comment("红票号码"),
+		field.String("red_pdf_path").
+			MaxLen(512).
+			Default("").
+			Comment("红票 PDF 存储路径"),
 
 		field.Int64("voided_by").
 			Optional().
@@ -157,5 +237,15 @@ func (Invoice) Indexes() []ent.Index {
 		index.Fields("invoice_no").
 			Unique().
 			Annotations(entsql.IndexWhere("invoice_no <> ''")),
+		index.Fields("application_no").
+			Unique().
+			Annotations(entsql.IndexWhere("application_no <> ''")),
+		index.Fields("provider_trace_id").
+			Unique().
+			Annotations(entsql.IndexWhere("provider_trace_id <> ''")),
+		index.Fields("reverse_trace_id").
+			Unique().
+			Annotations(entsql.IndexWhere("reverse_trace_id <> ''")),
+		index.Fields("provider_state"),
 	}
 }

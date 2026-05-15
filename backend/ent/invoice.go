@@ -27,6 +27,8 @@ type Invoice struct {
 	UserID int64 `json:"user_id,omitempty"`
 	// 申请时邮箱快照
 	UserEmail string `json:"user_email,omitempty"`
+	// 内部申请单号，创建后回填，与平台 invoice_no 区分
+	ApplicationNo string `json:"application_no,omitempty"`
 	// personal | business
 	TitleType string `json:"title_type,omitempty"`
 	// Title holds the value of the "title" field.
@@ -35,6 +37,14 @@ type Invoice struct {
 	TaxNo string `json:"tax_no,omitempty"`
 	// 收票邮箱（可选）
 	ContactEmail string `json:"contact_email,omitempty"`
+	// 购方地址（专票必填）
+	BuyerAddress string `json:"buyer_address,omitempty"`
+	// 购方电话（专票必填）
+	BuyerPhone string `json:"buyer_phone,omitempty"`
+	// 购方开户行（专票必填）
+	BuyerBankName string `json:"buyer_bank_name,omitempty"`
+	// 购方银行账号（专票必填）
+	BuyerBankAccount string `json:"buyer_bank_account,omitempty"`
 	// 订单 pay_amount 之和，RMB 元
 	Amount float64 `json:"amount,omitempty"`
 	// Currency holds the value of the "currency" field.
@@ -65,10 +75,34 @@ type Invoice struct {
 	PdfSha256 string `json:"pdf_sha256,omitempty"`
 	// PdfOriginalName holds the value of the "pdf_original_name" field.
 	PdfOriginalName string `json:"pdf_original_name,omitempty"`
-	// manual | nuonuo | baiwang | ...
+	// normal 普票 | special 专票
+	InvoiceKind string `json:"invoice_kind,omitempty"`
+	// 财云通 InvoiceType 枚举：04/10/01/08/05/06
+	InvoiceTypeCode string `json:"invoice_type_code,omitempty"`
+	// manual | caiyuntong | nuonuo | baiwang | ...
 	Provider string `json:"provider,omitempty"`
+	// none | queued | issuing | success | failed | reverse_pending | reversing | reverse_success | reverse_failed
+	ProviderState string `json:"provider_state,omitempty"`
+	// 蓝票 RequestID
+	ProviderTraceID string `json:"provider_trace_id,omitempty"`
+	// ProviderLastError holds the value of the "provider_last_error" field.
+	ProviderLastError string `json:"provider_last_error,omitempty"`
+	// ProviderRetryCount holds the value of the "provider_retry_count" field.
+	ProviderRetryCount int `json:"provider_retry_count,omitempty"`
 	// ProviderPayload holds the value of the "provider_payload" field.
 	ProviderPayload map[string]interface{} `json:"provider_payload,omitempty"`
+	// red_applying | red_confirmed | red_issuing | red_done
+	ReverseStep string `json:"reverse_step,omitempty"`
+	// 红字信息单编号（数电 Step 1 产物）
+	RedAdviceNum string `json:"red_advice_num,omitempty"`
+	// 红字信息单 uuid（数电 Step 2 产物）
+	RedConfirmNum string `json:"red_confirm_num,omitempty"`
+	// 红票 RequestID
+	ReverseTraceID string `json:"reverse_trace_id,omitempty"`
+	// 红票号码
+	RedInvoiceNo string `json:"red_invoice_no,omitempty"`
+	// 红票 PDF 存储路径
+	RedPdfPath string `json:"red_pdf_path,omitempty"`
 	// VoidedBy holds the value of the "voided_by" field.
 	VoidedBy *int64 `json:"voided_by,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -117,9 +151,9 @@ func (*Invoice) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case invoice.FieldAmount:
 			values[i] = new(sql.NullFloat64)
-		case invoice.FieldID, invoice.FieldUserID, invoice.FieldReviewedBy, invoice.FieldPdfSize, invoice.FieldVoidedBy:
+		case invoice.FieldID, invoice.FieldUserID, invoice.FieldReviewedBy, invoice.FieldPdfSize, invoice.FieldProviderRetryCount, invoice.FieldVoidedBy:
 			values[i] = new(sql.NullInt64)
-		case invoice.FieldUserEmail, invoice.FieldTitleType, invoice.FieldTitle, invoice.FieldTaxNo, invoice.FieldContactEmail, invoice.FieldCurrency, invoice.FieldNotes, invoice.FieldStatus, invoice.FieldReviewNotes, invoice.FieldInvoiceNo, invoice.FieldPdfPath, invoice.FieldPdfStorage, invoice.FieldPdfSha256, invoice.FieldPdfOriginalName, invoice.FieldProvider:
+		case invoice.FieldUserEmail, invoice.FieldApplicationNo, invoice.FieldTitleType, invoice.FieldTitle, invoice.FieldTaxNo, invoice.FieldContactEmail, invoice.FieldBuyerAddress, invoice.FieldBuyerPhone, invoice.FieldBuyerBankName, invoice.FieldBuyerBankAccount, invoice.FieldCurrency, invoice.FieldNotes, invoice.FieldStatus, invoice.FieldReviewNotes, invoice.FieldInvoiceNo, invoice.FieldPdfPath, invoice.FieldPdfStorage, invoice.FieldPdfSha256, invoice.FieldPdfOriginalName, invoice.FieldInvoiceKind, invoice.FieldInvoiceTypeCode, invoice.FieldProvider, invoice.FieldProviderState, invoice.FieldProviderTraceID, invoice.FieldProviderLastError, invoice.FieldReverseStep, invoice.FieldRedAdviceNum, invoice.FieldRedConfirmNum, invoice.FieldReverseTraceID, invoice.FieldRedInvoiceNo, invoice.FieldRedPdfPath:
 			values[i] = new(sql.NullString)
 		case invoice.FieldCreatedAt, invoice.FieldUpdatedAt, invoice.FieldSubmittedAt, invoice.FieldReviewedAt, invoice.FieldIssuedAt:
 			values[i] = new(sql.NullTime)
@@ -168,6 +202,12 @@ func (_m *Invoice) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UserEmail = value.String
 			}
+		case invoice.FieldApplicationNo:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field application_no", values[i])
+			} else if value.Valid {
+				_m.ApplicationNo = value.String
+			}
 		case invoice.FieldTitleType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field title_type", values[i])
@@ -191,6 +231,30 @@ func (_m *Invoice) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field contact_email", values[i])
 			} else if value.Valid {
 				_m.ContactEmail = value.String
+			}
+		case invoice.FieldBuyerAddress:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field buyer_address", values[i])
+			} else if value.Valid {
+				_m.BuyerAddress = value.String
+			}
+		case invoice.FieldBuyerPhone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field buyer_phone", values[i])
+			} else if value.Valid {
+				_m.BuyerPhone = value.String
+			}
+		case invoice.FieldBuyerBankName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field buyer_bank_name", values[i])
+			} else if value.Valid {
+				_m.BuyerBankName = value.String
+			}
+		case invoice.FieldBuyerBankAccount:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field buyer_bank_account", values[i])
+			} else if value.Valid {
+				_m.BuyerBankAccount = value.String
 			}
 		case invoice.FieldAmount:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
@@ -285,11 +349,47 @@ func (_m *Invoice) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.PdfOriginalName = value.String
 			}
+		case invoice.FieldInvoiceKind:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field invoice_kind", values[i])
+			} else if value.Valid {
+				_m.InvoiceKind = value.String
+			}
+		case invoice.FieldInvoiceTypeCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field invoice_type_code", values[i])
+			} else if value.Valid {
+				_m.InvoiceTypeCode = value.String
+			}
 		case invoice.FieldProvider:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field provider", values[i])
 			} else if value.Valid {
 				_m.Provider = value.String
+			}
+		case invoice.FieldProviderState:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_state", values[i])
+			} else if value.Valid {
+				_m.ProviderState = value.String
+			}
+		case invoice.FieldProviderTraceID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_trace_id", values[i])
+			} else if value.Valid {
+				_m.ProviderTraceID = value.String
+			}
+		case invoice.FieldProviderLastError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_last_error", values[i])
+			} else if value.Valid {
+				_m.ProviderLastError = value.String
+			}
+		case invoice.FieldProviderRetryCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_retry_count", values[i])
+			} else if value.Valid {
+				_m.ProviderRetryCount = int(value.Int64)
 			}
 		case invoice.FieldProviderPayload:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -298,6 +398,42 @@ func (_m *Invoice) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.ProviderPayload); err != nil {
 					return fmt.Errorf("unmarshal field provider_payload: %w", err)
 				}
+			}
+		case invoice.FieldReverseStep:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field reverse_step", values[i])
+			} else if value.Valid {
+				_m.ReverseStep = value.String
+			}
+		case invoice.FieldRedAdviceNum:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field red_advice_num", values[i])
+			} else if value.Valid {
+				_m.RedAdviceNum = value.String
+			}
+		case invoice.FieldRedConfirmNum:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field red_confirm_num", values[i])
+			} else if value.Valid {
+				_m.RedConfirmNum = value.String
+			}
+		case invoice.FieldReverseTraceID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field reverse_trace_id", values[i])
+			} else if value.Valid {
+				_m.ReverseTraceID = value.String
+			}
+		case invoice.FieldRedInvoiceNo:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field red_invoice_no", values[i])
+			} else if value.Valid {
+				_m.RedInvoiceNo = value.String
+			}
+		case invoice.FieldRedPdfPath:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field red_pdf_path", values[i])
+			} else if value.Valid {
+				_m.RedPdfPath = value.String
 			}
 		case invoice.FieldVoidedBy:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -364,6 +500,9 @@ func (_m *Invoice) String() string {
 	builder.WriteString("user_email=")
 	builder.WriteString(_m.UserEmail)
 	builder.WriteString(", ")
+	builder.WriteString("application_no=")
+	builder.WriteString(_m.ApplicationNo)
+	builder.WriteString(", ")
 	builder.WriteString("title_type=")
 	builder.WriteString(_m.TitleType)
 	builder.WriteString(", ")
@@ -375,6 +514,18 @@ func (_m *Invoice) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("contact_email=")
 	builder.WriteString(_m.ContactEmail)
+	builder.WriteString(", ")
+	builder.WriteString("buyer_address=")
+	builder.WriteString(_m.BuyerAddress)
+	builder.WriteString(", ")
+	builder.WriteString("buyer_phone=")
+	builder.WriteString(_m.BuyerPhone)
+	builder.WriteString(", ")
+	builder.WriteString("buyer_bank_name=")
+	builder.WriteString(_m.BuyerBankName)
+	builder.WriteString(", ")
+	builder.WriteString("buyer_bank_account=")
+	builder.WriteString(_m.BuyerBankAccount)
 	builder.WriteString(", ")
 	builder.WriteString("amount=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Amount))
@@ -427,11 +578,47 @@ func (_m *Invoice) String() string {
 	builder.WriteString("pdf_original_name=")
 	builder.WriteString(_m.PdfOriginalName)
 	builder.WriteString(", ")
+	builder.WriteString("invoice_kind=")
+	builder.WriteString(_m.InvoiceKind)
+	builder.WriteString(", ")
+	builder.WriteString("invoice_type_code=")
+	builder.WriteString(_m.InvoiceTypeCode)
+	builder.WriteString(", ")
 	builder.WriteString("provider=")
 	builder.WriteString(_m.Provider)
 	builder.WriteString(", ")
+	builder.WriteString("provider_state=")
+	builder.WriteString(_m.ProviderState)
+	builder.WriteString(", ")
+	builder.WriteString("provider_trace_id=")
+	builder.WriteString(_m.ProviderTraceID)
+	builder.WriteString(", ")
+	builder.WriteString("provider_last_error=")
+	builder.WriteString(_m.ProviderLastError)
+	builder.WriteString(", ")
+	builder.WriteString("provider_retry_count=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ProviderRetryCount))
+	builder.WriteString(", ")
 	builder.WriteString("provider_payload=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ProviderPayload))
+	builder.WriteString(", ")
+	builder.WriteString("reverse_step=")
+	builder.WriteString(_m.ReverseStep)
+	builder.WriteString(", ")
+	builder.WriteString("red_advice_num=")
+	builder.WriteString(_m.RedAdviceNum)
+	builder.WriteString(", ")
+	builder.WriteString("red_confirm_num=")
+	builder.WriteString(_m.RedConfirmNum)
+	builder.WriteString(", ")
+	builder.WriteString("reverse_trace_id=")
+	builder.WriteString(_m.ReverseTraceID)
+	builder.WriteString(", ")
+	builder.WriteString("red_invoice_no=")
+	builder.WriteString(_m.RedInvoiceNo)
+	builder.WriteString(", ")
+	builder.WriteString("red_pdf_path=")
+	builder.WriteString(_m.RedPdfPath)
 	builder.WriteString(", ")
 	if v := _m.VoidedBy; v != nil {
 		builder.WriteString("voided_by=")

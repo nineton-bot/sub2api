@@ -201,6 +201,46 @@ type SystemSettings struct {
 	// 发票（默认关闭）
 	InvoiceEnabled             bool // 主开关：全站发票功能
 	InvoiceDefaultForAllUsers  bool // 主开关 ON 时的默认可见性；false=白名单制（user.invoice_enabled）
+
+	// 自动开票渠道配置（v3）
+	InvoiceDefaultProvider string                    `json:"invoice_default_provider"` // manual | caiyuntong | ...
+	InvoiceCaiyuntong      InvoiceCaiyuntongSettings `json:"invoice_caiyuntong"`
+	InvoicePoller          InvoicePollerSettings     `json:"invoice_poller"`
+	InvoiceReverse         InvoiceReverseSettings    `json:"invoice_reverse"`
+}
+
+// InvoiceCaiyuntongSettings 财云通接入凭据 + 销方信息 + 票种映射。
+//
+// AccessKeySecret 字段在 admin API 响应中应当被掩码（参考 handler maskSecret）。
+type InvoiceCaiyuntongSettings struct {
+	Endpoint         string  `json:"endpoint"`
+	AccessKeyID      string  `json:"access_key_id"`
+	AccessKeySecret  string  `json:"access_key_secret"` // 响应时掩码
+	SellerTaxNum     string  `json:"seller_tax_num"`
+	SellerName       string  `json:"seller_name"`
+	SellerAddress    string  `json:"seller_address"`
+	SellerPhone      string  `json:"seller_phone"`
+	SellerBankName   string  `json:"seller_bank_name"`
+	SellerBankAcc    string  `json:"seller_bank_account"`
+	Drawer           string  `json:"drawer"`
+	Payee            string  `json:"payee"`
+	Reviewer         string  `json:"reviewer"`
+	TypeForNormal    string  `json:"type_normal"`
+	TypeForSpecial   string  `json:"type_special"`
+	GoodsCodeDefault string  `json:"goods_code_default"`
+	DefaultTaxRate   float64 `json:"default_tax_rate"`
+}
+
+type InvoicePollerSettings struct {
+	IntervalSeconds int `json:"interval_seconds"`
+	TimeoutMinutes  int `json:"timeout_minutes"`
+}
+
+type InvoiceReverseSettings struct {
+	PollerIntervalSeconds int    `json:"poller_interval_seconds"`
+	TimeoutMinutes        int    `json:"timeout_minutes"`
+	AutoOnUserRefund      bool   `json:"auto_on_user_refund"`
+	DefaultReason         string `json:"default_reason"`
 }
 
 type DefaultSubscriptionSetting struct {

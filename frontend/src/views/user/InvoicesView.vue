@@ -38,6 +38,9 @@
           <thead class="bg-gray-50 dark:bg-dark-800">
             <tr>
               <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+                {{ t('invoices.fields.applicationNo') }}
+              </th>
+              <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                 {{ t('invoices.fields.invoiceNo') }}
               </th>
               <th class="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
@@ -60,7 +63,10 @@
           <tbody class="divide-y divide-gray-200 dark:divide-dark-700">
             <tr v-for="inv in invoices" :key="inv.id" class="hover:bg-gray-50 dark:hover:bg-dark-800">
               <td class="px-4 py-3 font-mono text-xs text-gray-900 dark:text-white">
-                {{ inv.invoice_no || `#${inv.id}` }}
+                {{ inv.application_no }}
+              </td>
+              <td class="px-4 py-3 font-mono text-xs text-gray-900 dark:text-white">
+                {{ inv.invoice_no || '—' }}
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
                 {{ inv.title }}
@@ -102,6 +108,23 @@
                     <Icon name="download" size="sm" />
                     <span>{{ t('invoices.detail.downloadPdf') }}</span>
                   </button>
+                  <span
+                    v-if="inv.status === 'issued' && inv.pending_void_request"
+                    class="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                    :title="t('invoices.voidRequest.pendingTooltip', { time: formatDate(inv.pending_void_request.requested_at), reason: inv.pending_void_request.reason })"
+                  >
+                    <Icon name="clock" size="sm" />
+                    <span>{{ t('invoices.voidRequest.pendingBadge') }}</span>
+                  </span>
+                  <button
+                    v-else-if="inv.status === 'issued' && canRequestVoid(inv)"
+                    type="button"
+                    class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                    @click="openVoidRequest(inv)"
+                  >
+                    <Icon name="x" size="sm" />
+                    <span>{{ t('invoices.voidRequest.button') }}</span>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -132,6 +155,14 @@
       :show="!!detailId"
       :invoice-id="detailId"
       @update:show="(v) => { if (!v) detailId = null }"
+    />
+
+    <!-- Void request dialog -->
+    <InvoiceVoidRequestDialog
+      :show="!!voidRequestTarget"
+      :invoice="voidRequestTarget"
+      @update:show="(v) => { if (!v) voidRequestTarget = null }"
+      @submitted="onVoidSubmitted"
     />
 
     <!-- Cancel confirm -->
@@ -169,6 +200,7 @@ import Icon from '@/components/icons/Icon.vue'
 import InvoiceStatusBadge from '@/components/invoice/InvoiceStatusBadge.vue'
 import InvoiceApplyDialog from '@/components/invoice/InvoiceApplyDialog.vue'
 import InvoiceDetailDialog from '@/components/invoice/InvoiceDetailDialog.vue'
+import InvoiceVoidRequestDialog from '@/components/invoice/InvoiceVoidRequestDialog.vue'
 import invoiceAPI from '@/api/invoices'
 import { extractApiErrorMessage } from "@/utils/apiError"
 import type { Invoice } from '@/types/invoice'
@@ -182,6 +214,7 @@ const currentFilter = ref('')
 const applyOpen = ref(false)
 const detailId = ref<number | null>(null)
 const cancelTargetId = ref<number | null>(null)
+const voidRequestTarget = ref<Invoice | null>(null)
 const downloadingId = ref<number | null>(null)
 const pagination = reactive({ page: 1, page_size: 20, total: 0 })
 
@@ -256,6 +289,28 @@ function handlePageSizeChange(size: number) {
 
 function onSubmitted() {
   pagination.page = 1
+  fetchInvoices()
+}
+
+function canRequestVoid(inv: Invoice): boolean {
+  // 仅 issued + 自动渠道 + provider_state 不在红冲流水线中时允许申请
+  // （manual 渠道无法自动红冲；正在红冲的票后端也会拒绝，前端先把按钮藏掉避免误触）
+  if (inv.status !== 'issued') return false
+  if (!inv.provider || inv.provider === 'manual') return false
+  const reverseStates: Array<Invoice['provider_state']> = [
+    'reverse_pending',
+    'reversing',
+    'reverse_success',
+    'reverse_failed',
+  ]
+  return !reverseStates.includes(inv.provider_state)
+}
+
+function openVoidRequest(inv: Invoice) {
+  voidRequestTarget.value = inv
+}
+
+function onVoidSubmitted() {
   fetchInvoices()
 }
 

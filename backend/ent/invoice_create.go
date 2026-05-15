@@ -64,6 +64,20 @@ func (_c *InvoiceCreate) SetUserEmail(v string) *InvoiceCreate {
 	return _c
 }
 
+// SetApplicationNo sets the "application_no" field.
+func (_c *InvoiceCreate) SetApplicationNo(v string) *InvoiceCreate {
+	_c.mutation.SetApplicationNo(v)
+	return _c
+}
+
+// SetNillableApplicationNo sets the "application_no" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableApplicationNo(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetApplicationNo(*v)
+	}
+	return _c
+}
+
 // SetTitleType sets the "title_type" field.
 func (_c *InvoiceCreate) SetTitleType(v string) *InvoiceCreate {
 	_c.mutation.SetTitleType(v)
@@ -100,6 +114,62 @@ func (_c *InvoiceCreate) SetContactEmail(v string) *InvoiceCreate {
 func (_c *InvoiceCreate) SetNillableContactEmail(v *string) *InvoiceCreate {
 	if v != nil {
 		_c.SetContactEmail(*v)
+	}
+	return _c
+}
+
+// SetBuyerAddress sets the "buyer_address" field.
+func (_c *InvoiceCreate) SetBuyerAddress(v string) *InvoiceCreate {
+	_c.mutation.SetBuyerAddress(v)
+	return _c
+}
+
+// SetNillableBuyerAddress sets the "buyer_address" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableBuyerAddress(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetBuyerAddress(*v)
+	}
+	return _c
+}
+
+// SetBuyerPhone sets the "buyer_phone" field.
+func (_c *InvoiceCreate) SetBuyerPhone(v string) *InvoiceCreate {
+	_c.mutation.SetBuyerPhone(v)
+	return _c
+}
+
+// SetNillableBuyerPhone sets the "buyer_phone" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableBuyerPhone(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetBuyerPhone(*v)
+	}
+	return _c
+}
+
+// SetBuyerBankName sets the "buyer_bank_name" field.
+func (_c *InvoiceCreate) SetBuyerBankName(v string) *InvoiceCreate {
+	_c.mutation.SetBuyerBankName(v)
+	return _c
+}
+
+// SetNillableBuyerBankName sets the "buyer_bank_name" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableBuyerBankName(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetBuyerBankName(*v)
+	}
+	return _c
+}
+
+// SetBuyerBankAccount sets the "buyer_bank_account" field.
+func (_c *InvoiceCreate) SetBuyerBankAccount(v string) *InvoiceCreate {
+	_c.mutation.SetBuyerBankAccount(v)
+	return _c
+}
+
+// SetNillableBuyerBankAccount sets the "buyer_bank_account" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableBuyerBankAccount(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetBuyerBankAccount(*v)
 	}
 	return _c
 }
@@ -298,6 +368,34 @@ func (_c *InvoiceCreate) SetNillablePdfOriginalName(v *string) *InvoiceCreate {
 	return _c
 }
 
+// SetInvoiceKind sets the "invoice_kind" field.
+func (_c *InvoiceCreate) SetInvoiceKind(v string) *InvoiceCreate {
+	_c.mutation.SetInvoiceKind(v)
+	return _c
+}
+
+// SetNillableInvoiceKind sets the "invoice_kind" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableInvoiceKind(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetInvoiceKind(*v)
+	}
+	return _c
+}
+
+// SetInvoiceTypeCode sets the "invoice_type_code" field.
+func (_c *InvoiceCreate) SetInvoiceTypeCode(v string) *InvoiceCreate {
+	_c.mutation.SetInvoiceTypeCode(v)
+	return _c
+}
+
+// SetNillableInvoiceTypeCode sets the "invoice_type_code" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableInvoiceTypeCode(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetInvoiceTypeCode(*v)
+	}
+	return _c
+}
+
 // SetProvider sets the "provider" field.
 func (_c *InvoiceCreate) SetProvider(v string) *InvoiceCreate {
 	_c.mutation.SetProvider(v)
@@ -312,9 +410,149 @@ func (_c *InvoiceCreate) SetNillableProvider(v *string) *InvoiceCreate {
 	return _c
 }
 
+// SetProviderState sets the "provider_state" field.
+func (_c *InvoiceCreate) SetProviderState(v string) *InvoiceCreate {
+	_c.mutation.SetProviderState(v)
+	return _c
+}
+
+// SetNillableProviderState sets the "provider_state" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableProviderState(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetProviderState(*v)
+	}
+	return _c
+}
+
+// SetProviderTraceID sets the "provider_trace_id" field.
+func (_c *InvoiceCreate) SetProviderTraceID(v string) *InvoiceCreate {
+	_c.mutation.SetProviderTraceID(v)
+	return _c
+}
+
+// SetNillableProviderTraceID sets the "provider_trace_id" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableProviderTraceID(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetProviderTraceID(*v)
+	}
+	return _c
+}
+
+// SetProviderLastError sets the "provider_last_error" field.
+func (_c *InvoiceCreate) SetProviderLastError(v string) *InvoiceCreate {
+	_c.mutation.SetProviderLastError(v)
+	return _c
+}
+
+// SetNillableProviderLastError sets the "provider_last_error" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableProviderLastError(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetProviderLastError(*v)
+	}
+	return _c
+}
+
+// SetProviderRetryCount sets the "provider_retry_count" field.
+func (_c *InvoiceCreate) SetProviderRetryCount(v int) *InvoiceCreate {
+	_c.mutation.SetProviderRetryCount(v)
+	return _c
+}
+
+// SetNillableProviderRetryCount sets the "provider_retry_count" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableProviderRetryCount(v *int) *InvoiceCreate {
+	if v != nil {
+		_c.SetProviderRetryCount(*v)
+	}
+	return _c
+}
+
 // SetProviderPayload sets the "provider_payload" field.
 func (_c *InvoiceCreate) SetProviderPayload(v map[string]interface{}) *InvoiceCreate {
 	_c.mutation.SetProviderPayload(v)
+	return _c
+}
+
+// SetReverseStep sets the "reverse_step" field.
+func (_c *InvoiceCreate) SetReverseStep(v string) *InvoiceCreate {
+	_c.mutation.SetReverseStep(v)
+	return _c
+}
+
+// SetNillableReverseStep sets the "reverse_step" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableReverseStep(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetReverseStep(*v)
+	}
+	return _c
+}
+
+// SetRedAdviceNum sets the "red_advice_num" field.
+func (_c *InvoiceCreate) SetRedAdviceNum(v string) *InvoiceCreate {
+	_c.mutation.SetRedAdviceNum(v)
+	return _c
+}
+
+// SetNillableRedAdviceNum sets the "red_advice_num" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableRedAdviceNum(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetRedAdviceNum(*v)
+	}
+	return _c
+}
+
+// SetRedConfirmNum sets the "red_confirm_num" field.
+func (_c *InvoiceCreate) SetRedConfirmNum(v string) *InvoiceCreate {
+	_c.mutation.SetRedConfirmNum(v)
+	return _c
+}
+
+// SetNillableRedConfirmNum sets the "red_confirm_num" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableRedConfirmNum(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetRedConfirmNum(*v)
+	}
+	return _c
+}
+
+// SetReverseTraceID sets the "reverse_trace_id" field.
+func (_c *InvoiceCreate) SetReverseTraceID(v string) *InvoiceCreate {
+	_c.mutation.SetReverseTraceID(v)
+	return _c
+}
+
+// SetNillableReverseTraceID sets the "reverse_trace_id" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableReverseTraceID(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetReverseTraceID(*v)
+	}
+	return _c
+}
+
+// SetRedInvoiceNo sets the "red_invoice_no" field.
+func (_c *InvoiceCreate) SetRedInvoiceNo(v string) *InvoiceCreate {
+	_c.mutation.SetRedInvoiceNo(v)
+	return _c
+}
+
+// SetNillableRedInvoiceNo sets the "red_invoice_no" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableRedInvoiceNo(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetRedInvoiceNo(*v)
+	}
+	return _c
+}
+
+// SetRedPdfPath sets the "red_pdf_path" field.
+func (_c *InvoiceCreate) SetRedPdfPath(v string) *InvoiceCreate {
+	_c.mutation.SetRedPdfPath(v)
+	return _c
+}
+
+// SetNillableRedPdfPath sets the "red_pdf_path" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableRedPdfPath(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetRedPdfPath(*v)
+	}
 	return _c
 }
 
@@ -395,6 +633,10 @@ func (_c *InvoiceCreate) defaults() {
 		v := invoice.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.ApplicationNo(); !ok {
+		v := invoice.DefaultApplicationNo
+		_c.mutation.SetApplicationNo(v)
+	}
 	if _, ok := _c.mutation.TaxNo(); !ok {
 		v := invoice.DefaultTaxNo
 		_c.mutation.SetTaxNo(v)
@@ -402,6 +644,22 @@ func (_c *InvoiceCreate) defaults() {
 	if _, ok := _c.mutation.ContactEmail(); !ok {
 		v := invoice.DefaultContactEmail
 		_c.mutation.SetContactEmail(v)
+	}
+	if _, ok := _c.mutation.BuyerAddress(); !ok {
+		v := invoice.DefaultBuyerAddress
+		_c.mutation.SetBuyerAddress(v)
+	}
+	if _, ok := _c.mutation.BuyerPhone(); !ok {
+		v := invoice.DefaultBuyerPhone
+		_c.mutation.SetBuyerPhone(v)
+	}
+	if _, ok := _c.mutation.BuyerBankName(); !ok {
+		v := invoice.DefaultBuyerBankName
+		_c.mutation.SetBuyerBankName(v)
+	}
+	if _, ok := _c.mutation.BuyerBankAccount(); !ok {
+		v := invoice.DefaultBuyerBankAccount
+		_c.mutation.SetBuyerBankAccount(v)
 	}
 	if _, ok := _c.mutation.Currency(); !ok {
 		v := invoice.DefaultCurrency
@@ -443,9 +701,57 @@ func (_c *InvoiceCreate) defaults() {
 		v := invoice.DefaultPdfOriginalName
 		_c.mutation.SetPdfOriginalName(v)
 	}
+	if _, ok := _c.mutation.InvoiceKind(); !ok {
+		v := invoice.DefaultInvoiceKind
+		_c.mutation.SetInvoiceKind(v)
+	}
+	if _, ok := _c.mutation.InvoiceTypeCode(); !ok {
+		v := invoice.DefaultInvoiceTypeCode
+		_c.mutation.SetInvoiceTypeCode(v)
+	}
 	if _, ok := _c.mutation.Provider(); !ok {
 		v := invoice.DefaultProvider
 		_c.mutation.SetProvider(v)
+	}
+	if _, ok := _c.mutation.ProviderState(); !ok {
+		v := invoice.DefaultProviderState
+		_c.mutation.SetProviderState(v)
+	}
+	if _, ok := _c.mutation.ProviderTraceID(); !ok {
+		v := invoice.DefaultProviderTraceID
+		_c.mutation.SetProviderTraceID(v)
+	}
+	if _, ok := _c.mutation.ProviderLastError(); !ok {
+		v := invoice.DefaultProviderLastError
+		_c.mutation.SetProviderLastError(v)
+	}
+	if _, ok := _c.mutation.ProviderRetryCount(); !ok {
+		v := invoice.DefaultProviderRetryCount
+		_c.mutation.SetProviderRetryCount(v)
+	}
+	if _, ok := _c.mutation.ReverseStep(); !ok {
+		v := invoice.DefaultReverseStep
+		_c.mutation.SetReverseStep(v)
+	}
+	if _, ok := _c.mutation.RedAdviceNum(); !ok {
+		v := invoice.DefaultRedAdviceNum
+		_c.mutation.SetRedAdviceNum(v)
+	}
+	if _, ok := _c.mutation.RedConfirmNum(); !ok {
+		v := invoice.DefaultRedConfirmNum
+		_c.mutation.SetRedConfirmNum(v)
+	}
+	if _, ok := _c.mutation.ReverseTraceID(); !ok {
+		v := invoice.DefaultReverseTraceID
+		_c.mutation.SetReverseTraceID(v)
+	}
+	if _, ok := _c.mutation.RedInvoiceNo(); !ok {
+		v := invoice.DefaultRedInvoiceNo
+		_c.mutation.SetRedInvoiceNo(v)
+	}
+	if _, ok := _c.mutation.RedPdfPath(); !ok {
+		v := invoice.DefaultRedPdfPath
+		_c.mutation.SetRedPdfPath(v)
 	}
 }
 
@@ -466,6 +772,14 @@ func (_c *InvoiceCreate) check() error {
 	if v, ok := _c.mutation.UserEmail(); ok {
 		if err := invoice.UserEmailValidator(v); err != nil {
 			return &ValidationError{Name: "user_email", err: fmt.Errorf(`ent: validator failed for field "Invoice.user_email": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ApplicationNo(); !ok {
+		return &ValidationError{Name: "application_no", err: errors.New(`ent: missing required field "Invoice.application_no"`)}
+	}
+	if v, ok := _c.mutation.ApplicationNo(); ok {
+		if err := invoice.ApplicationNoValidator(v); err != nil {
+			return &ValidationError{Name: "application_no", err: fmt.Errorf(`ent: validator failed for field "Invoice.application_no": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.TitleType(); !ok {
@@ -498,6 +812,38 @@ func (_c *InvoiceCreate) check() error {
 	if v, ok := _c.mutation.ContactEmail(); ok {
 		if err := invoice.ContactEmailValidator(v); err != nil {
 			return &ValidationError{Name: "contact_email", err: fmt.Errorf(`ent: validator failed for field "Invoice.contact_email": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.BuyerAddress(); !ok {
+		return &ValidationError{Name: "buyer_address", err: errors.New(`ent: missing required field "Invoice.buyer_address"`)}
+	}
+	if v, ok := _c.mutation.BuyerAddress(); ok {
+		if err := invoice.BuyerAddressValidator(v); err != nil {
+			return &ValidationError{Name: "buyer_address", err: fmt.Errorf(`ent: validator failed for field "Invoice.buyer_address": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.BuyerPhone(); !ok {
+		return &ValidationError{Name: "buyer_phone", err: errors.New(`ent: missing required field "Invoice.buyer_phone"`)}
+	}
+	if v, ok := _c.mutation.BuyerPhone(); ok {
+		if err := invoice.BuyerPhoneValidator(v); err != nil {
+			return &ValidationError{Name: "buyer_phone", err: fmt.Errorf(`ent: validator failed for field "Invoice.buyer_phone": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.BuyerBankName(); !ok {
+		return &ValidationError{Name: "buyer_bank_name", err: errors.New(`ent: missing required field "Invoice.buyer_bank_name"`)}
+	}
+	if v, ok := _c.mutation.BuyerBankName(); ok {
+		if err := invoice.BuyerBankNameValidator(v); err != nil {
+			return &ValidationError{Name: "buyer_bank_name", err: fmt.Errorf(`ent: validator failed for field "Invoice.buyer_bank_name": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.BuyerBankAccount(); !ok {
+		return &ValidationError{Name: "buyer_bank_account", err: errors.New(`ent: missing required field "Invoice.buyer_bank_account"`)}
+	}
+	if v, ok := _c.mutation.BuyerBankAccount(); ok {
+		if err := invoice.BuyerBankAccountValidator(v); err != nil {
+			return &ValidationError{Name: "buyer_bank_account", err: fmt.Errorf(`ent: validator failed for field "Invoice.buyer_bank_account": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Amount(); !ok {
@@ -571,12 +917,98 @@ func (_c *InvoiceCreate) check() error {
 			return &ValidationError{Name: "pdf_original_name", err: fmt.Errorf(`ent: validator failed for field "Invoice.pdf_original_name": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.InvoiceKind(); !ok {
+		return &ValidationError{Name: "invoice_kind", err: errors.New(`ent: missing required field "Invoice.invoice_kind"`)}
+	}
+	if v, ok := _c.mutation.InvoiceKind(); ok {
+		if err := invoice.InvoiceKindValidator(v); err != nil {
+			return &ValidationError{Name: "invoice_kind", err: fmt.Errorf(`ent: validator failed for field "Invoice.invoice_kind": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.InvoiceTypeCode(); !ok {
+		return &ValidationError{Name: "invoice_type_code", err: errors.New(`ent: missing required field "Invoice.invoice_type_code"`)}
+	}
+	if v, ok := _c.mutation.InvoiceTypeCode(); ok {
+		if err := invoice.InvoiceTypeCodeValidator(v); err != nil {
+			return &ValidationError{Name: "invoice_type_code", err: fmt.Errorf(`ent: validator failed for field "Invoice.invoice_type_code": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Provider(); !ok {
 		return &ValidationError{Name: "provider", err: errors.New(`ent: missing required field "Invoice.provider"`)}
 	}
 	if v, ok := _c.mutation.Provider(); ok {
 		if err := invoice.ProviderValidator(v); err != nil {
 			return &ValidationError{Name: "provider", err: fmt.Errorf(`ent: validator failed for field "Invoice.provider": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ProviderState(); !ok {
+		return &ValidationError{Name: "provider_state", err: errors.New(`ent: missing required field "Invoice.provider_state"`)}
+	}
+	if v, ok := _c.mutation.ProviderState(); ok {
+		if err := invoice.ProviderStateValidator(v); err != nil {
+			return &ValidationError{Name: "provider_state", err: fmt.Errorf(`ent: validator failed for field "Invoice.provider_state": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ProviderTraceID(); !ok {
+		return &ValidationError{Name: "provider_trace_id", err: errors.New(`ent: missing required field "Invoice.provider_trace_id"`)}
+	}
+	if v, ok := _c.mutation.ProviderTraceID(); ok {
+		if err := invoice.ProviderTraceIDValidator(v); err != nil {
+			return &ValidationError{Name: "provider_trace_id", err: fmt.Errorf(`ent: validator failed for field "Invoice.provider_trace_id": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ProviderLastError(); !ok {
+		return &ValidationError{Name: "provider_last_error", err: errors.New(`ent: missing required field "Invoice.provider_last_error"`)}
+	}
+	if _, ok := _c.mutation.ProviderRetryCount(); !ok {
+		return &ValidationError{Name: "provider_retry_count", err: errors.New(`ent: missing required field "Invoice.provider_retry_count"`)}
+	}
+	if _, ok := _c.mutation.ReverseStep(); !ok {
+		return &ValidationError{Name: "reverse_step", err: errors.New(`ent: missing required field "Invoice.reverse_step"`)}
+	}
+	if v, ok := _c.mutation.ReverseStep(); ok {
+		if err := invoice.ReverseStepValidator(v); err != nil {
+			return &ValidationError{Name: "reverse_step", err: fmt.Errorf(`ent: validator failed for field "Invoice.reverse_step": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.RedAdviceNum(); !ok {
+		return &ValidationError{Name: "red_advice_num", err: errors.New(`ent: missing required field "Invoice.red_advice_num"`)}
+	}
+	if v, ok := _c.mutation.RedAdviceNum(); ok {
+		if err := invoice.RedAdviceNumValidator(v); err != nil {
+			return &ValidationError{Name: "red_advice_num", err: fmt.Errorf(`ent: validator failed for field "Invoice.red_advice_num": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.RedConfirmNum(); !ok {
+		return &ValidationError{Name: "red_confirm_num", err: errors.New(`ent: missing required field "Invoice.red_confirm_num"`)}
+	}
+	if v, ok := _c.mutation.RedConfirmNum(); ok {
+		if err := invoice.RedConfirmNumValidator(v); err != nil {
+			return &ValidationError{Name: "red_confirm_num", err: fmt.Errorf(`ent: validator failed for field "Invoice.red_confirm_num": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ReverseTraceID(); !ok {
+		return &ValidationError{Name: "reverse_trace_id", err: errors.New(`ent: missing required field "Invoice.reverse_trace_id"`)}
+	}
+	if v, ok := _c.mutation.ReverseTraceID(); ok {
+		if err := invoice.ReverseTraceIDValidator(v); err != nil {
+			return &ValidationError{Name: "reverse_trace_id", err: fmt.Errorf(`ent: validator failed for field "Invoice.reverse_trace_id": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.RedInvoiceNo(); !ok {
+		return &ValidationError{Name: "red_invoice_no", err: errors.New(`ent: missing required field "Invoice.red_invoice_no"`)}
+	}
+	if v, ok := _c.mutation.RedInvoiceNo(); ok {
+		if err := invoice.RedInvoiceNoValidator(v); err != nil {
+			return &ValidationError{Name: "red_invoice_no", err: fmt.Errorf(`ent: validator failed for field "Invoice.red_invoice_no": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.RedPdfPath(); !ok {
+		return &ValidationError{Name: "red_pdf_path", err: errors.New(`ent: missing required field "Invoice.red_pdf_path"`)}
+	}
+	if v, ok := _c.mutation.RedPdfPath(); ok {
+		if err := invoice.RedPdfPathValidator(v); err != nil {
+			return &ValidationError{Name: "red_pdf_path", err: fmt.Errorf(`ent: validator failed for field "Invoice.red_pdf_path": %w`, err)}
 		}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
@@ -621,6 +1053,10 @@ func (_c *InvoiceCreate) createSpec() (*Invoice, *sqlgraph.CreateSpec) {
 		_spec.SetField(invoice.FieldUserEmail, field.TypeString, value)
 		_node.UserEmail = value
 	}
+	if value, ok := _c.mutation.ApplicationNo(); ok {
+		_spec.SetField(invoice.FieldApplicationNo, field.TypeString, value)
+		_node.ApplicationNo = value
+	}
 	if value, ok := _c.mutation.TitleType(); ok {
 		_spec.SetField(invoice.FieldTitleType, field.TypeString, value)
 		_node.TitleType = value
@@ -636,6 +1072,22 @@ func (_c *InvoiceCreate) createSpec() (*Invoice, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ContactEmail(); ok {
 		_spec.SetField(invoice.FieldContactEmail, field.TypeString, value)
 		_node.ContactEmail = value
+	}
+	if value, ok := _c.mutation.BuyerAddress(); ok {
+		_spec.SetField(invoice.FieldBuyerAddress, field.TypeString, value)
+		_node.BuyerAddress = value
+	}
+	if value, ok := _c.mutation.BuyerPhone(); ok {
+		_spec.SetField(invoice.FieldBuyerPhone, field.TypeString, value)
+		_node.BuyerPhone = value
+	}
+	if value, ok := _c.mutation.BuyerBankName(); ok {
+		_spec.SetField(invoice.FieldBuyerBankName, field.TypeString, value)
+		_node.BuyerBankName = value
+	}
+	if value, ok := _c.mutation.BuyerBankAccount(); ok {
+		_spec.SetField(invoice.FieldBuyerBankAccount, field.TypeString, value)
+		_node.BuyerBankAccount = value
 	}
 	if value, ok := _c.mutation.Amount(); ok {
 		_spec.SetField(invoice.FieldAmount, field.TypeFloat64, value)
@@ -697,13 +1149,61 @@ func (_c *InvoiceCreate) createSpec() (*Invoice, *sqlgraph.CreateSpec) {
 		_spec.SetField(invoice.FieldPdfOriginalName, field.TypeString, value)
 		_node.PdfOriginalName = value
 	}
+	if value, ok := _c.mutation.InvoiceKind(); ok {
+		_spec.SetField(invoice.FieldInvoiceKind, field.TypeString, value)
+		_node.InvoiceKind = value
+	}
+	if value, ok := _c.mutation.InvoiceTypeCode(); ok {
+		_spec.SetField(invoice.FieldInvoiceTypeCode, field.TypeString, value)
+		_node.InvoiceTypeCode = value
+	}
 	if value, ok := _c.mutation.Provider(); ok {
 		_spec.SetField(invoice.FieldProvider, field.TypeString, value)
 		_node.Provider = value
 	}
+	if value, ok := _c.mutation.ProviderState(); ok {
+		_spec.SetField(invoice.FieldProviderState, field.TypeString, value)
+		_node.ProviderState = value
+	}
+	if value, ok := _c.mutation.ProviderTraceID(); ok {
+		_spec.SetField(invoice.FieldProviderTraceID, field.TypeString, value)
+		_node.ProviderTraceID = value
+	}
+	if value, ok := _c.mutation.ProviderLastError(); ok {
+		_spec.SetField(invoice.FieldProviderLastError, field.TypeString, value)
+		_node.ProviderLastError = value
+	}
+	if value, ok := _c.mutation.ProviderRetryCount(); ok {
+		_spec.SetField(invoice.FieldProviderRetryCount, field.TypeInt, value)
+		_node.ProviderRetryCount = value
+	}
 	if value, ok := _c.mutation.ProviderPayload(); ok {
 		_spec.SetField(invoice.FieldProviderPayload, field.TypeJSON, value)
 		_node.ProviderPayload = value
+	}
+	if value, ok := _c.mutation.ReverseStep(); ok {
+		_spec.SetField(invoice.FieldReverseStep, field.TypeString, value)
+		_node.ReverseStep = value
+	}
+	if value, ok := _c.mutation.RedAdviceNum(); ok {
+		_spec.SetField(invoice.FieldRedAdviceNum, field.TypeString, value)
+		_node.RedAdviceNum = value
+	}
+	if value, ok := _c.mutation.RedConfirmNum(); ok {
+		_spec.SetField(invoice.FieldRedConfirmNum, field.TypeString, value)
+		_node.RedConfirmNum = value
+	}
+	if value, ok := _c.mutation.ReverseTraceID(); ok {
+		_spec.SetField(invoice.FieldReverseTraceID, field.TypeString, value)
+		_node.ReverseTraceID = value
+	}
+	if value, ok := _c.mutation.RedInvoiceNo(); ok {
+		_spec.SetField(invoice.FieldRedInvoiceNo, field.TypeString, value)
+		_node.RedInvoiceNo = value
+	}
+	if value, ok := _c.mutation.RedPdfPath(); ok {
+		_spec.SetField(invoice.FieldRedPdfPath, field.TypeString, value)
+		_node.RedPdfPath = value
 	}
 	if value, ok := _c.mutation.VoidedBy(); ok {
 		_spec.SetField(invoice.FieldVoidedBy, field.TypeInt64, value)
@@ -830,6 +1330,18 @@ func (u *InvoiceUpsert) UpdateUserEmail() *InvoiceUpsert {
 	return u
 }
 
+// SetApplicationNo sets the "application_no" field.
+func (u *InvoiceUpsert) SetApplicationNo(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldApplicationNo, v)
+	return u
+}
+
+// UpdateApplicationNo sets the "application_no" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateApplicationNo() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldApplicationNo)
+	return u
+}
+
 // SetTitleType sets the "title_type" field.
 func (u *InvoiceUpsert) SetTitleType(v string) *InvoiceUpsert {
 	u.Set(invoice.FieldTitleType, v)
@@ -875,6 +1387,54 @@ func (u *InvoiceUpsert) SetContactEmail(v string) *InvoiceUpsert {
 // UpdateContactEmail sets the "contact_email" field to the value that was provided on create.
 func (u *InvoiceUpsert) UpdateContactEmail() *InvoiceUpsert {
 	u.SetExcluded(invoice.FieldContactEmail)
+	return u
+}
+
+// SetBuyerAddress sets the "buyer_address" field.
+func (u *InvoiceUpsert) SetBuyerAddress(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldBuyerAddress, v)
+	return u
+}
+
+// UpdateBuyerAddress sets the "buyer_address" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateBuyerAddress() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldBuyerAddress)
+	return u
+}
+
+// SetBuyerPhone sets the "buyer_phone" field.
+func (u *InvoiceUpsert) SetBuyerPhone(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldBuyerPhone, v)
+	return u
+}
+
+// UpdateBuyerPhone sets the "buyer_phone" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateBuyerPhone() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldBuyerPhone)
+	return u
+}
+
+// SetBuyerBankName sets the "buyer_bank_name" field.
+func (u *InvoiceUpsert) SetBuyerBankName(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldBuyerBankName, v)
+	return u
+}
+
+// UpdateBuyerBankName sets the "buyer_bank_name" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateBuyerBankName() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldBuyerBankName)
+	return u
+}
+
+// SetBuyerBankAccount sets the "buyer_bank_account" field.
+func (u *InvoiceUpsert) SetBuyerBankAccount(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldBuyerBankAccount, v)
+	return u
+}
+
+// UpdateBuyerBankAccount sets the "buyer_bank_account" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateBuyerBankAccount() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldBuyerBankAccount)
 	return u
 }
 
@@ -1094,6 +1654,30 @@ func (u *InvoiceUpsert) UpdatePdfOriginalName() *InvoiceUpsert {
 	return u
 }
 
+// SetInvoiceKind sets the "invoice_kind" field.
+func (u *InvoiceUpsert) SetInvoiceKind(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldInvoiceKind, v)
+	return u
+}
+
+// UpdateInvoiceKind sets the "invoice_kind" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateInvoiceKind() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldInvoiceKind)
+	return u
+}
+
+// SetInvoiceTypeCode sets the "invoice_type_code" field.
+func (u *InvoiceUpsert) SetInvoiceTypeCode(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldInvoiceTypeCode, v)
+	return u
+}
+
+// UpdateInvoiceTypeCode sets the "invoice_type_code" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateInvoiceTypeCode() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldInvoiceTypeCode)
+	return u
+}
+
 // SetProvider sets the "provider" field.
 func (u *InvoiceUpsert) SetProvider(v string) *InvoiceUpsert {
 	u.Set(invoice.FieldProvider, v)
@@ -1103,6 +1687,60 @@ func (u *InvoiceUpsert) SetProvider(v string) *InvoiceUpsert {
 // UpdateProvider sets the "provider" field to the value that was provided on create.
 func (u *InvoiceUpsert) UpdateProvider() *InvoiceUpsert {
 	u.SetExcluded(invoice.FieldProvider)
+	return u
+}
+
+// SetProviderState sets the "provider_state" field.
+func (u *InvoiceUpsert) SetProviderState(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldProviderState, v)
+	return u
+}
+
+// UpdateProviderState sets the "provider_state" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateProviderState() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldProviderState)
+	return u
+}
+
+// SetProviderTraceID sets the "provider_trace_id" field.
+func (u *InvoiceUpsert) SetProviderTraceID(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldProviderTraceID, v)
+	return u
+}
+
+// UpdateProviderTraceID sets the "provider_trace_id" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateProviderTraceID() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldProviderTraceID)
+	return u
+}
+
+// SetProviderLastError sets the "provider_last_error" field.
+func (u *InvoiceUpsert) SetProviderLastError(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldProviderLastError, v)
+	return u
+}
+
+// UpdateProviderLastError sets the "provider_last_error" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateProviderLastError() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldProviderLastError)
+	return u
+}
+
+// SetProviderRetryCount sets the "provider_retry_count" field.
+func (u *InvoiceUpsert) SetProviderRetryCount(v int) *InvoiceUpsert {
+	u.Set(invoice.FieldProviderRetryCount, v)
+	return u
+}
+
+// UpdateProviderRetryCount sets the "provider_retry_count" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateProviderRetryCount() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldProviderRetryCount)
+	return u
+}
+
+// AddProviderRetryCount adds v to the "provider_retry_count" field.
+func (u *InvoiceUpsert) AddProviderRetryCount(v int) *InvoiceUpsert {
+	u.Add(invoice.FieldProviderRetryCount, v)
 	return u
 }
 
@@ -1121,6 +1759,78 @@ func (u *InvoiceUpsert) UpdateProviderPayload() *InvoiceUpsert {
 // ClearProviderPayload clears the value of the "provider_payload" field.
 func (u *InvoiceUpsert) ClearProviderPayload() *InvoiceUpsert {
 	u.SetNull(invoice.FieldProviderPayload)
+	return u
+}
+
+// SetReverseStep sets the "reverse_step" field.
+func (u *InvoiceUpsert) SetReverseStep(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldReverseStep, v)
+	return u
+}
+
+// UpdateReverseStep sets the "reverse_step" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateReverseStep() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldReverseStep)
+	return u
+}
+
+// SetRedAdviceNum sets the "red_advice_num" field.
+func (u *InvoiceUpsert) SetRedAdviceNum(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldRedAdviceNum, v)
+	return u
+}
+
+// UpdateRedAdviceNum sets the "red_advice_num" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateRedAdviceNum() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldRedAdviceNum)
+	return u
+}
+
+// SetRedConfirmNum sets the "red_confirm_num" field.
+func (u *InvoiceUpsert) SetRedConfirmNum(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldRedConfirmNum, v)
+	return u
+}
+
+// UpdateRedConfirmNum sets the "red_confirm_num" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateRedConfirmNum() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldRedConfirmNum)
+	return u
+}
+
+// SetReverseTraceID sets the "reverse_trace_id" field.
+func (u *InvoiceUpsert) SetReverseTraceID(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldReverseTraceID, v)
+	return u
+}
+
+// UpdateReverseTraceID sets the "reverse_trace_id" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateReverseTraceID() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldReverseTraceID)
+	return u
+}
+
+// SetRedInvoiceNo sets the "red_invoice_no" field.
+func (u *InvoiceUpsert) SetRedInvoiceNo(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldRedInvoiceNo, v)
+	return u
+}
+
+// UpdateRedInvoiceNo sets the "red_invoice_no" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateRedInvoiceNo() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldRedInvoiceNo)
+	return u
+}
+
+// SetRedPdfPath sets the "red_pdf_path" field.
+func (u *InvoiceUpsert) SetRedPdfPath(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldRedPdfPath, v)
+	return u
+}
+
+// UpdateRedPdfPath sets the "red_pdf_path" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateRedPdfPath() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldRedPdfPath)
 	return u
 }
 
@@ -1235,6 +1945,20 @@ func (u *InvoiceUpsertOne) UpdateUserEmail() *InvoiceUpsertOne {
 	})
 }
 
+// SetApplicationNo sets the "application_no" field.
+func (u *InvoiceUpsertOne) SetApplicationNo(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetApplicationNo(v)
+	})
+}
+
+// UpdateApplicationNo sets the "application_no" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateApplicationNo() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateApplicationNo()
+	})
+}
+
 // SetTitleType sets the "title_type" field.
 func (u *InvoiceUpsertOne) SetTitleType(v string) *InvoiceUpsertOne {
 	return u.Update(func(s *InvoiceUpsert) {
@@ -1288,6 +2012,62 @@ func (u *InvoiceUpsertOne) SetContactEmail(v string) *InvoiceUpsertOne {
 func (u *InvoiceUpsertOne) UpdateContactEmail() *InvoiceUpsertOne {
 	return u.Update(func(s *InvoiceUpsert) {
 		s.UpdateContactEmail()
+	})
+}
+
+// SetBuyerAddress sets the "buyer_address" field.
+func (u *InvoiceUpsertOne) SetBuyerAddress(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetBuyerAddress(v)
+	})
+}
+
+// UpdateBuyerAddress sets the "buyer_address" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateBuyerAddress() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateBuyerAddress()
+	})
+}
+
+// SetBuyerPhone sets the "buyer_phone" field.
+func (u *InvoiceUpsertOne) SetBuyerPhone(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetBuyerPhone(v)
+	})
+}
+
+// UpdateBuyerPhone sets the "buyer_phone" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateBuyerPhone() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateBuyerPhone()
+	})
+}
+
+// SetBuyerBankName sets the "buyer_bank_name" field.
+func (u *InvoiceUpsertOne) SetBuyerBankName(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetBuyerBankName(v)
+	})
+}
+
+// UpdateBuyerBankName sets the "buyer_bank_name" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateBuyerBankName() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateBuyerBankName()
+	})
+}
+
+// SetBuyerBankAccount sets the "buyer_bank_account" field.
+func (u *InvoiceUpsertOne) SetBuyerBankAccount(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetBuyerBankAccount(v)
+	})
+}
+
+// UpdateBuyerBankAccount sets the "buyer_bank_account" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateBuyerBankAccount() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateBuyerBankAccount()
 	})
 }
 
@@ -1543,6 +2323,34 @@ func (u *InvoiceUpsertOne) UpdatePdfOriginalName() *InvoiceUpsertOne {
 	})
 }
 
+// SetInvoiceKind sets the "invoice_kind" field.
+func (u *InvoiceUpsertOne) SetInvoiceKind(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetInvoiceKind(v)
+	})
+}
+
+// UpdateInvoiceKind sets the "invoice_kind" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateInvoiceKind() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateInvoiceKind()
+	})
+}
+
+// SetInvoiceTypeCode sets the "invoice_type_code" field.
+func (u *InvoiceUpsertOne) SetInvoiceTypeCode(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetInvoiceTypeCode(v)
+	})
+}
+
+// UpdateInvoiceTypeCode sets the "invoice_type_code" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateInvoiceTypeCode() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateInvoiceTypeCode()
+	})
+}
+
 // SetProvider sets the "provider" field.
 func (u *InvoiceUpsertOne) SetProvider(v string) *InvoiceUpsertOne {
 	return u.Update(func(s *InvoiceUpsert) {
@@ -1554,6 +2362,69 @@ func (u *InvoiceUpsertOne) SetProvider(v string) *InvoiceUpsertOne {
 func (u *InvoiceUpsertOne) UpdateProvider() *InvoiceUpsertOne {
 	return u.Update(func(s *InvoiceUpsert) {
 		s.UpdateProvider()
+	})
+}
+
+// SetProviderState sets the "provider_state" field.
+func (u *InvoiceUpsertOne) SetProviderState(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetProviderState(v)
+	})
+}
+
+// UpdateProviderState sets the "provider_state" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateProviderState() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateProviderState()
+	})
+}
+
+// SetProviderTraceID sets the "provider_trace_id" field.
+func (u *InvoiceUpsertOne) SetProviderTraceID(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetProviderTraceID(v)
+	})
+}
+
+// UpdateProviderTraceID sets the "provider_trace_id" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateProviderTraceID() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateProviderTraceID()
+	})
+}
+
+// SetProviderLastError sets the "provider_last_error" field.
+func (u *InvoiceUpsertOne) SetProviderLastError(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetProviderLastError(v)
+	})
+}
+
+// UpdateProviderLastError sets the "provider_last_error" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateProviderLastError() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateProviderLastError()
+	})
+}
+
+// SetProviderRetryCount sets the "provider_retry_count" field.
+func (u *InvoiceUpsertOne) SetProviderRetryCount(v int) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetProviderRetryCount(v)
+	})
+}
+
+// AddProviderRetryCount adds v to the "provider_retry_count" field.
+func (u *InvoiceUpsertOne) AddProviderRetryCount(v int) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.AddProviderRetryCount(v)
+	})
+}
+
+// UpdateProviderRetryCount sets the "provider_retry_count" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateProviderRetryCount() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateProviderRetryCount()
 	})
 }
 
@@ -1575,6 +2446,90 @@ func (u *InvoiceUpsertOne) UpdateProviderPayload() *InvoiceUpsertOne {
 func (u *InvoiceUpsertOne) ClearProviderPayload() *InvoiceUpsertOne {
 	return u.Update(func(s *InvoiceUpsert) {
 		s.ClearProviderPayload()
+	})
+}
+
+// SetReverseStep sets the "reverse_step" field.
+func (u *InvoiceUpsertOne) SetReverseStep(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetReverseStep(v)
+	})
+}
+
+// UpdateReverseStep sets the "reverse_step" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateReverseStep() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateReverseStep()
+	})
+}
+
+// SetRedAdviceNum sets the "red_advice_num" field.
+func (u *InvoiceUpsertOne) SetRedAdviceNum(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetRedAdviceNum(v)
+	})
+}
+
+// UpdateRedAdviceNum sets the "red_advice_num" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateRedAdviceNum() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateRedAdviceNum()
+	})
+}
+
+// SetRedConfirmNum sets the "red_confirm_num" field.
+func (u *InvoiceUpsertOne) SetRedConfirmNum(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetRedConfirmNum(v)
+	})
+}
+
+// UpdateRedConfirmNum sets the "red_confirm_num" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateRedConfirmNum() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateRedConfirmNum()
+	})
+}
+
+// SetReverseTraceID sets the "reverse_trace_id" field.
+func (u *InvoiceUpsertOne) SetReverseTraceID(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetReverseTraceID(v)
+	})
+}
+
+// UpdateReverseTraceID sets the "reverse_trace_id" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateReverseTraceID() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateReverseTraceID()
+	})
+}
+
+// SetRedInvoiceNo sets the "red_invoice_no" field.
+func (u *InvoiceUpsertOne) SetRedInvoiceNo(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetRedInvoiceNo(v)
+	})
+}
+
+// UpdateRedInvoiceNo sets the "red_invoice_no" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateRedInvoiceNo() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateRedInvoiceNo()
+	})
+}
+
+// SetRedPdfPath sets the "red_pdf_path" field.
+func (u *InvoiceUpsertOne) SetRedPdfPath(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetRedPdfPath(v)
+	})
+}
+
+// UpdateRedPdfPath sets the "red_pdf_path" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateRedPdfPath() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateRedPdfPath()
 	})
 }
 
@@ -1859,6 +2814,20 @@ func (u *InvoiceUpsertBulk) UpdateUserEmail() *InvoiceUpsertBulk {
 	})
 }
 
+// SetApplicationNo sets the "application_no" field.
+func (u *InvoiceUpsertBulk) SetApplicationNo(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetApplicationNo(v)
+	})
+}
+
+// UpdateApplicationNo sets the "application_no" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateApplicationNo() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateApplicationNo()
+	})
+}
+
 // SetTitleType sets the "title_type" field.
 func (u *InvoiceUpsertBulk) SetTitleType(v string) *InvoiceUpsertBulk {
 	return u.Update(func(s *InvoiceUpsert) {
@@ -1912,6 +2881,62 @@ func (u *InvoiceUpsertBulk) SetContactEmail(v string) *InvoiceUpsertBulk {
 func (u *InvoiceUpsertBulk) UpdateContactEmail() *InvoiceUpsertBulk {
 	return u.Update(func(s *InvoiceUpsert) {
 		s.UpdateContactEmail()
+	})
+}
+
+// SetBuyerAddress sets the "buyer_address" field.
+func (u *InvoiceUpsertBulk) SetBuyerAddress(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetBuyerAddress(v)
+	})
+}
+
+// UpdateBuyerAddress sets the "buyer_address" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateBuyerAddress() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateBuyerAddress()
+	})
+}
+
+// SetBuyerPhone sets the "buyer_phone" field.
+func (u *InvoiceUpsertBulk) SetBuyerPhone(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetBuyerPhone(v)
+	})
+}
+
+// UpdateBuyerPhone sets the "buyer_phone" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateBuyerPhone() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateBuyerPhone()
+	})
+}
+
+// SetBuyerBankName sets the "buyer_bank_name" field.
+func (u *InvoiceUpsertBulk) SetBuyerBankName(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetBuyerBankName(v)
+	})
+}
+
+// UpdateBuyerBankName sets the "buyer_bank_name" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateBuyerBankName() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateBuyerBankName()
+	})
+}
+
+// SetBuyerBankAccount sets the "buyer_bank_account" field.
+func (u *InvoiceUpsertBulk) SetBuyerBankAccount(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetBuyerBankAccount(v)
+	})
+}
+
+// UpdateBuyerBankAccount sets the "buyer_bank_account" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateBuyerBankAccount() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateBuyerBankAccount()
 	})
 }
 
@@ -2167,6 +3192,34 @@ func (u *InvoiceUpsertBulk) UpdatePdfOriginalName() *InvoiceUpsertBulk {
 	})
 }
 
+// SetInvoiceKind sets the "invoice_kind" field.
+func (u *InvoiceUpsertBulk) SetInvoiceKind(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetInvoiceKind(v)
+	})
+}
+
+// UpdateInvoiceKind sets the "invoice_kind" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateInvoiceKind() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateInvoiceKind()
+	})
+}
+
+// SetInvoiceTypeCode sets the "invoice_type_code" field.
+func (u *InvoiceUpsertBulk) SetInvoiceTypeCode(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetInvoiceTypeCode(v)
+	})
+}
+
+// UpdateInvoiceTypeCode sets the "invoice_type_code" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateInvoiceTypeCode() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateInvoiceTypeCode()
+	})
+}
+
 // SetProvider sets the "provider" field.
 func (u *InvoiceUpsertBulk) SetProvider(v string) *InvoiceUpsertBulk {
 	return u.Update(func(s *InvoiceUpsert) {
@@ -2178,6 +3231,69 @@ func (u *InvoiceUpsertBulk) SetProvider(v string) *InvoiceUpsertBulk {
 func (u *InvoiceUpsertBulk) UpdateProvider() *InvoiceUpsertBulk {
 	return u.Update(func(s *InvoiceUpsert) {
 		s.UpdateProvider()
+	})
+}
+
+// SetProviderState sets the "provider_state" field.
+func (u *InvoiceUpsertBulk) SetProviderState(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetProviderState(v)
+	})
+}
+
+// UpdateProviderState sets the "provider_state" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateProviderState() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateProviderState()
+	})
+}
+
+// SetProviderTraceID sets the "provider_trace_id" field.
+func (u *InvoiceUpsertBulk) SetProviderTraceID(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetProviderTraceID(v)
+	})
+}
+
+// UpdateProviderTraceID sets the "provider_trace_id" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateProviderTraceID() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateProviderTraceID()
+	})
+}
+
+// SetProviderLastError sets the "provider_last_error" field.
+func (u *InvoiceUpsertBulk) SetProviderLastError(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetProviderLastError(v)
+	})
+}
+
+// UpdateProviderLastError sets the "provider_last_error" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateProviderLastError() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateProviderLastError()
+	})
+}
+
+// SetProviderRetryCount sets the "provider_retry_count" field.
+func (u *InvoiceUpsertBulk) SetProviderRetryCount(v int) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetProviderRetryCount(v)
+	})
+}
+
+// AddProviderRetryCount adds v to the "provider_retry_count" field.
+func (u *InvoiceUpsertBulk) AddProviderRetryCount(v int) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.AddProviderRetryCount(v)
+	})
+}
+
+// UpdateProviderRetryCount sets the "provider_retry_count" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateProviderRetryCount() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateProviderRetryCount()
 	})
 }
 
@@ -2199,6 +3315,90 @@ func (u *InvoiceUpsertBulk) UpdateProviderPayload() *InvoiceUpsertBulk {
 func (u *InvoiceUpsertBulk) ClearProviderPayload() *InvoiceUpsertBulk {
 	return u.Update(func(s *InvoiceUpsert) {
 		s.ClearProviderPayload()
+	})
+}
+
+// SetReverseStep sets the "reverse_step" field.
+func (u *InvoiceUpsertBulk) SetReverseStep(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetReverseStep(v)
+	})
+}
+
+// UpdateReverseStep sets the "reverse_step" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateReverseStep() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateReverseStep()
+	})
+}
+
+// SetRedAdviceNum sets the "red_advice_num" field.
+func (u *InvoiceUpsertBulk) SetRedAdviceNum(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetRedAdviceNum(v)
+	})
+}
+
+// UpdateRedAdviceNum sets the "red_advice_num" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateRedAdviceNum() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateRedAdviceNum()
+	})
+}
+
+// SetRedConfirmNum sets the "red_confirm_num" field.
+func (u *InvoiceUpsertBulk) SetRedConfirmNum(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetRedConfirmNum(v)
+	})
+}
+
+// UpdateRedConfirmNum sets the "red_confirm_num" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateRedConfirmNum() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateRedConfirmNum()
+	})
+}
+
+// SetReverseTraceID sets the "reverse_trace_id" field.
+func (u *InvoiceUpsertBulk) SetReverseTraceID(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetReverseTraceID(v)
+	})
+}
+
+// UpdateReverseTraceID sets the "reverse_trace_id" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateReverseTraceID() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateReverseTraceID()
+	})
+}
+
+// SetRedInvoiceNo sets the "red_invoice_no" field.
+func (u *InvoiceUpsertBulk) SetRedInvoiceNo(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetRedInvoiceNo(v)
+	})
+}
+
+// UpdateRedInvoiceNo sets the "red_invoice_no" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateRedInvoiceNo() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateRedInvoiceNo()
+	})
+}
+
+// SetRedPdfPath sets the "red_pdf_path" field.
+func (u *InvoiceUpsertBulk) SetRedPdfPath(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetRedPdfPath(v)
+	})
+}
+
+// UpdateRedPdfPath sets the "red_pdf_path" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateRedPdfPath() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateRedPdfPath()
 	})
 }
 

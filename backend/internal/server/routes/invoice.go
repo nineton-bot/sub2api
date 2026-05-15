@@ -52,6 +52,7 @@ func RegisterInvoiceRoutes(
 		authenticated.POST("", invoiceHandler.CreateInvoice)
 		authenticated.GET("/:id", invoiceHandler.GetInvoiceDetail)
 		authenticated.POST("/:id/cancel", invoiceHandler.CancelInvoice)
+		authenticated.POST("/:id/void-request", invoiceHandler.RequestVoid)
 		authenticated.GET("/:id/pdf", invoiceHandler.DownloadInvoicePDF)
 	}
 
@@ -71,5 +72,17 @@ func RegisterInvoiceRoutes(
 		adminGroup.POST("/:id/mark-issued", adminInvoiceHandler.MarkIssued)
 		adminGroup.POST("/:id/void", adminInvoiceHandler.VoidInvoice)
 		adminGroup.GET("/:id/pdf", adminInvoiceHandler.DownloadPDF)
+		// v3：自动开票 / 自动红冲失败处理
+		adminGroup.POST("/:id/retry-issue", adminInvoiceHandler.RetryIssue)
+		adminGroup.POST("/:id/retry-reverse", adminInvoiceHandler.RetryReverse)
+		adminGroup.POST("/:id/mark-reversed", adminInvoiceHandler.MarkReversed)
+	}
+
+	// 用户作废申请审批（独立路径，作用对象是 void_request 表的记录而非 invoice）
+	voidReqGroup := v1.Group("/admin/invoice-void-requests")
+	voidReqGroup.Use(gin.HandlerFunc(adminAuth))
+	{
+		voidReqGroup.POST("/:id/approve", adminInvoiceHandler.ApproveVoidRequest)
+		voidReqGroup.POST("/:id/reject", adminInvoiceHandler.RejectVoidRequest)
 	}
 }

@@ -213,6 +213,18 @@ func (f InvoiceItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InvoiceItemMutation", m)
 }
 
+// The InvoiceVoidRequestFunc type is an adapter to allow the use of ordinary
+// function as InvoiceVoidRequest mutator.
+type InvoiceVoidRequestFunc func(context.Context, *ent.InvoiceVoidRequestMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f InvoiceVoidRequestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.InvoiceVoidRequestMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InvoiceVoidRequestMutation", m)
+}
+
 // The PaymentAuditLogFunc type is an adapter to allow the use of ordinary
 // function as PaymentAuditLog mutator.
 type PaymentAuditLogFunc func(context.Context, *ent.PaymentAuditLogMutation) (ent.Value, error)
@@ -355,6 +367,18 @@ func (f ReferralWithdrawalFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReferralWithdrawalMutation", m)
+}
+
+// The RefundRequestFunc type is an adapter to allow the use of ordinary
+// function as RefundRequest mutator.
+type RefundRequestFunc func(context.Context, *ent.RefundRequestMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RefundRequestFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RefundRequestMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RefundRequestMutation", m)
 }
 
 // The SecuritySecretFunc type is an adapter to allow the use of ordinary

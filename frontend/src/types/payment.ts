@@ -93,6 +93,14 @@ export interface PaymentOrder {
   refund_request_reason?: string
   plan_id?: number
   provider_instance_id?: string
+  /**
+   * 反规范化字段：订单是否被发票占用。
+   *   '' / undefined — 无活跃发票（可直接退款）
+   *   'pending' — 用户已申请发票，等管理员审批
+   *   'issued' — 已开发票（v3：用户申请退款会触发自动红冲）
+   */
+  invoice_status?: '' | 'pending' | 'issued'
+  invoice_id?: number
 }
 
 // ==================== Plans & Channels ====================

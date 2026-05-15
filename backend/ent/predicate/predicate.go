@@ -57,6 +57,9 @@ type Invoice func(*sql.Selector)
 // InvoiceItem is the predicate function for invoiceitem builders.
 type InvoiceItem func(*sql.Selector)
 
+// InvoiceVoidRequest is the predicate function for invoicevoidrequest builders.
+type InvoiceVoidRequest func(*sql.Selector)
+
 // PaymentAuditLog is the predicate function for paymentauditlog builders.
 type PaymentAuditLog func(*sql.Selector)
 
@@ -92,6 +95,9 @@ type ReferralPendingBonus func(*sql.Selector)
 
 // ReferralWithdrawal is the predicate function for referralwithdrawal builders.
 type ReferralWithdrawal func(*sql.Selector)
+
+// RefundRequest is the predicate function for refundrequest builders.
+type RefundRequest func(*sql.Selector)
 
 // SecuritySecret is the predicate function for securitysecret builders.
 type SecuritySecret func(*sql.Selector)

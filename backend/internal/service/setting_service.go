@@ -1636,8 +1636,60 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyInvoiceEnabled] = strconv.FormatBool(settings.InvoiceEnabled)
 	updates[SettingKeyInvoiceDefaultForAllUsers] = strconv.FormatBool(settings.InvoiceDefaultForAllUsers)
 
+	// 自动开票渠道（v3）。default_provider 空字符串视为「保留当前值」，与 handler 层一致；
+	// AccessKeySecret 为 secretMaskMarker 时也保留原值（不覆盖明文密钥）。
+	if strings.TrimSpace(settings.InvoiceDefaultProvider) != "" {
+		updates[SettingKeyInvoiceDefaultProvider] = strings.TrimSpace(settings.InvoiceDefaultProvider)
+	}
+	cy := settings.InvoiceCaiyuntong
+	updates[SettingKeyInvoiceCaiyuntongEndpoint] = strings.TrimSpace(cy.Endpoint)
+	updates[SettingKeyInvoiceCaiyuntongAccessKeyID] = strings.TrimSpace(cy.AccessKeyID)
+	if cy.AccessKeySecret != "" && cy.AccessKeySecret != SecretMaskMarker {
+		updates[SettingKeyInvoiceCaiyuntongAccessKeySecret] = cy.AccessKeySecret
+	}
+	updates[SettingKeyInvoiceCaiyuntongSellerTaxNum] = strings.TrimSpace(cy.SellerTaxNum)
+	updates[SettingKeyInvoiceCaiyuntongSellerName] = cy.SellerName
+	updates[SettingKeyInvoiceCaiyuntongSellerAddress] = cy.SellerAddress
+	updates[SettingKeyInvoiceCaiyuntongSellerPhone] = cy.SellerPhone
+	updates[SettingKeyInvoiceCaiyuntongSellerBankName] = cy.SellerBankName
+	updates[SettingKeyInvoiceCaiyuntongSellerBankAcc] = cy.SellerBankAcc
+	updates[SettingKeyInvoiceCaiyuntongDrawer] = cy.Drawer
+	updates[SettingKeyInvoiceCaiyuntongPayee] = cy.Payee
+	updates[SettingKeyInvoiceCaiyuntongReviewer] = cy.Reviewer
+	if strings.TrimSpace(cy.TypeForNormal) != "" {
+		updates[SettingKeyInvoiceCaiyuntongTypeNormal] = strings.TrimSpace(cy.TypeForNormal)
+	}
+	if strings.TrimSpace(cy.TypeForSpecial) != "" {
+		updates[SettingKeyInvoiceCaiyuntongTypeSpecial] = strings.TrimSpace(cy.TypeForSpecial)
+	}
+	updates[SettingKeyInvoiceCaiyuntongGoodsCodeDefault] = cy.GoodsCodeDefault
+	if cy.DefaultTaxRate > 0 {
+		updates[SettingKeyInvoiceCaiyuntongDefaultTaxRate] = strconv.FormatFloat(cy.DefaultTaxRate, 'f', -1, 64)
+	}
+
+	if settings.InvoicePoller.IntervalSeconds > 0 {
+		updates[SettingKeyInvoicePollerIntervalSeconds] = strconv.Itoa(settings.InvoicePoller.IntervalSeconds)
+	}
+	if settings.InvoicePoller.TimeoutMinutes > 0 {
+		updates[SettingKeyInvoicePollerTimeoutMinutes] = strconv.Itoa(settings.InvoicePoller.TimeoutMinutes)
+	}
+	if settings.InvoiceReverse.PollerIntervalSeconds > 0 {
+		updates[SettingKeyInvoiceReversePollerIntervalSeconds] = strconv.Itoa(settings.InvoiceReverse.PollerIntervalSeconds)
+	}
+	if settings.InvoiceReverse.TimeoutMinutes > 0 {
+		updates[SettingKeyInvoiceReverseTimeoutMinutes] = strconv.Itoa(settings.InvoiceReverse.TimeoutMinutes)
+	}
+	updates[SettingKeyInvoiceReverseAutoOnUserRefund] = strconv.FormatBool(settings.InvoiceReverse.AutoOnUserRefund)
+	if strings.TrimSpace(settings.InvoiceReverse.DefaultReason) != "" {
+		updates[SettingKeyInvoiceReverseDefaultReason] = strings.TrimSpace(settings.InvoiceReverse.DefaultReason)
+	}
+
 	return updates, nil
 }
+
+// SecretMaskMarker 是 handler 返回密钥字段时使用的掩码占位符。
+// 当前端再把这个值原样提交回来时，service 层应忽略（保留 DB 中原密文）。
+const SecretMaskMarker = "__masked__"
 
 func (s *SettingService) buildAuthSourceDefaultUpdates(ctx context.Context, settings *AuthSourceDefaultSettings) (map[string]string, error) {
 	if settings == nil {
@@ -2439,6 +2491,33 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		// 发票（默认完全关闭；管理员主动启用后再决定是否全员开放）
 		SettingKeyInvoiceEnabled:            "false",
 		SettingKeyInvoiceDefaultForAllUsers: "false",
+
+		// 发票渠道（v3 自动开票 + 自动红冲）
+		// default_provider="manual" 保持向后兼容：未填密钥前继续走人工上传 PDF。
+		SettingKeyInvoiceDefaultProvider:       "manual",
+		SettingKeyInvoiceCaiyuntongEndpoint:    "",
+		SettingKeyInvoiceCaiyuntongAccessKeyID: "",
+		// AccessKeySecret 不预置默认值，由管理员在 Settings UI 输入。
+		SettingKeyInvoiceCaiyuntongAccessKeySecret:    "",
+		SettingKeyInvoiceCaiyuntongSellerTaxNum:       "",
+		SettingKeyInvoiceCaiyuntongSellerName:         "",
+		SettingKeyInvoiceCaiyuntongSellerAddress:      "",
+		SettingKeyInvoiceCaiyuntongSellerPhone:        "",
+		SettingKeyInvoiceCaiyuntongSellerBankName:     "",
+		SettingKeyInvoiceCaiyuntongSellerBankAcc:      "",
+		SettingKeyInvoiceCaiyuntongDrawer:             "",
+		SettingKeyInvoiceCaiyuntongPayee:              "",
+		SettingKeyInvoiceCaiyuntongReviewer:           "",
+		SettingKeyInvoiceCaiyuntongTypeNormal:         "06",
+		SettingKeyInvoiceCaiyuntongTypeSpecial:        "05",
+		SettingKeyInvoiceCaiyuntongGoodsCodeDefault:   "",
+		SettingKeyInvoiceCaiyuntongDefaultTaxRate:     "0.06",
+		SettingKeyInvoicePollerIntervalSeconds:        "30",
+		SettingKeyInvoicePollerTimeoutMinutes:         "10",
+		SettingKeyInvoiceReversePollerIntervalSeconds: "30",
+		SettingKeyInvoiceReverseTimeoutMinutes:        "15",
+		SettingKeyInvoiceReverseAutoOnUserRefund:      "true",
+		SettingKeyInvoiceReverseDefaultReason:         "01",
 	}
 
 	return s.settingRepo.SetMultiple(ctx, defaults)
@@ -2846,7 +2925,71 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result.InvoiceEnabled = settings[SettingKeyInvoiceEnabled] == "true"
 	result.InvoiceDefaultForAllUsers = settings[SettingKeyInvoiceDefaultForAllUsers] == "true"
 
+	// 发票渠道（v3）
+	result.InvoiceDefaultProvider = strings.TrimSpace(settings[SettingKeyInvoiceDefaultProvider])
+	if result.InvoiceDefaultProvider == "" {
+		result.InvoiceDefaultProvider = "manual"
+	}
+	cyDefaultTaxRate, _ := strconv.ParseFloat(strings.TrimSpace(settings[SettingKeyInvoiceCaiyuntongDefaultTaxRate]), 64)
+	result.InvoiceCaiyuntong = InvoiceCaiyuntongSettings{
+		Endpoint:         settings[SettingKeyInvoiceCaiyuntongEndpoint],
+		AccessKeyID:      settings[SettingKeyInvoiceCaiyuntongAccessKeyID],
+		AccessKeySecret:  settings[SettingKeyInvoiceCaiyuntongAccessKeySecret],
+		SellerTaxNum:     settings[SettingKeyInvoiceCaiyuntongSellerTaxNum],
+		SellerName:       settings[SettingKeyInvoiceCaiyuntongSellerName],
+		SellerAddress:    settings[SettingKeyInvoiceCaiyuntongSellerAddress],
+		SellerPhone:      settings[SettingKeyInvoiceCaiyuntongSellerPhone],
+		SellerBankName:   settings[SettingKeyInvoiceCaiyuntongSellerBankName],
+		SellerBankAcc:    settings[SettingKeyInvoiceCaiyuntongSellerBankAcc],
+		Drawer:           settings[SettingKeyInvoiceCaiyuntongDrawer],
+		Payee:            settings[SettingKeyInvoiceCaiyuntongPayee],
+		Reviewer:         settings[SettingKeyInvoiceCaiyuntongReviewer],
+		TypeForNormal:    fallbackOnEmpty(settings[SettingKeyInvoiceCaiyuntongTypeNormal], "06"),
+		TypeForSpecial:   fallbackOnEmpty(settings[SettingKeyInvoiceCaiyuntongTypeSpecial], "05"),
+		GoodsCodeDefault: settings[SettingKeyInvoiceCaiyuntongGoodsCodeDefault],
+		DefaultTaxRate:   cyDefaultTaxRate,
+	}
+	if result.InvoiceCaiyuntong.DefaultTaxRate <= 0 {
+		result.InvoiceCaiyuntong.DefaultTaxRate = 0.06
+	}
+	pi, _ := strconv.Atoi(strings.TrimSpace(settings[SettingKeyInvoicePollerIntervalSeconds]))
+	if pi <= 0 {
+		pi = 30
+	}
+	pt, _ := strconv.Atoi(strings.TrimSpace(settings[SettingKeyInvoicePollerTimeoutMinutes]))
+	if pt <= 0 {
+		pt = 10
+	}
+	result.InvoicePoller = InvoicePollerSettings{IntervalSeconds: pi, TimeoutMinutes: pt}
+
+	ri, _ := strconv.Atoi(strings.TrimSpace(settings[SettingKeyInvoiceReversePollerIntervalSeconds]))
+	if ri <= 0 {
+		ri = 30
+	}
+	rt, _ := strconv.Atoi(strings.TrimSpace(settings[SettingKeyInvoiceReverseTimeoutMinutes]))
+	if rt <= 0 {
+		rt = 15
+	}
+	rAuto := true
+	if v, ok := settings[SettingKeyInvoiceReverseAutoOnUserRefund]; ok && v != "" {
+		rAuto = v == "true"
+	}
+	result.InvoiceReverse = InvoiceReverseSettings{
+		PollerIntervalSeconds: ri,
+		TimeoutMinutes:        rt,
+		AutoOnUserRefund:      rAuto,
+		DefaultReason:         fallbackOnEmpty(strings.TrimSpace(settings[SettingKeyInvoiceReverseDefaultReason]), "01"),
+	}
+
 	return result
+}
+
+// fallbackOnEmpty 字符串非空则返回原值，否则返回默认值。
+func fallbackOnEmpty(v, dft string) string {
+	if strings.TrimSpace(v) == "" {
+		return dft
+	}
+	return v
 }
 
 func isFalseSettingValue(value string) bool {

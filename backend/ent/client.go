@@ -32,6 +32,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
 	"github.com/Wei-Shaw/sub2api/ent/invoice"
 	"github.com/Wei-Shaw/sub2api/ent/invoiceitem"
+	"github.com/Wei-Shaw/sub2api/ent/invoicevoidrequest"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -44,6 +45,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/referralcommissionreleaselog"
 	"github.com/Wei-Shaw/sub2api/ent/referralpendingbonus"
 	"github.com/Wei-Shaw/sub2api/ent/referralwithdrawal"
+	"github.com/Wei-Shaw/sub2api/ent/refundrequest"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
@@ -99,6 +101,8 @@ type Client struct {
 	Invoice *InvoiceClient
 	// InvoiceItem is the client for interacting with the InvoiceItem builders.
 	InvoiceItem *InvoiceItemClient
+	// InvoiceVoidRequest is the client for interacting with the InvoiceVoidRequest builders.
+	InvoiceVoidRequest *InvoiceVoidRequestClient
 	// PaymentAuditLog is the client for interacting with the PaymentAuditLog builders.
 	PaymentAuditLog *PaymentAuditLogClient
 	// PaymentOrder is the client for interacting with the PaymentOrder builders.
@@ -123,6 +127,8 @@ type Client struct {
 	ReferralPendingBonus *ReferralPendingBonusClient
 	// ReferralWithdrawal is the client for interacting with the ReferralWithdrawal builders.
 	ReferralWithdrawal *ReferralWithdrawalClient
+	// RefundRequest is the client for interacting with the RefundRequest builders.
+	RefundRequest *RefundRequestClient
 	// SecuritySecret is the client for interacting with the SecuritySecret builders.
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
@@ -175,6 +181,7 @@ func (c *Client) init() {
 	c.IdentityAdoptionDecision = NewIdentityAdoptionDecisionClient(c.config)
 	c.Invoice = NewInvoiceClient(c.config)
 	c.InvoiceItem = NewInvoiceItemClient(c.config)
+	c.InvoiceVoidRequest = NewInvoiceVoidRequestClient(c.config)
 	c.PaymentAuditLog = NewPaymentAuditLogClient(c.config)
 	c.PaymentOrder = NewPaymentOrderClient(c.config)
 	c.PaymentProviderInstance = NewPaymentProviderInstanceClient(c.config)
@@ -187,6 +194,7 @@ func (c *Client) init() {
 	c.ReferralCommissionReleaseLog = NewReferralCommissionReleaseLogClient(c.config)
 	c.ReferralPendingBonus = NewReferralPendingBonusClient(c.config)
 	c.ReferralWithdrawal = NewReferralWithdrawalClient(c.config)
+	c.RefundRequest = NewRefundRequestClient(c.config)
 	c.SecuritySecret = NewSecuritySecretClient(c.config)
 	c.Setting = NewSettingClient(c.config)
 	c.SubscriptionPlan = NewSubscriptionPlanClient(c.config)
@@ -308,6 +316,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		IdentityAdoptionDecision:      NewIdentityAdoptionDecisionClient(cfg),
 		Invoice:                       NewInvoiceClient(cfg),
 		InvoiceItem:                   NewInvoiceItemClient(cfg),
+		InvoiceVoidRequest:            NewInvoiceVoidRequestClient(cfg),
 		PaymentAuditLog:               NewPaymentAuditLogClient(cfg),
 		PaymentOrder:                  NewPaymentOrderClient(cfg),
 		PaymentProviderInstance:       NewPaymentProviderInstanceClient(cfg),
@@ -320,6 +329,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ReferralCommissionReleaseLog:  NewReferralCommissionReleaseLogClient(cfg),
 		ReferralPendingBonus:          NewReferralPendingBonusClient(cfg),
 		ReferralWithdrawal:            NewReferralWithdrawalClient(cfg),
+		RefundRequest:                 NewRefundRequestClient(cfg),
 		SecuritySecret:                NewSecuritySecretClient(cfg),
 		Setting:                       NewSettingClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
@@ -368,6 +378,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		IdentityAdoptionDecision:      NewIdentityAdoptionDecisionClient(cfg),
 		Invoice:                       NewInvoiceClient(cfg),
 		InvoiceItem:                   NewInvoiceItemClient(cfg),
+		InvoiceVoidRequest:            NewInvoiceVoidRequestClient(cfg),
 		PaymentAuditLog:               NewPaymentAuditLogClient(cfg),
 		PaymentOrder:                  NewPaymentOrderClient(cfg),
 		PaymentProviderInstance:       NewPaymentProviderInstanceClient(cfg),
@@ -380,6 +391,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ReferralCommissionReleaseLog:  NewReferralCommissionReleaseLogClient(cfg),
 		ReferralPendingBonus:          NewReferralPendingBonusClient(cfg),
 		ReferralWithdrawal:            NewReferralWithdrawalClient(cfg),
+		RefundRequest:                 NewRefundRequestClient(cfg),
 		SecuritySecret:                NewSecuritySecretClient(cfg),
 		Setting:                       NewSettingClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
@@ -426,13 +438,14 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.Invoice, c.InvoiceItem,
-		c.PaymentAuditLog, c.PaymentOrder, c.PaymentProviderInstance,
-		c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage, c.Proxy, c.RedeemCode,
-		c.ReferralCommission, c.ReferralCommissionReleaseLog, c.ReferralPendingBonus,
-		c.ReferralWithdrawal, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
-		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserReferralConfig, c.UserSubscription,
+		c.InvoiceVoidRequest, c.PaymentAuditLog, c.PaymentOrder,
+		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
+		c.Proxy, c.RedeemCode, c.ReferralCommission, c.ReferralCommissionReleaseLog,
+		c.ReferralPendingBonus, c.ReferralWithdrawal, c.RefundRequest,
+		c.SecuritySecret, c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile,
+		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
+		c.UserAttributeDefinition, c.UserAttributeValue, c.UserReferralConfig,
+		c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -447,13 +460,14 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.Invoice, c.InvoiceItem,
-		c.PaymentAuditLog, c.PaymentOrder, c.PaymentProviderInstance,
-		c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage, c.Proxy, c.RedeemCode,
-		c.ReferralCommission, c.ReferralCommissionReleaseLog, c.ReferralPendingBonus,
-		c.ReferralWithdrawal, c.SecuritySecret, c.Setting, c.SubscriptionPlan,
-		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserReferralConfig, c.UserSubscription,
+		c.InvoiceVoidRequest, c.PaymentAuditLog, c.PaymentOrder,
+		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
+		c.Proxy, c.RedeemCode, c.ReferralCommission, c.ReferralCommissionReleaseLog,
+		c.ReferralPendingBonus, c.ReferralWithdrawal, c.RefundRequest,
+		c.SecuritySecret, c.Setting, c.SubscriptionPlan, c.TLSFingerprintProfile,
+		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
+		c.UserAttributeDefinition, c.UserAttributeValue, c.UserReferralConfig,
+		c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -496,6 +510,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Invoice.mutate(ctx, m)
 	case *InvoiceItemMutation:
 		return c.InvoiceItem.mutate(ctx, m)
+	case *InvoiceVoidRequestMutation:
+		return c.InvoiceVoidRequest.mutate(ctx, m)
 	case *PaymentAuditLogMutation:
 		return c.PaymentAuditLog.mutate(ctx, m)
 	case *PaymentOrderMutation:
@@ -520,6 +536,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ReferralPendingBonus.mutate(ctx, m)
 	case *ReferralWithdrawalMutation:
 		return c.ReferralWithdrawal.mutate(ctx, m)
+	case *RefundRequestMutation:
+		return c.RefundRequest.mutate(ctx, m)
 	case *SecuritySecretMutation:
 		return c.SecuritySecret.mutate(ctx, m)
 	case *SettingMutation:
@@ -3327,6 +3345,139 @@ func (c *InvoiceItemClient) mutate(ctx context.Context, m *InvoiceItemMutation) 
 	}
 }
 
+// InvoiceVoidRequestClient is a client for the InvoiceVoidRequest schema.
+type InvoiceVoidRequestClient struct {
+	config
+}
+
+// NewInvoiceVoidRequestClient returns a client for the InvoiceVoidRequest from the given config.
+func NewInvoiceVoidRequestClient(c config) *InvoiceVoidRequestClient {
+	return &InvoiceVoidRequestClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `invoicevoidrequest.Hooks(f(g(h())))`.
+func (c *InvoiceVoidRequestClient) Use(hooks ...Hook) {
+	c.hooks.InvoiceVoidRequest = append(c.hooks.InvoiceVoidRequest, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `invoicevoidrequest.Intercept(f(g(h())))`.
+func (c *InvoiceVoidRequestClient) Intercept(interceptors ...Interceptor) {
+	c.inters.InvoiceVoidRequest = append(c.inters.InvoiceVoidRequest, interceptors...)
+}
+
+// Create returns a builder for creating a InvoiceVoidRequest entity.
+func (c *InvoiceVoidRequestClient) Create() *InvoiceVoidRequestCreate {
+	mutation := newInvoiceVoidRequestMutation(c.config, OpCreate)
+	return &InvoiceVoidRequestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of InvoiceVoidRequest entities.
+func (c *InvoiceVoidRequestClient) CreateBulk(builders ...*InvoiceVoidRequestCreate) *InvoiceVoidRequestCreateBulk {
+	return &InvoiceVoidRequestCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *InvoiceVoidRequestClient) MapCreateBulk(slice any, setFunc func(*InvoiceVoidRequestCreate, int)) *InvoiceVoidRequestCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &InvoiceVoidRequestCreateBulk{err: fmt.Errorf("calling to InvoiceVoidRequestClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*InvoiceVoidRequestCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &InvoiceVoidRequestCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for InvoiceVoidRequest.
+func (c *InvoiceVoidRequestClient) Update() *InvoiceVoidRequestUpdate {
+	mutation := newInvoiceVoidRequestMutation(c.config, OpUpdate)
+	return &InvoiceVoidRequestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *InvoiceVoidRequestClient) UpdateOne(_m *InvoiceVoidRequest) *InvoiceVoidRequestUpdateOne {
+	mutation := newInvoiceVoidRequestMutation(c.config, OpUpdateOne, withInvoiceVoidRequest(_m))
+	return &InvoiceVoidRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *InvoiceVoidRequestClient) UpdateOneID(id int64) *InvoiceVoidRequestUpdateOne {
+	mutation := newInvoiceVoidRequestMutation(c.config, OpUpdateOne, withInvoiceVoidRequestID(id))
+	return &InvoiceVoidRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for InvoiceVoidRequest.
+func (c *InvoiceVoidRequestClient) Delete() *InvoiceVoidRequestDelete {
+	mutation := newInvoiceVoidRequestMutation(c.config, OpDelete)
+	return &InvoiceVoidRequestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *InvoiceVoidRequestClient) DeleteOne(_m *InvoiceVoidRequest) *InvoiceVoidRequestDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *InvoiceVoidRequestClient) DeleteOneID(id int64) *InvoiceVoidRequestDeleteOne {
+	builder := c.Delete().Where(invoicevoidrequest.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &InvoiceVoidRequestDeleteOne{builder}
+}
+
+// Query returns a query builder for InvoiceVoidRequest.
+func (c *InvoiceVoidRequestClient) Query() *InvoiceVoidRequestQuery {
+	return &InvoiceVoidRequestQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeInvoiceVoidRequest},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a InvoiceVoidRequest entity by its id.
+func (c *InvoiceVoidRequestClient) Get(ctx context.Context, id int64) (*InvoiceVoidRequest, error) {
+	return c.Query().Where(invoicevoidrequest.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *InvoiceVoidRequestClient) GetX(ctx context.Context, id int64) *InvoiceVoidRequest {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *InvoiceVoidRequestClient) Hooks() []Hook {
+	return c.hooks.InvoiceVoidRequest
+}
+
+// Interceptors returns the client interceptors.
+func (c *InvoiceVoidRequestClient) Interceptors() []Interceptor {
+	return c.inters.InvoiceVoidRequest
+}
+
+func (c *InvoiceVoidRequestClient) mutate(ctx context.Context, m *InvoiceVoidRequestMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&InvoiceVoidRequestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&InvoiceVoidRequestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&InvoiceVoidRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&InvoiceVoidRequestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown InvoiceVoidRequest mutation op: %q", m.Op())
+	}
+}
+
 // PaymentAuditLogClient is a client for the PaymentAuditLog schema.
 type PaymentAuditLogClient struct {
 	config
@@ -5066,6 +5217,139 @@ func (c *ReferralWithdrawalClient) mutate(ctx context.Context, m *ReferralWithdr
 		return (&ReferralWithdrawalDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ReferralWithdrawal mutation op: %q", m.Op())
+	}
+}
+
+// RefundRequestClient is a client for the RefundRequest schema.
+type RefundRequestClient struct {
+	config
+}
+
+// NewRefundRequestClient returns a client for the RefundRequest from the given config.
+func NewRefundRequestClient(c config) *RefundRequestClient {
+	return &RefundRequestClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `refundrequest.Hooks(f(g(h())))`.
+func (c *RefundRequestClient) Use(hooks ...Hook) {
+	c.hooks.RefundRequest = append(c.hooks.RefundRequest, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `refundrequest.Intercept(f(g(h())))`.
+func (c *RefundRequestClient) Intercept(interceptors ...Interceptor) {
+	c.inters.RefundRequest = append(c.inters.RefundRequest, interceptors...)
+}
+
+// Create returns a builder for creating a RefundRequest entity.
+func (c *RefundRequestClient) Create() *RefundRequestCreate {
+	mutation := newRefundRequestMutation(c.config, OpCreate)
+	return &RefundRequestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RefundRequest entities.
+func (c *RefundRequestClient) CreateBulk(builders ...*RefundRequestCreate) *RefundRequestCreateBulk {
+	return &RefundRequestCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *RefundRequestClient) MapCreateBulk(slice any, setFunc func(*RefundRequestCreate, int)) *RefundRequestCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &RefundRequestCreateBulk{err: fmt.Errorf("calling to RefundRequestClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*RefundRequestCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &RefundRequestCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RefundRequest.
+func (c *RefundRequestClient) Update() *RefundRequestUpdate {
+	mutation := newRefundRequestMutation(c.config, OpUpdate)
+	return &RefundRequestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RefundRequestClient) UpdateOne(_m *RefundRequest) *RefundRequestUpdateOne {
+	mutation := newRefundRequestMutation(c.config, OpUpdateOne, withRefundRequest(_m))
+	return &RefundRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RefundRequestClient) UpdateOneID(id int64) *RefundRequestUpdateOne {
+	mutation := newRefundRequestMutation(c.config, OpUpdateOne, withRefundRequestID(id))
+	return &RefundRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RefundRequest.
+func (c *RefundRequestClient) Delete() *RefundRequestDelete {
+	mutation := newRefundRequestMutation(c.config, OpDelete)
+	return &RefundRequestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RefundRequestClient) DeleteOne(_m *RefundRequest) *RefundRequestDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RefundRequestClient) DeleteOneID(id int64) *RefundRequestDeleteOne {
+	builder := c.Delete().Where(refundrequest.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RefundRequestDeleteOne{builder}
+}
+
+// Query returns a query builder for RefundRequest.
+func (c *RefundRequestClient) Query() *RefundRequestQuery {
+	return &RefundRequestQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeRefundRequest},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a RefundRequest entity by its id.
+func (c *RefundRequestClient) Get(ctx context.Context, id int64) (*RefundRequest, error) {
+	return c.Query().Where(refundrequest.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RefundRequestClient) GetX(ctx context.Context, id int64) *RefundRequest {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *RefundRequestClient) Hooks() []Hook {
+	return c.hooks.RefundRequest
+}
+
+// Interceptors returns the client interceptors.
+func (c *RefundRequestClient) Interceptors() []Interceptor {
+	return c.inters.RefundRequest
+}
+
+func (c *RefundRequestClient) mutate(ctx context.Context, m *RefundRequestMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RefundRequestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RefundRequestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RefundRequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RefundRequestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown RefundRequest mutation op: %q", m.Op())
 	}
 }
 
@@ -7077,24 +7361,26 @@ type (
 		AuthIdentityChannel, ChannelMonitor, ChannelMonitorDailyRollup,
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, Invoice, InvoiceItem,
-		PaymentAuditLog, PaymentOrder, PaymentProviderInstance, PendingAuthSession,
-		PromoCode, PromoCodeUsage, Proxy, RedeemCode, ReferralCommission,
-		ReferralCommissionReleaseLog, ReferralPendingBonus, ReferralWithdrawal,
-		SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
-		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
-		UserAttributeValue, UserReferralConfig, UserSubscription []ent.Hook
+		InvoiceVoidRequest, PaymentAuditLog, PaymentOrder, PaymentProviderInstance,
+		PendingAuthSession, PromoCode, PromoCodeUsage, Proxy, RedeemCode,
+		ReferralCommission, ReferralCommissionReleaseLog, ReferralPendingBonus,
+		ReferralWithdrawal, RefundRequest, SecuritySecret, Setting, SubscriptionPlan,
+		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserReferralConfig,
+		UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
 		AuthIdentityChannel, ChannelMonitor, ChannelMonitorDailyRollup,
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, Invoice, InvoiceItem,
-		PaymentAuditLog, PaymentOrder, PaymentProviderInstance, PendingAuthSession,
-		PromoCode, PromoCodeUsage, Proxy, RedeemCode, ReferralCommission,
-		ReferralCommissionReleaseLog, ReferralPendingBonus, ReferralWithdrawal,
-		SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
-		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
-		UserAttributeValue, UserReferralConfig, UserSubscription []ent.Interceptor
+		InvoiceVoidRequest, PaymentAuditLog, PaymentOrder, PaymentProviderInstance,
+		PendingAuthSession, PromoCode, PromoCodeUsage, Proxy, RedeemCode,
+		ReferralCommission, ReferralCommissionReleaseLog, ReferralPendingBonus,
+		ReferralWithdrawal, RefundRequest, SecuritySecret, Setting, SubscriptionPlan,
+		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		UserAttributeDefinition, UserAttributeValue, UserReferralConfig,
+		UserSubscription []ent.Interceptor
 	}
 )
 

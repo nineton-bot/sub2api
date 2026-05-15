@@ -308,6 +308,48 @@ export function deriveWeChatConnectStoredMode(
 /**
  * System settings interface
  */
+/**
+ * 财云通发票渠道配置。
+ *
+ * `access_key_secret` 在 GET 响应中由后端用 `__masked__` 占位；
+ * 前端原样回传时后端识别并保留 DB 中的原密钥。要修改密钥时清空该字段再输入新值。
+ */
+export interface InvoiceCaiyuntongSettings {
+  endpoint: string;
+  access_key_id: string;
+  access_key_secret: string;
+  seller_tax_num: string;
+  seller_name: string;
+  seller_address: string;
+  seller_phone: string;
+  seller_bank_name: string;
+  seller_bank_account: string;
+  drawer: string;
+  payee: string;
+  reviewer: string;
+  /** 普票对应的 InvoiceType 代码（默认 06 数电普）。 */
+  type_normal: string;
+  /** 专票对应的 InvoiceType 代码（默认 05 数电专）。 */
+  type_special: string;
+  goods_code_default: string;
+  /** 默认税率，例 0.06 = 6%。 */
+  default_tax_rate: number;
+}
+
+export interface InvoicePollerSettings {
+  interval_seconds: number;
+  timeout_minutes: number;
+}
+
+export interface InvoiceReverseSettings {
+  poller_interval_seconds: number;
+  timeout_minutes: number;
+  /** 退款触发自动红冲。关闭则用户对已开票订单的退款被拒。 */
+  auto_on_user_refund: boolean;
+  /** 红冲原因代码，默认 01 销货退回。 */
+  default_reason: string;
+}
+
 export interface SystemSettings {
   // Registration settings
   registration_enabled: boolean;
@@ -518,6 +560,12 @@ export interface SystemSettings {
   invoice_enabled: boolean;
   invoice_default_for_all_users: boolean;
 
+  // 自动开票渠道（v3）
+  invoice_default_provider: string;
+  invoice_caiyuntong: InvoiceCaiyuntongSettings;
+  invoice_poller: InvoicePollerSettings;
+  invoice_reverse: InvoiceReverseSettings;
+
   // Balance & quota notification
   balance_low_notify_enabled: boolean;
   balance_low_notify_threshold: number;
@@ -715,6 +763,12 @@ export interface UpdateSettingsRequest {
   // 发票
   invoice_enabled?: boolean;
   invoice_default_for_all_users?: boolean;
+
+  // 自动开票渠道（v3）
+  invoice_default_provider?: string;
+  invoice_caiyuntong?: InvoiceCaiyuntongSettings;
+  invoice_poller?: InvoicePollerSettings;
+  invoice_reverse?: InvoiceReverseSettings;
 
   // Balance & quota notification
   balance_low_notify_enabled?: boolean;

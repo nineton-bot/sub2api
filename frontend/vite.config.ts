@@ -21,7 +21,15 @@ function injectPublicSettings(backendUrl: string): Plugin {
           if (response.ok) {
             const data = await response.json()
             if (data.code === 0 && data.data) {
-              const script = `<script>window.__APP_CONFIG__=${JSON.stringify(data.data)};</script>`
+              // 安全编码：JSON 字面量直接放进 <script> 时需要转义，
+              // 否则若任一字符串字段（home_content / contact_info / custom_menu_items …）
+              // 含有 "</script>" 或 U+2028 / U+2029，会让 HTML 解析器提前断开 script 标签
+              // 或 JS 引擎把行分隔符当语句终止。
+              const safe = JSON.stringify(data.data)
+                .replace(/<\/(script)/gi, '<\\/$1')
+                .replace(/\u2028/g, '\\u2028')
+                .replace(/\u2029/g, '\\u2029')
+              const script = `<script>window.__APP_CONFIG__=${safe};</script>`
               return html.replace('</head>', `${script}\n</head>`)
             }
           }

@@ -25,6 +25,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/identityadoptiondecision"
 	"github.com/Wei-Shaw/sub2api/ent/invoice"
 	"github.com/Wei-Shaw/sub2api/ent/invoiceitem"
+	"github.com/Wei-Shaw/sub2api/ent/invoicevoidrequest"
 	"github.com/Wei-Shaw/sub2api/ent/paymentauditlog"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
@@ -38,6 +39,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/referralcommissionreleaselog"
 	"github.com/Wei-Shaw/sub2api/ent/referralpendingbonus"
 	"github.com/Wei-Shaw/sub2api/ent/referralwithdrawal"
+	"github.com/Wei-Shaw/sub2api/ent/refundrequest"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
@@ -567,6 +569,33 @@ func (f TraverseInvoiceItem) Traverse(ctx context.Context, q ent.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *ent.InvoiceItemQuery", q)
 }
 
+// The InvoiceVoidRequestFunc type is an adapter to allow the use of ordinary function as a Querier.
+type InvoiceVoidRequestFunc func(context.Context, *ent.InvoiceVoidRequestQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f InvoiceVoidRequestFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.InvoiceVoidRequestQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.InvoiceVoidRequestQuery", q)
+}
+
+// The TraverseInvoiceVoidRequest type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseInvoiceVoidRequest func(context.Context, *ent.InvoiceVoidRequestQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseInvoiceVoidRequest) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseInvoiceVoidRequest) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.InvoiceVoidRequestQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.InvoiceVoidRequestQuery", q)
+}
+
 // The PaymentAuditLogFunc type is an adapter to allow the use of ordinary function as a Querier.
 type PaymentAuditLogFunc func(context.Context, *ent.PaymentAuditLogQuery) (ent.Value, error)
 
@@ -889,6 +918,33 @@ func (f TraverseReferralWithdrawal) Traverse(ctx context.Context, q ent.Query) e
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.ReferralWithdrawalQuery", q)
+}
+
+// The RefundRequestFunc type is an adapter to allow the use of ordinary function as a Querier.
+type RefundRequestFunc func(context.Context, *ent.RefundRequestQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f RefundRequestFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.RefundRequestQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.RefundRequestQuery", q)
+}
+
+// The TraverseRefundRequest type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseRefundRequest func(context.Context, *ent.RefundRequestQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseRefundRequest) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseRefundRequest) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.RefundRequestQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.RefundRequestQuery", q)
 }
 
 // The SecuritySecretFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -1252,6 +1308,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.InvoiceQuery, predicate.Invoice, invoice.OrderOption]{typ: ent.TypeInvoice, tq: q}, nil
 	case *ent.InvoiceItemQuery:
 		return &query[*ent.InvoiceItemQuery, predicate.InvoiceItem, invoiceitem.OrderOption]{typ: ent.TypeInvoiceItem, tq: q}, nil
+	case *ent.InvoiceVoidRequestQuery:
+		return &query[*ent.InvoiceVoidRequestQuery, predicate.InvoiceVoidRequest, invoicevoidrequest.OrderOption]{typ: ent.TypeInvoiceVoidRequest, tq: q}, nil
 	case *ent.PaymentAuditLogQuery:
 		return &query[*ent.PaymentAuditLogQuery, predicate.PaymentAuditLog, paymentauditlog.OrderOption]{typ: ent.TypePaymentAuditLog, tq: q}, nil
 	case *ent.PaymentOrderQuery:
@@ -1276,6 +1334,8 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.ReferralPendingBonusQuery, predicate.ReferralPendingBonus, referralpendingbonus.OrderOption]{typ: ent.TypeReferralPendingBonus, tq: q}, nil
 	case *ent.ReferralWithdrawalQuery:
 		return &query[*ent.ReferralWithdrawalQuery, predicate.ReferralWithdrawal, referralwithdrawal.OrderOption]{typ: ent.TypeReferralWithdrawal, tq: q}, nil
+	case *ent.RefundRequestQuery:
+		return &query[*ent.RefundRequestQuery, predicate.RefundRequest, refundrequest.OrderOption]{typ: ent.TypeRefundRequest, tq: q}, nil
 	case *ent.SecuritySecretQuery:
 		return &query[*ent.SecuritySecretQuery, predicate.SecuritySecret, securitysecret.OrderOption]{typ: ent.TypeSecuritySecret, tq: q}, nil
 	case *ent.SettingQuery:

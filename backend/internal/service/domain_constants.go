@@ -404,6 +404,45 @@ const (
 	// 默认 false（白名单制）。
 	SettingKeyInvoiceDefaultForAllUsers = "invoice_default_for_all_users"
 
+	// --- 开票渠道 / 财云通对接 (v3) ---
+
+	// SettingKeyInvoiceDefaultProvider 自动开票默认渠道。值：manual | caiyuntong。
+	// "manual" 表示走传统人工上传 PDF 流程；其它值表示自动开票。
+	SettingKeyInvoiceDefaultProvider = "invoice_default_provider"
+
+	// 财云通（bigfintax）接入凭据
+	SettingKeyInvoiceCaiyuntongEndpoint    = "invoice_caiyuntong_endpoint"
+	SettingKeyInvoiceCaiyuntongAccessKeyID = "invoice_caiyuntong_access_key_id"
+	// AccessKeySecret 存储时按现有 secret 加密通道处理（与支付密钥同等级别）。
+	SettingKeyInvoiceCaiyuntongAccessKeySecret = "invoice_caiyuntong_access_key_secret"
+
+	// 销方信息
+	SettingKeyInvoiceCaiyuntongSellerTaxNum     = "invoice_caiyuntong_seller_tax_num"
+	SettingKeyInvoiceCaiyuntongSellerName       = "invoice_caiyuntong_seller_name"
+	SettingKeyInvoiceCaiyuntongSellerAddress    = "invoice_caiyuntong_seller_address"
+	SettingKeyInvoiceCaiyuntongSellerPhone      = "invoice_caiyuntong_seller_phone"
+	SettingKeyInvoiceCaiyuntongSellerBankName   = "invoice_caiyuntong_seller_bank_name"
+	SettingKeyInvoiceCaiyuntongSellerBankAcc    = "invoice_caiyuntong_seller_bank_account"
+	SettingKeyInvoiceCaiyuntongDrawer           = "invoice_caiyuntong_drawer"
+	SettingKeyInvoiceCaiyuntongPayee            = "invoice_caiyuntong_payee"
+	SettingKeyInvoiceCaiyuntongReviewer         = "invoice_caiyuntong_reviewer"
+
+	// 票种代码（财云通 InvoiceType 枚举：04 增普 / 10 数电普老 / 01 增专 / 08 数电专老 / 05 数电专 / 06 数电普）
+	SettingKeyInvoiceCaiyuntongTypeNormal  = "invoice_caiyuntong_type_normal"  // 默认 06
+	SettingKeyInvoiceCaiyuntongTypeSpecial = "invoice_caiyuntong_type_special" // 默认 05
+
+	// 商品/税收分类与税率
+	SettingKeyInvoiceCaiyuntongGoodsCodeDefault = "invoice_caiyuntong_goods_code_default"
+	SettingKeyInvoiceCaiyuntongDefaultTaxRate   = "invoice_caiyuntong_default_tax_rate" // 例 "0.06"
+
+	// 轮询与红冲（poll/reverse worker 读取）
+	SettingKeyInvoicePollerIntervalSeconds        = "invoice_poller_interval_seconds"
+	SettingKeyInvoicePollerTimeoutMinutes         = "invoice_poller_timeout_minutes"
+	SettingKeyInvoiceReversePollerIntervalSeconds = "invoice_reverse_poller_interval_seconds"
+	SettingKeyInvoiceReverseTimeoutMinutes        = "invoice_reverse_timeout_minutes"
+	SettingKeyInvoiceReverseAutoOnUserRefund      = "invoice_reverse_auto_on_user_refund"
+	SettingKeyInvoiceReverseDefaultReason         = "invoice_reverse_default_reason" // 默认 01
+
 	// SettingKeyEnableAnthropicCacheTTL1hInjection 是否对 Anthropic OAuth/SetupToken 请求体注入 1h cache_control ttl（默认 false）
 	SettingKeyEnableAnthropicCacheTTL1hInjection = "enable_anthropic_cache_ttl_1h_injection"
 

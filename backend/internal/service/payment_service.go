@@ -182,6 +182,16 @@ type PaymentService struct {
 	groupRepo       GroupRepository
 	resumeService   *PaymentResumeService
 	referralService *ReferralService
+	settingService  *SettingService // v3：用于读取自动红冲开关
+}
+
+// SetSettingService 注入 SettingService 以读取发票/红冲相关配置（v3）。
+// 使用 setter 避免修改 NewPaymentService 签名，对其他调用方零影响。
+func (s *PaymentService) SetSettingService(svc *SettingService) {
+	if s == nil {
+		return
+	}
+	s.settingService = svc
 }
 
 func NewPaymentService(entClient *dbent.Client, registry *payment.Registry, loadBalancer payment.LoadBalancer, redeemService *RedeemService, subscriptionSvc *SubscriptionService, configService *PaymentConfigService, userRepo UserRepository, groupRepo GroupRepository, referralService *ReferralService) *PaymentService {

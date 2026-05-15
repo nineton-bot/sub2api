@@ -34,11 +34,12 @@ func (h *InvoiceHandler) ListInvoices(c *gin.Context) {
 		}
 	}
 	out, err := h.invoiceService.AdminListInvoices(c.Request.Context(), service.AdminInvoiceListFilter{
-		Status:   c.Query("status"),
-		UserID:   userID,
-		Email:    c.Query("email"),
-		Page:     page,
-		PageSize: pageSize,
+		Status:      c.Query("status"),
+		UserID:      userID,
+		Email:       c.Query("email"),
+		Page:        page,
+		PageSize:    pageSize,
+		VoidPending: c.Query("void_pending") == "true",
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -63,7 +64,13 @@ func (h *InvoiceHandler) GetInvoiceDetail(c *gin.Context) {
 }
 
 // ApproveInvoice transitions pending → approved.
-// POST /api/v1/admin/invoices/:id/approve  body: { "notes": "..." }
+//
+// POST /api/v1/admin/invoices/:id/approve
+//
+//	body: { "notes": "...", "invoice_kind": "normal|special", "provider": "caiyuntong|manual" }
+//
+// 当 provider 为非 manual 渠道时，service 层会在事务内把 provider_state 置 queued，
+// 由后台 worker 异步调用第三方接口完成自动开票。
 func (h *InvoiceHandler) ApproveInvoice(c *gin.Context) {
 	adminID, ok := requireAdminID(c)
 	if !ok {
@@ -74,10 +81,20 @@ func (h *InvoiceHandler) ApproveInvoice(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Notes string `json:"notes"`
+		Notes           string `json:"notes"`
+		InvoiceKind     string `json:"invoice_kind"`
+		Provider        string `json:"provider"`
+		InvoiceTypeCode string `json:"invoice_type_code"`
 	}
 	_ = c.ShouldBindJSON(&req)
-	if err := h.invoiceService.AdminApprove(c.Request.Context(), adminID, id, req.Notes); err != nil {
+	if err := h.invoiceService.AdminApprove(c.Request.Context(), service.AdminApproveParams{
+		AdminID:         adminID,
+		InvoiceID:       id,
+		Notes:           req.Notes,
+		InvoiceKind:     req.InvoiceKind,
+		Provider:        req.Provider,
+		InvoiceTypeCode: req.InvoiceTypeCode,
+	}); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}
@@ -304,4 +321,103 @@ func requireAdminID(c *gin.Context) (int64, bool) {
 		return 0, false
 	}
 	return subject.UserID, true
+}
+
+// RetryIssue 重新尝试自动开票（仅 provider_state=failed 时有效）。
+// POST /api/v1/admin/invoices/:id/retry-issue
+func (h *InvoiceHandler) RetryIssue(c *gin.Context) {
+	id, ok := parseInvoiceIDParam(c)
+	if !ok {
+		return
+	}
+	if err := h.invoiceService.AdminRetryIssue(c.Request.Context(), id); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "queued"})
+}
+
+// RetryReverse 重新尝试自动红冲（仅 provider_state=reverse_failed 时有效）。
+// POST /api/v1/admin/invoices/:id/retry-reverse
+func (h *InvoiceHandler) RetryReverse(c *gin.Context) {
+	id, ok := parseInvoiceIDParam(c)
+	if !ok {
+		return
+	}
+	if err := h.invoiceService.AdminRetryReverse(c.Request.Context(), id); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "reverse_queued"})
+}
+
+// MarkReversed 管理员标记「已在第三方平台手工红冲」（兜底通道）。
+// POST /api/v1/admin/invoices/:id/mark-reversed  body: { "red_invoice_no": "..." }
+func (h *InvoiceHandler) MarkReversed(c *gin.Context) {
+	adminID, ok := requireAdminID(c)
+	if !ok {
+		return
+	}
+	id, ok := parseInvoiceIDParam(c)
+	if !ok {
+		return
+	}
+	var req struct {
+		RedInvoiceNo string `json:"red_invoice_no"`
+	}
+	_ = c.ShouldBindJSON(&req)
+	if err := h.invoiceService.AdminMarkReversed(c.Request.Context(), adminID, id, req.RedInvoiceNo); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "marked"})
+}
+
+// ApproveVoidRequest 管理员通过用户的作废申请，同事务触发红冲流水线。
+// POST /api/v1/admin/invoice-void-requests/:id/approve  body: { "notes": "可选备注" }
+func (h *InvoiceHandler) ApproveVoidRequest(c *gin.Context) {
+	adminID, ok := requireAdminID(c)
+	if !ok {
+		return
+	}
+	requestID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || requestID <= 0 {
+		response.BadRequest(c, "Invalid void request ID")
+		return
+	}
+	var req struct {
+		Notes string `json:"notes"`
+	}
+	_ = c.ShouldBindJSON(&req)
+	if err := h.invoiceService.AdminApproveVoidRequest(c.Request.Context(), adminID, requestID, req.Notes); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "approved"})
+}
+
+// RejectVoidRequest 管理员驳回作废申请，必填驳回理由。
+// POST /api/v1/admin/invoice-void-requests/:id/reject  body: { "reason": "..." }
+func (h *InvoiceHandler) RejectVoidRequest(c *gin.Context) {
+	adminID, ok := requireAdminID(c)
+	if !ok {
+		return
+	}
+	requestID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || requestID <= 0 {
+		response.BadRequest(c, "Invalid void request ID")
+		return
+	}
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request body")
+		return
+	}
+	if err := h.invoiceService.AdminRejectVoidRequest(c.Request.Context(), adminID, requestID, req.Reason); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "rejected"})
 }

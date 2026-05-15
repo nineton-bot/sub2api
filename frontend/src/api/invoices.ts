@@ -43,6 +43,14 @@ export const invoiceAPI = {
     return apiClient.post<{ message: string }>(`/invoices/${id}/cancel`)
   },
 
+  /** 申请作废（仅 issued + 非 manual 渠道） */
+  requestVoid(id: number, reason: string) {
+    return apiClient.post<{ id: number; status: string; reason: string; requested_at: string }>(
+      `/invoices/${id}/void-request`,
+      { reason },
+    )
+  },
+
   /** 已开具发票 PDF 下载（带 JWT auth，触发浏览器下载） */
   async downloadPdf(id: number): Promise<void> {
     const resp = await apiClient.get(`/invoices/${id}/pdf`, { responseType: 'blob' })

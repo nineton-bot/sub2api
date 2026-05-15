@@ -13,6 +13,7 @@ import (
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/paymentorder"
 	"github.com/Wei-Shaw/sub2api/ent/paymentproviderinstance"
+	"github.com/Wei-Shaw/sub2api/ent/refundrequest"
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
@@ -150,6 +151,10 @@ func psLegacyOrderMatchesInstance(orderPaymentType string, inst *dbent.PaymentPr
 func (s *PaymentService) RequestRefund(ctx context.Context, oid, uid int64, reason string) error {
 	o, err := s.validateRefundRequest(ctx, oid, uid)
 	if err != nil {
+		// 已开发票 + 启用了自动红冲：走另一条路径（创建 refund_request 进入红冲流程）
+		if isLockedByInvoiceErr(err) && s.shouldAutoReverseOnUserRefund(ctx) {
+			return s.requestRefundWithReverse(ctx, oid, uid, reason)
+		}
 		return err
 	}
 	u, err := s.userRepo.GetByID(ctx, o.UserID)
@@ -170,6 +175,184 @@ func (s *PaymentService) RequestRefund(ctx context.Context, oid, uid int64, reas
 		return infraerrors.Conflict("CONFLICT", "order status changed")
 	}
 	s.writeAuditLog(ctx, oid, "REFUND_REQUESTED", fmt.Sprintf("user:%d", uid), map[string]any{"amount": o.Amount, "reason": nr})
+	return nil
+}
+
+// FinalizeRefundAfterReverse 在红冲成功后由 InvoiceService 调用，
+// 执行实际的资金退款 + refund_request 状态推进。
+//
+// 流程：
+//  1. 找到 invoice_id 对应的 refund_request（必须是 awaiting_reverse 或 reversing）
+//  2. 把 refund_request 状态改为 refunding
+//  3. 调 PrepareRefund(force=true, deduct=true) + ExecuteRefund 走完资金链路
+//  4. 把 refund_request 标 done（或失败时 blocked）
+//
+// 实现 InvoiceRefundExecutor 接口；通过 SetRefundExecutor 注入，避免循环依赖。
+func (s *PaymentService) FinalizeRefundAfterReverse(ctx context.Context, invoiceID int64) error {
+	if s == nil || s.entClient == nil {
+		return fmt.Errorf("payment service unavailable")
+	}
+	rr, err := s.entClient.RefundRequest.Query().
+		Where(
+			refundrequest.InvoiceIDEQ(invoiceID),
+			refundrequest.StatusIn("awaiting_reverse", "reversing"),
+		).
+		First(ctx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			// 无 refund_request 关联（可能是强制红冲场景），直接返回 nil
+			slog.Info("finalize_refund_no_request", "invoice_id", invoiceID)
+			return nil
+		}
+		return fmt.Errorf("query refund_request: %w", err)
+	}
+
+	if _, err := s.entClient.RefundRequest.UpdateOneID(rr.ID).
+		SetStatus("refunding").
+		Save(ctx); err != nil {
+		return fmt.Errorf("mark refunding: %w", err)
+	}
+
+	// 按 out_trade_no 找回订单
+	o, err := s.entClient.PaymentOrder.Query().
+		Where(paymentorder.OutTradeNoEQ(rr.PaymentOrderID)).
+		First(ctx)
+	if err != nil {
+		_ = s.markRefundRequestFailed(ctx, rr.ID, "order not found")
+		return fmt.Errorf("query order: %w", err)
+	}
+
+	plan, _, err := s.PrepareRefund(ctx, o.ID, rr.Amount, rr.Reason, true /*force*/, true /*deduct*/)
+	if err != nil || plan == nil {
+		msg := "prepare refund failed"
+		if err != nil {
+			msg = err.Error()
+		}
+		_ = s.markRefundRequestFailed(ctx, rr.ID, msg)
+		return err
+	}
+	if _, err := s.ExecuteRefund(ctx, plan); err != nil {
+		_ = s.markRefundRequestFailed(ctx, rr.ID, err.Error())
+		return err
+	}
+
+	if _, err := s.entClient.RefundRequest.UpdateOneID(rr.ID).
+		SetStatus("done").
+		Save(ctx); err != nil {
+		return fmt.Errorf("mark refund_request done: %w", err)
+	}
+	slog.Info("refund_finalized_after_reverse", "invoice_id", invoiceID, "refund_request_id", rr.ID)
+	return nil
+}
+
+func (s *PaymentService) markRefundRequestFailed(ctx context.Context, rrID int64, errMsg string) error {
+	_, err := s.entClient.RefundRequest.UpdateOneID(rrID).
+		SetStatus("blocked").
+		SetLastError(truncForRefundReqErr(errMsg)).
+		Save(ctx)
+	return err
+}
+
+func truncForRefundReqErr(s string) string {
+	if len(s) <= 1024 {
+		return s
+	}
+	return s[:1024]
+}
+
+// isLockedByInvoiceErr 判断是不是「订单被发票锁住」的 409。
+func isLockedByInvoiceErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "ORDER_LOCKED_BY_INVOICE")
+}
+
+// shouldAutoReverseOnUserRefund 读取 settings.invoice_reverse.auto_on_user_refund，
+// 关闭时退款仍然 409（兼容旧行为）。
+func (s *PaymentService) shouldAutoReverseOnUserRefund(ctx context.Context) bool {
+	if s == nil || s.settingService == nil {
+		return false
+	}
+	settings, err := s.settingService.GetAllSettings(ctx)
+	if err != nil || settings == nil {
+		return false
+	}
+	return settings.InvoiceReverse.AutoOnUserRefund
+}
+
+// requestRefundWithReverse 处理已开票订单的用户退款（v3 自动红冲）。
+//
+// 与 RequestRefund 不同：
+//   - 不直接把订单转入 REFUND_REQUESTED；订单保持 COMPLETED 状态
+//   - 创建 refund_requests 记录（status=awaiting_reverse），管理员可在后台看到
+//   - 把对应 invoice.provider_state 置 reverse_pending，由 invoice reverse worker 推进
+//   - 红冲成功后由 worker 调内部 RequestRefund + PrepareRefund + ExecuteRefund 完成资金退款
+func (s *PaymentService) requestRefundWithReverse(ctx context.Context, oid, uid int64, reason string) error {
+	o, err := s.entClient.PaymentOrder.Get(ctx, oid)
+	if err != nil {
+		return infraerrors.NotFound("NOT_FOUND", "order not found")
+	}
+	if o.UserID != uid {
+		return infraerrors.Forbidden("FORBIDDEN", "no permission")
+	}
+	if o.Status != OrderStatusCompleted {
+		return infraerrors.BadRequest("INVALID_STATUS", "only completed orders can request refund")
+	}
+	if o.InvoiceID == nil {
+		return infraerrors.Conflict("ORDER_NOT_LINKED_TO_INVOICE", "order is not linked to any invoice")
+	}
+
+	// 幂等：同一订单已有进行中的 refund_request，直接返回成功
+	existing, err := s.entClient.RefundRequest.Query().
+		Where(
+			refundrequest.PaymentOrderIDEQ(o.OutTradeNo),
+			refundrequest.StatusIn("awaiting_reverse", "reversing", "refunding"),
+		).
+		First(ctx)
+	if err == nil && existing != nil {
+		return nil
+	}
+
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	_, err = tx.RefundRequest.Create().
+		SetUserID(uid).
+		SetPaymentOrderID(o.OutTradeNo).
+		SetInvoiceID(*o.InvoiceID).
+		SetStatus("awaiting_reverse").
+		SetReason(strings.TrimSpace(reason)).
+		SetAmount(o.Amount).
+		Save(ctx)
+	if err != nil {
+		return fmt.Errorf("create refund_request: %w", err)
+	}
+
+	// 推进 invoice 进入红冲流水线
+	if _, err := tx.Invoice.UpdateOneID(*o.InvoiceID).
+		SetProviderState(ProviderStateReversePending).
+		SetReverseStep("").
+		SetProviderLastError("").
+		SetProviderRetryCount(0).
+		Save(ctx); err != nil {
+		return fmt.Errorf("mark invoice for reverse: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	s.writeAuditLog(ctx, oid, "REFUND_REQUESTED_VIA_INVOICE_REVERSE",
+		fmt.Sprintf("user:%d", uid),
+		map[string]any{"amount": o.Amount, "reason": strings.TrimSpace(reason), "invoice_id": *o.InvoiceID})
+	slog.Info("refund_request_pending_invoice_reverse",
+		"order_id", oid,
+		"invoice_id", *o.InvoiceID,
+		"amount", o.Amount,
+	)
 	return nil
 }
 

@@ -48,6 +48,8 @@ type Tx struct {
 	Invoice *InvoiceClient
 	// InvoiceItem is the client for interacting with the InvoiceItem builders.
 	InvoiceItem *InvoiceItemClient
+	// InvoiceVoidRequest is the client for interacting with the InvoiceVoidRequest builders.
+	InvoiceVoidRequest *InvoiceVoidRequestClient
 	// PaymentAuditLog is the client for interacting with the PaymentAuditLog builders.
 	PaymentAuditLog *PaymentAuditLogClient
 	// PaymentOrder is the client for interacting with the PaymentOrder builders.
@@ -72,6 +74,8 @@ type Tx struct {
 	ReferralPendingBonus *ReferralPendingBonusClient
 	// ReferralWithdrawal is the client for interacting with the ReferralWithdrawal builders.
 	ReferralWithdrawal *ReferralWithdrawalClient
+	// RefundRequest is the client for interacting with the RefundRequest builders.
+	RefundRequest *RefundRequestClient
 	// SecuritySecret is the client for interacting with the SecuritySecret builders.
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
@@ -244,6 +248,7 @@ func (tx *Tx) init() {
 	tx.IdentityAdoptionDecision = NewIdentityAdoptionDecisionClient(tx.config)
 	tx.Invoice = NewInvoiceClient(tx.config)
 	tx.InvoiceItem = NewInvoiceItemClient(tx.config)
+	tx.InvoiceVoidRequest = NewInvoiceVoidRequestClient(tx.config)
 	tx.PaymentAuditLog = NewPaymentAuditLogClient(tx.config)
 	tx.PaymentOrder = NewPaymentOrderClient(tx.config)
 	tx.PaymentProviderInstance = NewPaymentProviderInstanceClient(tx.config)
@@ -256,6 +261,7 @@ func (tx *Tx) init() {
 	tx.ReferralCommissionReleaseLog = NewReferralCommissionReleaseLogClient(tx.config)
 	tx.ReferralPendingBonus = NewReferralPendingBonusClient(tx.config)
 	tx.ReferralWithdrawal = NewReferralWithdrawalClient(tx.config)
+	tx.RefundRequest = NewRefundRequestClient(tx.config)
 	tx.SecuritySecret = NewSecuritySecretClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
 	tx.SubscriptionPlan = NewSubscriptionPlanClient(tx.config)

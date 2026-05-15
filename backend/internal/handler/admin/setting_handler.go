@@ -266,6 +266,36 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 
 		InvoiceEnabled:            settings.InvoiceEnabled,
 		InvoiceDefaultForAllUsers: settings.InvoiceDefaultForAllUsers,
+
+		InvoiceDefaultProvider: settings.InvoiceDefaultProvider,
+		InvoiceCaiyuntong: dto.InvoiceCaiyuntongSettings{
+			Endpoint:         settings.InvoiceCaiyuntong.Endpoint,
+			AccessKeyID:      settings.InvoiceCaiyuntong.AccessKeyID,
+			AccessKeySecret:  maskInvoiceSecret(settings.InvoiceCaiyuntong.AccessKeySecret),
+			SellerTaxNum:     settings.InvoiceCaiyuntong.SellerTaxNum,
+			SellerName:       settings.InvoiceCaiyuntong.SellerName,
+			SellerAddress:    settings.InvoiceCaiyuntong.SellerAddress,
+			SellerPhone:      settings.InvoiceCaiyuntong.SellerPhone,
+			SellerBankName:   settings.InvoiceCaiyuntong.SellerBankName,
+			SellerBankAcc:    settings.InvoiceCaiyuntong.SellerBankAcc,
+			Drawer:           settings.InvoiceCaiyuntong.Drawer,
+			Payee:            settings.InvoiceCaiyuntong.Payee,
+			Reviewer:         settings.InvoiceCaiyuntong.Reviewer,
+			TypeForNormal:    settings.InvoiceCaiyuntong.TypeForNormal,
+			TypeForSpecial:   settings.InvoiceCaiyuntong.TypeForSpecial,
+			GoodsCodeDefault: settings.InvoiceCaiyuntong.GoodsCodeDefault,
+			DefaultTaxRate:   settings.InvoiceCaiyuntong.DefaultTaxRate,
+		},
+		InvoicePoller: dto.InvoicePollerSettings{
+			IntervalSeconds: settings.InvoicePoller.IntervalSeconds,
+			TimeoutMinutes:  settings.InvoicePoller.TimeoutMinutes,
+		},
+		InvoiceReverse: dto.InvoiceReverseSettings{
+			PollerIntervalSeconds: settings.InvoiceReverse.PollerIntervalSeconds,
+			TimeoutMinutes:        settings.InvoiceReverse.TimeoutMinutes,
+			AutoOnUserRefund:      settings.InvoiceReverse.AutoOnUserRefund,
+			DefaultReason:         settings.InvoiceReverse.DefaultReason,
+		},
 	}
 
 	// OpenAI fast policy (stored under a dedicated setting key)
@@ -572,6 +602,12 @@ type UpdateSettingsRequest struct {
 	// 发票（指针类型 → 允许部分更新）
 	InvoiceEnabled            *bool `json:"invoice_enabled"`
 	InvoiceDefaultForAllUsers *bool `json:"invoice_default_for_all_users"`
+
+	// 自动开票渠道（v3）
+	InvoiceDefaultProvider *string                        `json:"invoice_default_provider,omitempty"`
+	InvoiceCaiyuntong      *dto.InvoiceCaiyuntongSettings `json:"invoice_caiyuntong,omitempty"`
+	InvoicePoller          *dto.InvoicePollerSettings     `json:"invoice_poller,omitempty"`
+	InvoiceReverse         *dto.InvoiceReverseSettings    `json:"invoice_reverse,omitempty"`
 
 	// 风控中心功能开关
 	RiskControlEnabled *bool `json:"risk_control_enabled"`
@@ -1501,6 +1537,35 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.InvoiceDefaultForAllUsers
 		}(),
+
+		InvoiceDefaultProvider: func() string {
+			if req.InvoiceDefaultProvider != nil {
+				return *req.InvoiceDefaultProvider
+			}
+			return previousSettings.InvoiceDefaultProvider
+		}(),
+		InvoiceCaiyuntong: mergeInvoiceCaiyuntong(req.InvoiceCaiyuntong, previousSettings.InvoiceCaiyuntong),
+		InvoicePoller: func() service.InvoicePollerSettings {
+			if req.InvoicePoller == nil {
+				return previousSettings.InvoicePoller
+			}
+			return service.InvoicePollerSettings{
+				IntervalSeconds: req.InvoicePoller.IntervalSeconds,
+				TimeoutMinutes:  req.InvoicePoller.TimeoutMinutes,
+			}
+		}(),
+		InvoiceReverse: func() service.InvoiceReverseSettings {
+			if req.InvoiceReverse == nil {
+				return previousSettings.InvoiceReverse
+			}
+			return service.InvoiceReverseSettings{
+				PollerIntervalSeconds: req.InvoiceReverse.PollerIntervalSeconds,
+				TimeoutMinutes:        req.InvoiceReverse.TimeoutMinutes,
+				AutoOnUserRefund:      req.InvoiceReverse.AutoOnUserRefund,
+				DefaultReason:         req.InvoiceReverse.DefaultReason,
+			}
+		}(),
+
 		RiskControlEnabled: func() bool {
 			if req.RiskControlEnabled != nil {
 				return *req.RiskControlEnabled
@@ -1789,6 +1854,36 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 
 		InvoiceEnabled:            updatedSettings.InvoiceEnabled,
 		InvoiceDefaultForAllUsers: updatedSettings.InvoiceDefaultForAllUsers,
+
+		InvoiceDefaultProvider: updatedSettings.InvoiceDefaultProvider,
+		InvoiceCaiyuntong: dto.InvoiceCaiyuntongSettings{
+			Endpoint:         updatedSettings.InvoiceCaiyuntong.Endpoint,
+			AccessKeyID:      updatedSettings.InvoiceCaiyuntong.AccessKeyID,
+			AccessKeySecret:  maskInvoiceSecret(updatedSettings.InvoiceCaiyuntong.AccessKeySecret),
+			SellerTaxNum:     updatedSettings.InvoiceCaiyuntong.SellerTaxNum,
+			SellerName:       updatedSettings.InvoiceCaiyuntong.SellerName,
+			SellerAddress:    updatedSettings.InvoiceCaiyuntong.SellerAddress,
+			SellerPhone:      updatedSettings.InvoiceCaiyuntong.SellerPhone,
+			SellerBankName:   updatedSettings.InvoiceCaiyuntong.SellerBankName,
+			SellerBankAcc:    updatedSettings.InvoiceCaiyuntong.SellerBankAcc,
+			Drawer:           updatedSettings.InvoiceCaiyuntong.Drawer,
+			Payee:            updatedSettings.InvoiceCaiyuntong.Payee,
+			Reviewer:         updatedSettings.InvoiceCaiyuntong.Reviewer,
+			TypeForNormal:    updatedSettings.InvoiceCaiyuntong.TypeForNormal,
+			TypeForSpecial:   updatedSettings.InvoiceCaiyuntong.TypeForSpecial,
+			GoodsCodeDefault: updatedSettings.InvoiceCaiyuntong.GoodsCodeDefault,
+			DefaultTaxRate:   updatedSettings.InvoiceCaiyuntong.DefaultTaxRate,
+		},
+		InvoicePoller: dto.InvoicePollerSettings{
+			IntervalSeconds: updatedSettings.InvoicePoller.IntervalSeconds,
+			TimeoutMinutes:  updatedSettings.InvoicePoller.TimeoutMinutes,
+		},
+		InvoiceReverse: dto.InvoiceReverseSettings{
+			PollerIntervalSeconds: updatedSettings.InvoiceReverse.PollerIntervalSeconds,
+			TimeoutMinutes:        updatedSettings.InvoiceReverse.TimeoutMinutes,
+			AutoOnUserRefund:      updatedSettings.InvoiceReverse.AutoOnUserRefund,
+			DefaultReason:         updatedSettings.InvoiceReverse.DefaultReason,
+		},
 
 		RiskControlEnabled: updatedSettings.RiskControlEnabled,
 	}
@@ -3004,4 +3099,44 @@ func (h *SettingHandler) TestWebSearchEmulation(c *gin.Context) {
 		return
 	}
 	response.Success(c, result)
+}
+
+// maskInvoiceSecret 返回前端可显示的密钥占位符。
+// 空字符串原样保留（让前端能区分「未配置」vs「已配置」）。
+func maskInvoiceSecret(plain string) string {
+	if plain == "" {
+		return ""
+	}
+	return service.SecretMaskMarker
+}
+
+// mergeInvoiceCaiyuntong 把 admin 请求体里的渠道配置 merge 进当前设置。
+// req == nil 表示请求未带该字段（保留全部当前值）。
+// AccessKeySecret 若为 SecretMaskMarker 或空，保留当前密文。
+func mergeInvoiceCaiyuntong(req *dto.InvoiceCaiyuntongSettings, prev service.InvoiceCaiyuntongSettings) service.InvoiceCaiyuntongSettings {
+	if req == nil {
+		return prev
+	}
+	secret := req.AccessKeySecret
+	if secret == "" || secret == service.SecretMaskMarker {
+		secret = prev.AccessKeySecret
+	}
+	return service.InvoiceCaiyuntongSettings{
+		Endpoint:         req.Endpoint,
+		AccessKeyID:      req.AccessKeyID,
+		AccessKeySecret:  secret,
+		SellerTaxNum:     req.SellerTaxNum,
+		SellerName:       req.SellerName,
+		SellerAddress:    req.SellerAddress,
+		SellerPhone:      req.SellerPhone,
+		SellerBankName:   req.SellerBankName,
+		SellerBankAcc:    req.SellerBankAcc,
+		Drawer:           req.Drawer,
+		Payee:            req.Payee,
+		Reviewer:         req.Reviewer,
+		TypeForNormal:    req.TypeForNormal,
+		TypeForSpecial:   req.TypeForSpecial,
+		GoodsCodeDefault: req.GoodsCodeDefault,
+		DefaultTaxRate:   req.DefaultTaxRate,
+	}
 }

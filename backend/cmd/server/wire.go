@@ -99,6 +99,8 @@ func provideCleanup(
 	backupSvc *service.BackupService,
 	paymentOrderExpiry *service.PaymentOrderExpiryService,
 	channelMonitorRunner *service.ChannelMonitorRunner,
+	invoiceSvc *service.InvoiceService,
+	_ service.InvoiceRefundLinker, // 强制 wire 构造 InvoiceRefundLinker，让 InvoiceService.SetRefundExecutor 被调用
 ) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -250,6 +252,12 @@ func provideCleanup(
 			{"ChannelMonitorRunner", func() error {
 				if channelMonitorRunner != nil {
 					channelMonitorRunner.Stop()
+				}
+				return nil
+			}},
+			{"InvoiceWorkers", func() error {
+				if invoiceSvc != nil {
+					invoiceSvc.StopInvoiceWorkers()
 				}
 				return nil
 			}},
