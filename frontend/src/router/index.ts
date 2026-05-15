@@ -277,7 +277,9 @@ const routes: RouteRecordRaw[] = [
       requiresAdmin: false,
       title: 'My Invoices',
       titleKey: 'nav.invoices',
-      requiresPayment: true
+      // 发票模块有独立的 invoice_enabled 开关；不依赖 payment_enabled，
+      // 否则在禁用 payment 但启用 invoice 的部署（如 ukrouter）会被 guard 误判
+      requiresInvoice: true
     }
   },
   {
@@ -624,7 +626,8 @@ const routes: RouteRecordRaw[] = [
       requiresAdmin: true,
       title: 'Invoice Management',
       titleKey: 'nav.invoiceManagement',
-      requiresPayment: true
+      // 同 user invoice 路由：检查 invoice_enabled 而非 payment_enabled
+      requiresInvoice: true
     }
   },
 
@@ -773,6 +776,15 @@ router.beforeEach((to, _from, next) => {
   if (to.meta.requiresPayment) {
     const paymentEnabled = appStore.cachedPublicSettings?.payment_enabled
     if (!paymentEnabled) {
+      next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
+      return
+    }
+  }
+
+  // Check invoice feature requirement (独立于 payment)
+  if (to.meta.requiresInvoice) {
+    const invoiceEnabled = appStore.cachedPublicSettings?.invoice_enabled
+    if (!invoiceEnabled) {
       next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
       return
     }
