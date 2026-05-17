@@ -169,6 +169,10 @@ export interface CreateOrderRequest {
   openid?: string
   wechat_resume_token?: string
   is_mobile?: boolean
+  // 仅订阅订单生效。空/"new" → 履约新建一行（叠加套餐）；"renew" → 履约延长 renew_subscription_id 指定的 sub。
+  purchase_intent?: 'new' | 'renew'
+  // 仅 purchase_intent="renew" 时必填，指向要续期的 user_subscriptions.id。
+  renew_subscription_id?: number
 }
 
 export type CreateOrderResultType = 'order_created' | 'oauth_required' | 'jsapi_ready'

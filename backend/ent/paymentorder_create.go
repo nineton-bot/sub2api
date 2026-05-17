@@ -211,6 +211,34 @@ func (_c *PaymentOrderCreate) SetNillableSubscriptionDays(v *int) *PaymentOrderC
 	return _c
 }
 
+// SetPurchaseIntent sets the "purchase_intent" field.
+func (_c *PaymentOrderCreate) SetPurchaseIntent(v string) *PaymentOrderCreate {
+	_c.mutation.SetPurchaseIntent(v)
+	return _c
+}
+
+// SetNillablePurchaseIntent sets the "purchase_intent" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillablePurchaseIntent(v *string) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetPurchaseIntent(*v)
+	}
+	return _c
+}
+
+// SetRenewSubscriptionID sets the "renew_subscription_id" field.
+func (_c *PaymentOrderCreate) SetRenewSubscriptionID(v int64) *PaymentOrderCreate {
+	_c.mutation.SetRenewSubscriptionID(v)
+	return _c
+}
+
+// SetNillableRenewSubscriptionID sets the "renew_subscription_id" field if the given value is not nil.
+func (_c *PaymentOrderCreate) SetNillableRenewSubscriptionID(v *int64) *PaymentOrderCreate {
+	if v != nil {
+		_c.SetRenewSubscriptionID(*v)
+	}
+	return _c
+}
+
 // SetProviderInstanceID sets the "provider_instance_id" field.
 func (_c *PaymentOrderCreate) SetProviderInstanceID(v string) *PaymentOrderCreate {
 	_c.mutation.SetProviderInstanceID(v)
@@ -553,6 +581,10 @@ func (_c *PaymentOrderCreate) defaults() {
 		v := paymentorder.DefaultOrderType
 		_c.mutation.SetOrderType(v)
 	}
+	if _, ok := _c.mutation.PurchaseIntent(); !ok {
+		v := paymentorder.DefaultPurchaseIntent
+		_c.mutation.SetPurchaseIntent(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := paymentorder.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -647,6 +679,14 @@ func (_c *PaymentOrderCreate) check() error {
 	if v, ok := _c.mutation.OrderType(); ok {
 		if err := paymentorder.OrderTypeValidator(v); err != nil {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PurchaseIntent(); !ok {
+		return &ValidationError{Name: "purchase_intent", err: errors.New(`ent: missing required field "PaymentOrder.purchase_intent"`)}
+	}
+	if v, ok := _c.mutation.PurchaseIntent(); ok {
+		if err := paymentorder.PurchaseIntentValidator(v); err != nil {
+			return &ValidationError{Name: "purchase_intent", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.purchase_intent": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.ProviderInstanceID(); ok {
@@ -808,6 +848,14 @@ func (_c *PaymentOrderCreate) createSpec() (*PaymentOrder, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.SubscriptionDays(); ok {
 		_spec.SetField(paymentorder.FieldSubscriptionDays, field.TypeInt, value)
 		_node.SubscriptionDays = &value
+	}
+	if value, ok := _c.mutation.PurchaseIntent(); ok {
+		_spec.SetField(paymentorder.FieldPurchaseIntent, field.TypeString, value)
+		_node.PurchaseIntent = value
+	}
+	if value, ok := _c.mutation.RenewSubscriptionID(); ok {
+		_spec.SetField(paymentorder.FieldRenewSubscriptionID, field.TypeInt64, value)
+		_node.RenewSubscriptionID = &value
 	}
 	if value, ok := _c.mutation.ProviderInstanceID(); ok {
 		_spec.SetField(paymentorder.FieldProviderInstanceID, field.TypeString, value)
@@ -1261,6 +1309,42 @@ func (u *PaymentOrderUpsert) AddSubscriptionDays(v int) *PaymentOrderUpsert {
 // ClearSubscriptionDays clears the value of the "subscription_days" field.
 func (u *PaymentOrderUpsert) ClearSubscriptionDays() *PaymentOrderUpsert {
 	u.SetNull(paymentorder.FieldSubscriptionDays)
+	return u
+}
+
+// SetPurchaseIntent sets the "purchase_intent" field.
+func (u *PaymentOrderUpsert) SetPurchaseIntent(v string) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldPurchaseIntent, v)
+	return u
+}
+
+// UpdatePurchaseIntent sets the "purchase_intent" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdatePurchaseIntent() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldPurchaseIntent)
+	return u
+}
+
+// SetRenewSubscriptionID sets the "renew_subscription_id" field.
+func (u *PaymentOrderUpsert) SetRenewSubscriptionID(v int64) *PaymentOrderUpsert {
+	u.Set(paymentorder.FieldRenewSubscriptionID, v)
+	return u
+}
+
+// UpdateRenewSubscriptionID sets the "renew_subscription_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsert) UpdateRenewSubscriptionID() *PaymentOrderUpsert {
+	u.SetExcluded(paymentorder.FieldRenewSubscriptionID)
+	return u
+}
+
+// AddRenewSubscriptionID adds v to the "renew_subscription_id" field.
+func (u *PaymentOrderUpsert) AddRenewSubscriptionID(v int64) *PaymentOrderUpsert {
+	u.Add(paymentorder.FieldRenewSubscriptionID, v)
+	return u
+}
+
+// ClearRenewSubscriptionID clears the value of the "renew_subscription_id" field.
+func (u *PaymentOrderUpsert) ClearRenewSubscriptionID() *PaymentOrderUpsert {
+	u.SetNull(paymentorder.FieldRenewSubscriptionID)
 	return u
 }
 
@@ -2009,6 +2093,48 @@ func (u *PaymentOrderUpsertOne) UpdateSubscriptionDays() *PaymentOrderUpsertOne 
 func (u *PaymentOrderUpsertOne) ClearSubscriptionDays() *PaymentOrderUpsertOne {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.ClearSubscriptionDays()
+	})
+}
+
+// SetPurchaseIntent sets the "purchase_intent" field.
+func (u *PaymentOrderUpsertOne) SetPurchaseIntent(v string) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPurchaseIntent(v)
+	})
+}
+
+// UpdatePurchaseIntent sets the "purchase_intent" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdatePurchaseIntent() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePurchaseIntent()
+	})
+}
+
+// SetRenewSubscriptionID sets the "renew_subscription_id" field.
+func (u *PaymentOrderUpsertOne) SetRenewSubscriptionID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetRenewSubscriptionID(v)
+	})
+}
+
+// AddRenewSubscriptionID adds v to the "renew_subscription_id" field.
+func (u *PaymentOrderUpsertOne) AddRenewSubscriptionID(v int64) *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddRenewSubscriptionID(v)
+	})
+}
+
+// UpdateRenewSubscriptionID sets the "renew_subscription_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertOne) UpdateRenewSubscriptionID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateRenewSubscriptionID()
+	})
+}
+
+// ClearRenewSubscriptionID clears the value of the "renew_subscription_id" field.
+func (u *PaymentOrderUpsertOne) ClearRenewSubscriptionID() *PaymentOrderUpsertOne {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearRenewSubscriptionID()
 	})
 }
 
@@ -2983,6 +3109,48 @@ func (u *PaymentOrderUpsertBulk) UpdateSubscriptionDays() *PaymentOrderUpsertBul
 func (u *PaymentOrderUpsertBulk) ClearSubscriptionDays() *PaymentOrderUpsertBulk {
 	return u.Update(func(s *PaymentOrderUpsert) {
 		s.ClearSubscriptionDays()
+	})
+}
+
+// SetPurchaseIntent sets the "purchase_intent" field.
+func (u *PaymentOrderUpsertBulk) SetPurchaseIntent(v string) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetPurchaseIntent(v)
+	})
+}
+
+// UpdatePurchaseIntent sets the "purchase_intent" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdatePurchaseIntent() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdatePurchaseIntent()
+	})
+}
+
+// SetRenewSubscriptionID sets the "renew_subscription_id" field.
+func (u *PaymentOrderUpsertBulk) SetRenewSubscriptionID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.SetRenewSubscriptionID(v)
+	})
+}
+
+// AddRenewSubscriptionID adds v to the "renew_subscription_id" field.
+func (u *PaymentOrderUpsertBulk) AddRenewSubscriptionID(v int64) *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.AddRenewSubscriptionID(v)
+	})
+}
+
+// UpdateRenewSubscriptionID sets the "renew_subscription_id" field to the value that was provided on create.
+func (u *PaymentOrderUpsertBulk) UpdateRenewSubscriptionID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.UpdateRenewSubscriptionID()
+	})
+}
+
+// ClearRenewSubscriptionID clears the value of the "renew_subscription_id" field.
+func (u *PaymentOrderUpsertBulk) ClearRenewSubscriptionID() *PaymentOrderUpsertBulk {
+	return u.Update(func(s *PaymentOrderUpsert) {
+		s.ClearRenewSubscriptionID()
 	})
 }
 

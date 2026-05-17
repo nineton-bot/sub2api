@@ -204,6 +204,54 @@ func (s *UserSubscriptionRepoSuite) TestGetActiveByUserIDAndGroupID_ExpiredIgnor
 	s.Require().Error(err, "expected error for expired subscription")
 }
 
+// TestListActiveByUserIDAndGroupID_StackedReturnedInExpiryOrder 验证叠加套餐场景：
+// 同 (user, group) 下两张 active sub 都返回，并按 expires_at ASC 排序（FIFO 消化基础）。
+// 这是 GetActiveSubscription 的 list+pick 改造能正确工作的根基 —— 顺序错了 picker 就乱。
+func (s *UserSubscriptionRepoSuite) TestListActiveByUserIDAndGroupID_StackedReturnedInExpiryOrder() {
+	user := s.mustCreateUser("stacked@test.com", service.RoleUser)
+	group := s.mustCreateGroup("g-stacked")
+
+	// 第二张更晚到期：意图是验证返回的第一项是更早到期的那张
+	later := s.mustCreateSubscription(user.ID, group.ID, func(c *dbent.UserSubscriptionCreate) {
+		c.SetExpiresAt(time.Now().Add(60 * 24 * time.Hour))
+	})
+	earlier := s.mustCreateSubscription(user.ID, group.ID, func(c *dbent.UserSubscriptionCreate) {
+		c.SetExpiresAt(time.Now().Add(7 * 24 * time.Hour))
+	})
+
+	got, err := s.repo.ListActiveByUserIDAndGroupID(s.ctx, user.ID, group.ID)
+	s.Require().NoError(err, "ListActiveByUserIDAndGroupID")
+	s.Require().Len(got, 2, "both stacked subs must be returned")
+	s.Require().Equal(earlier.ID, got[0].ID, "first element must be the earlier-expiring sub")
+	s.Require().Equal(later.ID, got[1].ID)
+	for _, sub := range got {
+		s.Require().NotNil(sub.Group, "WithGroup preload missing")
+	}
+}
+
+// TestListActiveByUserIDAndGroupID_FiltersExpired 验证已过期/非 active 状态不应被返回。
+func (s *UserSubscriptionRepoSuite) TestListActiveByUserIDAndGroupID_FiltersExpired() {
+	user := s.mustCreateUser("stacked-filter@test.com", service.RoleUser)
+	group := s.mustCreateGroup("g-stacked-filter")
+
+	// 一张已过期、一张已 suspended、一张 active 未到期：只有最后一张应被返回
+	s.mustCreateSubscription(user.ID, group.ID, func(c *dbent.UserSubscriptionCreate) {
+		c.SetExpiresAt(time.Now().Add(-1 * time.Hour))
+	})
+	s.mustCreateSubscription(user.ID, group.ID, func(c *dbent.UserSubscriptionCreate) {
+		c.SetStatus(service.SubscriptionStatusSuspended)
+		c.SetExpiresAt(time.Now().Add(30 * 24 * time.Hour))
+	})
+	active := s.mustCreateSubscription(user.ID, group.ID, func(c *dbent.UserSubscriptionCreate) {
+		c.SetExpiresAt(time.Now().Add(30 * 24 * time.Hour))
+	})
+
+	got, err := s.repo.ListActiveByUserIDAndGroupID(s.ctx, user.ID, group.ID)
+	s.Require().NoError(err)
+	s.Require().Len(got, 1)
+	s.Require().Equal(active.ID, got[0].ID)
+}
+
 // --- ListByUserID / ListActiveByUserID ---
 
 func (s *UserSubscriptionRepoSuite) TestListByUserID() {

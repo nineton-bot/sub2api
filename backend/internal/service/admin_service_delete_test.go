@@ -399,19 +399,19 @@ func (s *billingCacheStub) InvalidateUserBalance(ctx context.Context, userID int
 	panic("unexpected InvalidateUserBalance call")
 }
 
-func (s *billingCacheStub) GetSubscriptionCache(ctx context.Context, userID, groupID int64) (*SubscriptionCacheData, error) {
+func (s *billingCacheStub) GetSubscriptionCache(ctx context.Context, userID, groupID, subID int64) (*SubscriptionCacheData, error) {
 	panic("unexpected GetSubscriptionCache call")
 }
 
-func (s *billingCacheStub) SetSubscriptionCache(ctx context.Context, userID, groupID int64, data *SubscriptionCacheData) error {
+func (s *billingCacheStub) SetSubscriptionCache(ctx context.Context, userID, groupID, subID int64, data *SubscriptionCacheData) error {
 	panic("unexpected SetSubscriptionCache call")
 }
 
-func (s *billingCacheStub) UpdateSubscriptionUsage(ctx context.Context, userID, groupID int64, cost float64) error {
+func (s *billingCacheStub) UpdateSubscriptionUsage(ctx context.Context, userID, groupID, subID int64, cost float64) error {
 	panic("unexpected UpdateSubscriptionUsage call")
 }
 
-func (s *billingCacheStub) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID int64, count int) error {
+func (s *billingCacheStub) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID, subID int64, count int) error {
 	panic("unexpected UpdateSubscriptionRequestCount call")
 }
 

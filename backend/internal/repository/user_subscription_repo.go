@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -75,33 +76,79 @@ func (r *userSubscriptionRepository) GetByID(ctx context.Context, id int64) (*se
 	return userSubscriptionEntityToService(m), nil
 }
 
+// GetByUserIDAndGroupID 返回 (user, group) 下任一行；存在多行（叠加套餐场景）时取
+// expires_at 最早的一张，保证返回结果稳定。多行命中会记 INFO 日志便于追溯。
 func (r *userSubscriptionRepository) GetByUserIDAndGroupID(ctx context.Context, userID, groupID int64) (*service.UserSubscription, error) {
 	client := clientFromContext(ctx, r.client)
-	m, err := client.UserSubscription.Query().
-		Where(usersubscription.UserIDEQ(userID), usersubscription.GroupIDEQ(groupID)).
+	q := client.UserSubscription.Query().
+		Where(usersubscription.UserIDEQ(userID), usersubscription.GroupIDEQ(groupID))
+	m, err := q.Clone().
+		Order(dbent.Asc(usersubscription.FieldExpiresAt), dbent.Asc(usersubscription.FieldID)).
 		WithGroup().
-		Only(ctx)
+		First(ctx)
 	if err != nil {
 		return nil, translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
 	}
+	maybeWarnMultiSubscription(ctx, q, userID, groupID, "GetByUserIDAndGroupID")
 	return userSubscriptionEntityToService(m), nil
 }
 
+// GetActiveByUserIDAndGroupID 返回 (user, group) 下任一 active 行；存在多行时取
+// expires_at 最早的一张。请求扣费热路径请改用 ListActiveByUserIDAndGroupID。
 func (r *userSubscriptionRepository) GetActiveByUserIDAndGroupID(ctx context.Context, userID, groupID int64) (*service.UserSubscription, error) {
 	client := clientFromContext(ctx, r.client)
-	m, err := client.UserSubscription.Query().
+	q := client.UserSubscription.Query().
+		Where(
+			usersubscription.UserIDEQ(userID),
+			usersubscription.GroupIDEQ(groupID),
+			usersubscription.StatusEQ(service.SubscriptionStatusActive),
+			usersubscription.ExpiresAtGT(time.Now()),
+		)
+	m, err := q.Clone().
+		Order(dbent.Asc(usersubscription.FieldExpiresAt), dbent.Asc(usersubscription.FieldID)).
+		WithGroup().
+		First(ctx)
+	if err != nil {
+		return nil, translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+	}
+	maybeWarnMultiSubscription(ctx, q, userID, groupID, "GetActiveByUserIDAndGroupID")
+	return userSubscriptionEntityToService(m), nil
+}
+
+// maybeWarnMultiSubscription 在单行查询命中多行（叠加套餐场景）时记一条 INFO 日志。
+// 目的：帮助追溯哪些旧调用路径还在用单行 API 处理多 sub 数据，便于后续切到 ListActive 版。
+// 仅做日志，不影响业务返回值。Count 失败静默忽略（不影响主流程）。
+func maybeWarnMultiSubscription(ctx context.Context, q *dbent.UserSubscriptionQuery, userID, groupID int64, caller string) {
+	n, err := q.Count(ctx)
+	if err != nil || n <= 1 {
+		return
+	}
+	slog.Info("user_subscription.single_row_query_hit_multiple",
+		"caller", caller,
+		"user_id", userID,
+		"group_id", groupID,
+		"matched_rows", n,
+	)
+}
+
+// ListActiveByUserIDAndGroupID 返回 (user, group) 下所有 active 且未过期的订阅，
+// 按 expires_at ASC, id ASC 排序，供请求扣费层做 FIFO + 跳过耗尽的挑选。
+func (r *userSubscriptionRepository) ListActiveByUserIDAndGroupID(ctx context.Context, userID, groupID int64) ([]service.UserSubscription, error) {
+	client := clientFromContext(ctx, r.client)
+	subs, err := client.UserSubscription.Query().
 		Where(
 			usersubscription.UserIDEQ(userID),
 			usersubscription.GroupIDEQ(groupID),
 			usersubscription.StatusEQ(service.SubscriptionStatusActive),
 			usersubscription.ExpiresAtGT(time.Now()),
 		).
+		Order(dbent.Asc(usersubscription.FieldExpiresAt), dbent.Asc(usersubscription.FieldID)).
 		WithGroup().
-		Only(ctx)
+		All(ctx)
 	if err != nil {
-		return nil, translatePersistenceError(err, service.ErrSubscriptionNotFound, nil)
+		return nil, err
 	}
-	return userSubscriptionEntityToService(m), nil
+	return userSubscriptionEntitiesToService(subs), nil
 }
 
 func (r *userSubscriptionRepository) Update(ctx context.Context, sub *service.UserSubscription) error {

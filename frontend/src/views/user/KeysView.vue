@@ -415,14 +415,20 @@
             data-tour="key-form-group"
           >
             <template #selected="{ option }">
-              <GroupBadge
-                v-if="option"
-                :name="(option as unknown as GroupOption).label"
-                :platform="(option as unknown as GroupOption).platform"
-                :subscription-type="(option as unknown as GroupOption).subscriptionType"
-                :rate-multiplier="(option as unknown as GroupOption).rate"
-                :user-rate-multiplier="(option as unknown as GroupOption).userRate"
-              />
+              <span v-if="option" class="inline-flex items-center gap-1.5">
+                <GroupBadge
+                  :name="(option as unknown as GroupOption).label"
+                  :platform="(option as unknown as GroupOption).platform"
+                  :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                  :rate-multiplier="(option as unknown as GroupOption).rate"
+                  :user-rate-multiplier="(option as unknown as GroupOption).userRate"
+                />
+                <span
+                  v-if="((option as unknown as GroupOption).stackCount ?? 0) > 1"
+                  :title="t('keys.stackedSubsTooltip', { n: (option as unknown as GroupOption).stackCount })"
+                  class="inline-flex items-center rounded-md bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+                >×{{ (option as unknown as GroupOption).stackCount }}</span>
+              </span>
               <span v-else class="text-gray-400">{{ t('keys.selectGroup') }}</span>
             </template>
             <template #option="{ option, selected }">
@@ -453,17 +459,23 @@
                 <span class="h-px flex-1 bg-gray-200 dark:bg-dark-600"></span>
               </div>
               <!-- Product row -->
-              <GroupOptionItem
-                v-else
-                :name="(option as unknown as GroupOption).label"
-                :platform="(option as unknown as GroupOption).platform"
-                :subscription-type="(option as unknown as GroupOption).subscriptionType"
-                :rate-multiplier="(option as unknown as GroupOption).rate"
-                :user-rate-multiplier="(option as unknown as GroupOption).userRate"
-                :description="(option as unknown as GroupOption).description"
-                :days-remaining="(option as unknown as GroupOption).daysRemaining"
-                :selected="selected"
-              />
+              <div v-else class="flex w-full items-center gap-2">
+                <GroupOptionItem
+                  :name="(option as unknown as GroupOption).label"
+                  :platform="(option as unknown as GroupOption).platform"
+                  :subscription-type="(option as unknown as GroupOption).subscriptionType"
+                  :rate-multiplier="(option as unknown as GroupOption).rate"
+                  :user-rate-multiplier="(option as unknown as GroupOption).userRate"
+                  :description="(option as unknown as GroupOption).description"
+                  :days-remaining="(option as unknown as GroupOption).daysRemaining"
+                  :selected="selected"
+                />
+                <span
+                  v-if="((option as unknown as GroupOption).stackCount ?? 0) > 1"
+                  :title="t('keys.stackedSubsTooltip', { n: (option as unknown as GroupOption).stackCount })"
+                  class="shrink-0 inline-flex items-center rounded-md bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+                >×{{ (option as unknown as GroupOption).stackCount }}</span>
+              </div>
             </template>
           </Select>
           <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -1075,19 +1087,26 @@
               ]"
               :title="option.description || undefined"
             >
-              <GroupOptionItem
-                :name="option.label"
-                :platform="option.platform"
-                :subscription-type="option.subscriptionType"
-                :rate-multiplier="option.rate"
-                :user-rate-multiplier="option.userRate"
-                :description="option.description"
-                :days-remaining="option.daysRemaining"
-                :selected="
-                  selectedKeyForGroup?.group_id === option.value ||
-                  (!selectedKeyForGroup?.group_id && option.value === null)
-                "
-              />
+              <div class="flex w-full items-center gap-2">
+                <GroupOptionItem
+                  :name="option.label"
+                  :platform="option.platform"
+                  :subscription-type="option.subscriptionType"
+                  :rate-multiplier="option.rate"
+                  :user-rate-multiplier="option.userRate"
+                  :description="option.description"
+                  :days-remaining="option.daysRemaining"
+                  :selected="
+                    selectedKeyForGroup?.group_id === option.value ||
+                    (!selectedKeyForGroup?.group_id && option.value === null)
+                  "
+                />
+                <span
+                  v-if="(option.stackCount ?? 0) > 1"
+                  :title="t('keys.stackedSubsTooltip', { n: option.stackCount })"
+                  class="shrink-0 inline-flex items-center rounded-md bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold leading-none text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+                >×{{ option.stackCount }}</span>
+              </div>
             </button>
           </template>
           <!-- Empty state when search has no results -->
@@ -1151,6 +1170,8 @@ interface GroupOption {
   subscriptionType: SubscriptionType
   platform: GroupPlatform
   daysRemaining?: number | null
+  // 用户对该订阅组的并行 active 订阅数（叠加套餐）。>1 时下拉显示 ×N chip。
+  stackCount?: number
   [key: string]: unknown
 }
 
@@ -1335,7 +1356,8 @@ const mapGroup = (group: Group): GroupOption => ({
   platform: group.platform,
   daysRemaining: group.subscription_type === 'subscription'
     ? (subscriptionDaysMap.value[group.id] ?? null)
-    : null
+    : null,
+  stackCount: group.stack_count ?? 0
 })
 
 // Convert groups to Select options with section headers grouping by billing type

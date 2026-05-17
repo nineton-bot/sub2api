@@ -25582,6 +25582,9 @@ type PaymentOrderMutation struct {
 	addsubscription_group_id *int64
 	subscription_days        *int
 	addsubscription_days     *int
+	purchase_intent          *string
+	renew_subscription_id    *int64
+	addrenew_subscription_id *int64
 	provider_instance_id     *string
 	provider_key             *string
 	provider_snapshot        *map[string]interface{}
@@ -26573,6 +26576,112 @@ func (m *PaymentOrderMutation) ResetSubscriptionDays() {
 	m.subscription_days = nil
 	m.addsubscription_days = nil
 	delete(m.clearedFields, paymentorder.FieldSubscriptionDays)
+}
+
+// SetPurchaseIntent sets the "purchase_intent" field.
+func (m *PaymentOrderMutation) SetPurchaseIntent(s string) {
+	m.purchase_intent = &s
+}
+
+// PurchaseIntent returns the value of the "purchase_intent" field in the mutation.
+func (m *PaymentOrderMutation) PurchaseIntent() (r string, exists bool) {
+	v := m.purchase_intent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPurchaseIntent returns the old "purchase_intent" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldPurchaseIntent(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPurchaseIntent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPurchaseIntent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPurchaseIntent: %w", err)
+	}
+	return oldValue.PurchaseIntent, nil
+}
+
+// ResetPurchaseIntent resets all changes to the "purchase_intent" field.
+func (m *PaymentOrderMutation) ResetPurchaseIntent() {
+	m.purchase_intent = nil
+}
+
+// SetRenewSubscriptionID sets the "renew_subscription_id" field.
+func (m *PaymentOrderMutation) SetRenewSubscriptionID(i int64) {
+	m.renew_subscription_id = &i
+	m.addrenew_subscription_id = nil
+}
+
+// RenewSubscriptionID returns the value of the "renew_subscription_id" field in the mutation.
+func (m *PaymentOrderMutation) RenewSubscriptionID() (r int64, exists bool) {
+	v := m.renew_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRenewSubscriptionID returns the old "renew_subscription_id" field's value of the PaymentOrder entity.
+// If the PaymentOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentOrderMutation) OldRenewSubscriptionID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRenewSubscriptionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRenewSubscriptionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRenewSubscriptionID: %w", err)
+	}
+	return oldValue.RenewSubscriptionID, nil
+}
+
+// AddRenewSubscriptionID adds i to the "renew_subscription_id" field.
+func (m *PaymentOrderMutation) AddRenewSubscriptionID(i int64) {
+	if m.addrenew_subscription_id != nil {
+		*m.addrenew_subscription_id += i
+	} else {
+		m.addrenew_subscription_id = &i
+	}
+}
+
+// AddedRenewSubscriptionID returns the value that was added to the "renew_subscription_id" field in this mutation.
+func (m *PaymentOrderMutation) AddedRenewSubscriptionID() (r int64, exists bool) {
+	v := m.addrenew_subscription_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRenewSubscriptionID clears the value of the "renew_subscription_id" field.
+func (m *PaymentOrderMutation) ClearRenewSubscriptionID() {
+	m.renew_subscription_id = nil
+	m.addrenew_subscription_id = nil
+	m.clearedFields[paymentorder.FieldRenewSubscriptionID] = struct{}{}
+}
+
+// RenewSubscriptionIDCleared returns if the "renew_subscription_id" field was cleared in this mutation.
+func (m *PaymentOrderMutation) RenewSubscriptionIDCleared() bool {
+	_, ok := m.clearedFields[paymentorder.FieldRenewSubscriptionID]
+	return ok
+}
+
+// ResetRenewSubscriptionID resets all changes to the "renew_subscription_id" field.
+func (m *PaymentOrderMutation) ResetRenewSubscriptionID() {
+	m.renew_subscription_id = nil
+	m.addrenew_subscription_id = nil
+	delete(m.clearedFields, paymentorder.FieldRenewSubscriptionID)
 }
 
 // SetProviderInstanceID sets the "provider_instance_id" field.
@@ -27687,7 +27796,7 @@ func (m *PaymentOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentOrderMutation) Fields() []string {
-	fields := make([]string, 0, 41)
+	fields := make([]string, 0, 43)
 	if m.user != nil {
 		fields = append(fields, paymentorder.FieldUserID)
 	}
@@ -27741,6 +27850,12 @@ func (m *PaymentOrderMutation) Fields() []string {
 	}
 	if m.subscription_days != nil {
 		fields = append(fields, paymentorder.FieldSubscriptionDays)
+	}
+	if m.purchase_intent != nil {
+		fields = append(fields, paymentorder.FieldPurchaseIntent)
+	}
+	if m.renew_subscription_id != nil {
+		fields = append(fields, paymentorder.FieldRenewSubscriptionID)
 	}
 	if m.provider_instance_id != nil {
 		fields = append(fields, paymentorder.FieldProviderInstanceID)
@@ -27855,6 +27970,10 @@ func (m *PaymentOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.SubscriptionGroupID()
 	case paymentorder.FieldSubscriptionDays:
 		return m.SubscriptionDays()
+	case paymentorder.FieldPurchaseIntent:
+		return m.PurchaseIntent()
+	case paymentorder.FieldRenewSubscriptionID:
+		return m.RenewSubscriptionID()
 	case paymentorder.FieldProviderInstanceID:
 		return m.ProviderInstanceID()
 	case paymentorder.FieldProviderKey:
@@ -27946,6 +28065,10 @@ func (m *PaymentOrderMutation) OldField(ctx context.Context, name string) (ent.V
 		return m.OldSubscriptionGroupID(ctx)
 	case paymentorder.FieldSubscriptionDays:
 		return m.OldSubscriptionDays(ctx)
+	case paymentorder.FieldPurchaseIntent:
+		return m.OldPurchaseIntent(ctx)
+	case paymentorder.FieldRenewSubscriptionID:
+		return m.OldRenewSubscriptionID(ctx)
 	case paymentorder.FieldProviderInstanceID:
 		return m.OldProviderInstanceID(ctx)
 	case paymentorder.FieldProviderKey:
@@ -28126,6 +28249,20 @@ func (m *PaymentOrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSubscriptionDays(v)
+		return nil
+	case paymentorder.FieldPurchaseIntent:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPurchaseIntent(v)
+		return nil
+	case paymentorder.FieldRenewSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRenewSubscriptionID(v)
 		return nil
 	case paymentorder.FieldProviderInstanceID:
 		v, ok := value.(string)
@@ -28314,6 +28451,9 @@ func (m *PaymentOrderMutation) AddedFields() []string {
 	if m.addsubscription_days != nil {
 		fields = append(fields, paymentorder.FieldSubscriptionDays)
 	}
+	if m.addrenew_subscription_id != nil {
+		fields = append(fields, paymentorder.FieldRenewSubscriptionID)
+	}
 	if m.addrefund_amount != nil {
 		fields = append(fields, paymentorder.FieldRefundAmount)
 	}
@@ -28340,6 +28480,8 @@ func (m *PaymentOrderMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSubscriptionGroupID()
 	case paymentorder.FieldSubscriptionDays:
 		return m.AddedSubscriptionDays()
+	case paymentorder.FieldRenewSubscriptionID:
+		return m.AddedRenewSubscriptionID()
 	case paymentorder.FieldRefundAmount:
 		return m.AddedRefundAmount()
 	case paymentorder.FieldInvoiceID:
@@ -28395,6 +28537,13 @@ func (m *PaymentOrderMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddSubscriptionDays(v)
 		return nil
+	case paymentorder.FieldRenewSubscriptionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRenewSubscriptionID(v)
+		return nil
 	case paymentorder.FieldRefundAmount:
 		v, ok := value.(float64)
 		if !ok {
@@ -28437,6 +28586,9 @@ func (m *PaymentOrderMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(paymentorder.FieldSubscriptionDays) {
 		fields = append(fields, paymentorder.FieldSubscriptionDays)
+	}
+	if m.FieldCleared(paymentorder.FieldRenewSubscriptionID) {
+		fields = append(fields, paymentorder.FieldRenewSubscriptionID)
 	}
 	if m.FieldCleared(paymentorder.FieldProviderInstanceID) {
 		fields = append(fields, paymentorder.FieldProviderInstanceID)
@@ -28514,6 +28666,9 @@ func (m *PaymentOrderMutation) ClearField(name string) error {
 		return nil
 	case paymentorder.FieldSubscriptionDays:
 		m.ClearSubscriptionDays()
+		return nil
+	case paymentorder.FieldRenewSubscriptionID:
+		m.ClearRenewSubscriptionID()
 		return nil
 	case paymentorder.FieldProviderInstanceID:
 		m.ClearProviderInstanceID()
@@ -28618,6 +28773,12 @@ func (m *PaymentOrderMutation) ResetField(name string) error {
 		return nil
 	case paymentorder.FieldSubscriptionDays:
 		m.ResetSubscriptionDays()
+		return nil
+	case paymentorder.FieldPurchaseIntent:
+		m.ResetPurchaseIntent()
+		return nil
+	case paymentorder.FieldRenewSubscriptionID:
+		m.ResetRenewSubscriptionID()
 		return nil
 	case paymentorder.FieldProviderInstanceID:
 		m.ResetProviderInstanceID()

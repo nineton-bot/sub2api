@@ -70,8 +70,8 @@ func TestBillingKeyGeneration(t *testing.T) {
 	})
 
 	t.Run("sub_key", func(t *testing.T) {
-		key := billingSubKey(100, 200)
-		assert.Equal(t, "billing:sub:100:200", key)
+		key := billingSubKey(100, 200, 7)
+		assert.Equal(t, "billing:sub:100:200:7", key)
 	})
 }
 

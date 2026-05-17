@@ -34,21 +34,21 @@ func (b *billingCacheWorkerStub) InvalidateUserBalance(ctx context.Context, user
 	return nil
 }
 
-func (b *billingCacheWorkerStub) GetSubscriptionCache(ctx context.Context, userID, groupID int64) (*SubscriptionCacheData, error) {
+func (b *billingCacheWorkerStub) GetSubscriptionCache(ctx context.Context, userID, groupID, subID int64) (*SubscriptionCacheData, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (b *billingCacheWorkerStub) SetSubscriptionCache(ctx context.Context, userID, groupID int64, data *SubscriptionCacheData) error {
+func (b *billingCacheWorkerStub) SetSubscriptionCache(ctx context.Context, userID, groupID, subID int64, data *SubscriptionCacheData) error {
 	atomic.AddInt64(&b.subscriptionUpdates, 1)
 	return nil
 }
 
-func (b *billingCacheWorkerStub) UpdateSubscriptionUsage(ctx context.Context, userID, groupID int64, cost float64) error {
+func (b *billingCacheWorkerStub) UpdateSubscriptionUsage(ctx context.Context, userID, groupID, subID int64, cost float64) error {
 	atomic.AddInt64(&b.subscriptionUpdates, 1)
 	return nil
 }
 
-func (b *billingCacheWorkerStub) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID int64, count int) error {
+func (b *billingCacheWorkerStub) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID, subID int64, count int) error {
 	atomic.AddInt64(&b.subscriptionUpdates, 1)
 	return nil
 }
@@ -84,7 +84,7 @@ func TestBillingCacheServiceQueueHighLoad(t *testing.T) {
 	}
 	require.Less(t, time.Since(start), 2*time.Second)
 
-	svc.QueueUpdateSubscriptionUsage(1, 2, 1.5)
+	svc.QueueUpdateSubscriptionUsage(1, 2, 3, 1.5)
 
 	require.Eventually(t, func() bool {
 		return atomic.LoadInt64(&cache.balanceUpdates) > 0

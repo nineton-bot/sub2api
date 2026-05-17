@@ -87,6 +87,18 @@ func (PaymentOrder) Fields() []ent.Field {
 		field.Int("subscription_days").
 			Optional().
 			Nillable(),
+		// 购买意图（区分"新购/叠加" vs "续期"）。
+		// "new"（默认）：履约时创建新 user_subscriptions 行（叠加套餐场景）。
+		// "renew"：履约时延长 renew_subscription_id 指定的现有 sub 的 expires_at，不重置 usage/window。
+		// 由前端"我的订阅"页的续期对话框二选一驱动；缺省视为 "new"，确保新购路径行为不变。
+		field.String("purchase_intent").
+			MaxLen(16).
+			Default("new"),
+		// 仅当 purchase_intent="renew" 时使用：目标 user_subscriptions.id。
+		// 不设外键 —— sub 被硬删后订单仍保留可审计性；履约时验证归属即可。
+		field.Int64("renew_subscription_id").
+			Optional().
+			Nillable(),
 		field.String("provider_instance_id").
 			Optional().
 			Nillable().

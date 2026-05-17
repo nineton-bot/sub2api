@@ -683,6 +683,7 @@ export default {
     namePlaceholder: 'My API Key',
     groupLabel: 'Group',
     selectGroup: 'Select a group',
+    stackedSubsTooltip: 'You own {n} stacked subscriptions for this plan; quota is consumed in expiry order — no manual switching needed.',
     statusLabel: 'Status',
     selectStatus: 'Select status',
     saving: 'Saving...',
@@ -6521,7 +6522,14 @@ export default {
     expiresOn: 'Expires on {date}',
     resetIn: 'Resets in {time}',
     windowNotActive: 'Awaiting first use',
-    usageOf: '{used} of {limit}'
+    usageOf: '{used} of {limit}',
+    renewChoiceTitle: 'How would you like to proceed?',
+    renewChoiceIntro: 'You already own a subscription for "{name}". Pick what this purchase should do:',
+    renewChoiceRenewLabel: 'Renew the current plan',
+    renewChoiceRenewDesc: 'Extends the existing subscription\'s expiry only. Used quota keeps accumulating into the current window until it resets naturally. Best when you simply want to extend service.',
+    renewChoiceBuyLabel: 'Buy another (independent)',
+    renewChoiceBuyDesc: 'Creates a new parallel subscription with its own quota and a fresh monthly window starting now. If your current one is exhausted, you can use the new one immediately. Both cards will show on My Subscriptions.',
+    renewChoiceHint: 'Note: renewal does NOT reset already-used quota. If you need fresh capacity right away, pick "Buy another".'
   },
 
   // Onboarding Tour
@@ -6822,6 +6830,11 @@ export default {
       BALANCE_NOT_ENOUGH: 'Refund amount exceeds balance.',
       REFUND_AMOUNT_EXCEEDED: 'Refund amount exceeds the recharge amount.',
       REFUND_FAILED: 'Refund failed.',
+      SUBSCRIPTION_STACK_LIMIT_EXCEEDED: 'You already have {current} stacked subscriptions for this plan, reaching the limit ({max}). Wait for some to expire or request a refund before purchasing more.',
+      RENEW_SUBSCRIPTION_NOT_OWNED: 'The subscription you are trying to renew does not belong to this account. Please refresh My Subscriptions and try again.',
+      RENEW_SUBSCRIPTION_GROUP_MISMATCH: 'The plan you selected belongs to a different group than the subscription you are renewing. Please go back to My Subscriptions and click renew on the correct card.',
+      SUBSCRIPTION_NOT_FOUND: 'The subscription you want to renew does not exist or has been removed. Please refresh My Subscriptions and try again.',
+      GROUP_NOT_SUBSCRIPTION_TYPE: 'This group is not a subscription type and cannot accept subscription orders.',
     },
     airwallexPay: 'Airwallex Payment',
     stripePay: 'Pay Now',
@@ -6834,6 +6847,8 @@ export default {
     },
     subscribeNow: 'Subscribe Now',
     renewNow: 'Renew',
+    renewModeBanner: 'Renewal mode: this payment will extend subscription #{subId} only and will NOT reset used quota.',
+    renewModeCleared: 'You switched to a plan in a different group. Renewal mode has been cleared — this purchase will create a new standalone subscription.',
     selectPlan: 'Select Plan',
     planFeatures: 'Features',
     planCard: {
@@ -7036,11 +7051,11 @@ export default {
     loadFailed: 'Failed to load referral data',
     howItWorksTitle: 'How it works',
     howItWorksLine1: 'Share your invite link — new users who register through it are bound to you forever.',
-    howItWorksLine2: 'Every time they recharge or subscribe, you accrue {rate}% gross commission.',
+    howItWorksLine2: 'Every time they recharge or subscribe, you accrue gross commission at the current rate ({rate}%, subject to adjustment by platform policy).',
     howItWorksLine3: 'Commission is released as your invitees actually consume: by balance usage for recharges, and by elapsed days for subscriptions.',
     howItWorksLine4: 'Released commission is added directly to your balance — no manual withdrawal needed.',
     useUsableTitle: 'Use your usable commission',
-    useUsableHint: 'Transfer to account balance for immediate API spend, or request withdrawal to WeChat / Alipay / bank.',
+    useUsableHint: 'Transfer to account balance for immediate API spend.',
     withdrawalComingSoon: 'Withdrawal will be available soon',
     transfer: {
       action: 'Transfer to balance',

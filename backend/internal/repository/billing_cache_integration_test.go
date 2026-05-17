@@ -140,8 +140,9 @@ func (s *BillingCacheSuite) TestSubscriptionCache() {
 			fn: func(ctx context.Context, rdb *redis.Client, cache service.BillingCache) {
 				userID := int64(10)
 				groupID := int64(20)
+				subID := int64(1)
 
-				_, err := cache.GetSubscriptionCache(ctx, userID, groupID)
+				_, err := cache.GetSubscriptionCache(ctx, userID, groupID, subID)
 				require.ErrorIs(s.T(), err, redis.Nil, "expected redis.Nil for missing subscription key")
 			},
 		},
@@ -150,9 +151,10 @@ func (s *BillingCacheSuite) TestSubscriptionCache() {
 			fn: func(ctx context.Context, rdb *redis.Client, cache service.BillingCache) {
 				userID := int64(11)
 				groupID := int64(21)
-				subKey := fmt.Sprintf("%s%d:%d", billingSubKeyPrefix, userID, groupID)
+				subID := int64(1)
+				subKey := fmt.Sprintf("%s%d:%d:%d", billingSubKeyPrefix, userID, groupID, subID)
 
-				require.NoError(s.T(), cache.UpdateSubscriptionUsage(ctx, userID, groupID, 1.0), "UpdateSubscriptionUsage should not error")
+				require.NoError(s.T(), cache.UpdateSubscriptionUsage(ctx, userID, groupID, subID, 1.0), "UpdateSubscriptionUsage should not error")
 
 				exists, err := rdb.Exists(ctx, subKey).Result()
 				require.NoError(s.T(), err, "Exists")
@@ -164,7 +166,8 @@ func (s *BillingCacheSuite) TestSubscriptionCache() {
 			fn: func(ctx context.Context, rdb *redis.Client, cache service.BillingCache) {
 				userID := int64(12)
 				groupID := int64(22)
-				subKey := fmt.Sprintf("%s%d:%d", billingSubKeyPrefix, userID, groupID)
+				subID := int64(1)
+				subKey := fmt.Sprintf("%s%d:%d:%d", billingSubKeyPrefix, userID, groupID, subID)
 
 				data := &service.SubscriptionCacheData{
 					Status:       "active",
@@ -174,9 +177,9 @@ func (s *BillingCacheSuite) TestSubscriptionCache() {
 					MonthlyUsage: 3.0,
 					Version:      7,
 				}
-				require.NoError(s.T(), cache.SetSubscriptionCache(ctx, userID, groupID, data), "SetSubscriptionCache")
+				require.NoError(s.T(), cache.SetSubscriptionCache(ctx, userID, groupID, subID, data), "SetSubscriptionCache")
 
-				gotSub, err := cache.GetSubscriptionCache(ctx, userID, groupID)
+				gotSub, err := cache.GetSubscriptionCache(ctx, userID, groupID, subID)
 				require.NoError(s.T(), err, "GetSubscriptionCache")
 				require.Equal(s.T(), "active", gotSub.Status)
 				require.Equal(s.T(), int64(7), gotSub.Version)
@@ -192,6 +195,7 @@ func (s *BillingCacheSuite) TestSubscriptionCache() {
 			fn: func(ctx context.Context, rdb *redis.Client, cache service.BillingCache) {
 				userID := int64(13)
 				groupID := int64(23)
+				subID := int64(1)
 
 				data := &service.SubscriptionCacheData{
 					Status:       "active",
@@ -201,11 +205,11 @@ func (s *BillingCacheSuite) TestSubscriptionCache() {
 					MonthlyUsage: 3.0,
 					Version:      1,
 				}
-				require.NoError(s.T(), cache.SetSubscriptionCache(ctx, userID, groupID, data), "SetSubscriptionCache")
+				require.NoError(s.T(), cache.SetSubscriptionCache(ctx, userID, groupID, subID, data), "SetSubscriptionCache")
 
-				require.NoError(s.T(), cache.UpdateSubscriptionUsage(ctx, userID, groupID, 0.5), "UpdateSubscriptionUsage")
+				require.NoError(s.T(), cache.UpdateSubscriptionUsage(ctx, userID, groupID, subID, 0.5), "UpdateSubscriptionUsage")
 
-				gotSub, err := cache.GetSubscriptionCache(ctx, userID, groupID)
+				gotSub, err := cache.GetSubscriptionCache(ctx, userID, groupID, subID)
 				require.NoError(s.T(), err, "GetSubscriptionCache after update")
 				require.Equal(s.T(), 1.5, gotSub.DailyUsage)
 				require.Equal(s.T(), 2.5, gotSub.WeeklyUsage)
@@ -213,34 +217,44 @@ func (s *BillingCacheSuite) TestSubscriptionCache() {
 			},
 		},
 		{
-			name: "invalidate_removes_key",
+			name: "invalidate_removes_all_subs_for_user_group",
 			fn: func(ctx context.Context, rdb *redis.Client, cache service.BillingCache) {
 				userID := int64(101)
 				groupID := int64(10)
-				subKey := fmt.Sprintf("%s%d:%d", billingSubKeyPrefix, userID, groupID)
-
-				data := &service.SubscriptionCacheData{
-					Status:       "active",
-					ExpiresAt:    time.Now().Add(1 * time.Hour),
-					DailyUsage:   1.0,
-					WeeklyUsage:  2.0,
-					MonthlyUsage: 3.0,
-					Version:      1,
+				subIDs := []int64{1, 2} // 模拟叠加套餐：同 (user, group) 下两张 sub
+				subKeys := make([]string, len(subIDs))
+				for i, sid := range subIDs {
+					subKeys[i] = fmt.Sprintf("%s%d:%d:%d", billingSubKeyPrefix, userID, groupID, sid)
+					data := &service.SubscriptionCacheData{
+						Status:       "active",
+						ExpiresAt:    time.Now().Add(1 * time.Hour),
+						DailyUsage:   float64(i + 1),
+						WeeklyUsage:  2.0,
+						MonthlyUsage: 3.0,
+						Version:      1,
+					}
+					require.NoError(s.T(), cache.SetSubscriptionCache(ctx, userID, groupID, sid, data), "SetSubscriptionCache")
 				}
-				require.NoError(s.T(), cache.SetSubscriptionCache(ctx, userID, groupID, data), "SetSubscriptionCache")
 
-				exists, err := rdb.Exists(ctx, subKey).Result()
-				require.NoError(s.T(), err, "Exists")
-				require.Equal(s.T(), int64(1), exists, "expected subscription key to exist")
+				for _, k := range subKeys {
+					exists, err := rdb.Exists(ctx, k).Result()
+					require.NoError(s.T(), err, "Exists")
+					require.Equal(s.T(), int64(1), exists, "expected subscription key %s to exist", k)
+				}
 
+				// InvalidateSubscriptionCache 应该清掉 (user, group) 下所有 sub 的缓存
 				require.NoError(s.T(), cache.InvalidateSubscriptionCache(ctx, userID, groupID), "InvalidateSubscriptionCache")
 
-				exists, err = rdb.Exists(ctx, subKey).Result()
-				require.NoError(s.T(), err, "Exists after invalidate")
-				require.Equal(s.T(), int64(0), exists, "expected subscription key to be removed after invalidate")
+				for _, k := range subKeys {
+					exists, err := rdb.Exists(ctx, k).Result()
+					require.NoError(s.T(), err, "Exists after invalidate")
+					require.Equal(s.T(), int64(0), exists, "expected subscription key %s to be removed after invalidate", k)
+				}
 
-				_, err = cache.GetSubscriptionCache(ctx, userID, groupID)
-				require.ErrorIs(s.T(), err, redis.Nil, "expected redis.Nil after invalidate")
+				for _, sid := range subIDs {
+					_, err := cache.GetSubscriptionCache(ctx, userID, groupID, sid)
+					require.ErrorIs(s.T(), err, redis.Nil, "expected redis.Nil for sub %d after invalidate", sid)
+				}
 			},
 		},
 		{
@@ -248,7 +262,8 @@ func (s *BillingCacheSuite) TestSubscriptionCache() {
 			fn: func(ctx context.Context, rdb *redis.Client, cache service.BillingCache) {
 				userID := int64(102)
 				groupID := int64(11)
-				subKey := fmt.Sprintf("%s%d:%d", billingSubKeyPrefix, userID, groupID)
+				subID := int64(1)
+				subKey := fmt.Sprintf("%s%d:%d:%d", billingSubKeyPrefix, userID, groupID, subID)
 
 				fields := map[string]any{
 					"expires_at":    time.Now().Add(1 * time.Hour).Unix(),
@@ -259,7 +274,7 @@ func (s *BillingCacheSuite) TestSubscriptionCache() {
 				}
 				require.NoError(s.T(), rdb.HSet(ctx, subKey, fields).Err(), "HSet")
 
-				_, err := cache.GetSubscriptionCache(ctx, userID, groupID)
+				_, err := cache.GetSubscriptionCache(ctx, userID, groupID, subID)
 				require.Error(s.T(), err, "expected error for missing status field")
 				require.NotErrorIs(s.T(), err, redis.Nil, "expected parsing error, not redis.Nil")
 				require.Equal(s.T(), "invalid cache: missing status", err.Error())
@@ -338,7 +353,7 @@ func (s *BillingCacheSuite) TestUpdateSubscriptionUsage_ErrorPropagation() {
 		cache := NewBillingCache(rdb)
 		ctx := context.Background()
 
-		err := cache.UpdateSubscriptionUsage(ctx, 88888, 77777, 1.0)
+		err := cache.UpdateSubscriptionUsage(ctx, 88888, 77777, 99, 1.0)
 		require.NoError(s.T(), err, "UpdateSubscriptionUsage on non-existent key should return nil")
 	})
 
@@ -352,12 +367,12 @@ func (s *BillingCacheSuite) TestUpdateSubscriptionUsage_ErrorPropagation() {
 			ExpiresAt: time.Now().Add(1 * time.Hour),
 			Version:   1,
 		}
-		require.NoError(s.T(), cache.SetSubscriptionCache(ctx, 301, 401, data))
+		require.NoError(s.T(), cache.SetSubscriptionCache(ctx, 301, 401, 1, data))
 
 		cancelCtx, cancel := context.WithCancel(ctx)
 		cancel()
 
-		err := cache.UpdateSubscriptionUsage(cancelCtx, 301, 401, 1.0)
+		err := cache.UpdateSubscriptionUsage(cancelCtx, 301, 401, 1, 1.0)
 		require.Error(s.T(), err, "cancelled context should propagate error")
 	})
 }

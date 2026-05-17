@@ -284,6 +284,218 @@ func (s *SubscriptionService) AssignOrExtendSubscription(ctx context.Context, in
 	return sub, false, nil // false 表示是新建
 }
 
+// MaxStackedSubscriptionsPerUserGroup 单一 (user, group) 下允许的并行 active sub 数量上限。
+// 防御性硬上限，避免恶意/误操作循环购买产生海量行 —— 正常用户用不到这么多。
+// 触顶时 CreateNewSubscription 返回 ErrTooManyStackedSubscriptions，让上游决定如何提示。
+const MaxStackedSubscriptionsPerUserGroup = 10
+
+// ErrTooManyStackedSubscriptions 同 (user, group) 已达叠加上限时返回。
+var ErrTooManyStackedSubscriptions = infraerrors.BadRequest(
+	"SUBSCRIPTION_STACK_LIMIT_EXCEEDED",
+	"too many active subscriptions for this plan",
+)
+
+// CreateNewSubscription 无条件创建一行 user_subscriptions（用于支付路径）。
+//
+// 与 AssignOrExtendSubscription 不同：不查询已有订阅、不做续期合并。
+// 同 (user, group) 下可以并行存在多行（"叠加套餐"）。请求扣费时由
+// GetActiveSubscription 按 FIFO 挑第一张未触限的 sub 计费。
+//
+// 失败时返回 createSubscription 的原始错误。成功后失效 L1 + Redis 计费缓存，
+// 确保后续请求拿到新列表。同 (user, group) 下已有 >= MaxStackedSubscriptionsPerUserGroup
+// 张 active sub 时直接拒绝（防御性）。
+func (s *SubscriptionService) CreateNewSubscription(ctx context.Context, input *AssignSubscriptionInput) (*UserSubscription, error) {
+	// 校验分组
+	group, err := s.groupRepo.GetByID(ctx, input.GroupID)
+	if err != nil {
+		return nil, fmt.Errorf("group not found: %w", err)
+	}
+	if !group.IsSubscriptionType() {
+		return nil, ErrGroupNotSubscriptionType
+	}
+
+	// 叠加上限保护：避免单一 (user, group) 出现异常多行
+	existing, err := s.userSubRepo.ListActiveByUserIDAndGroupID(ctx, input.UserID, input.GroupID)
+	if err != nil {
+		return nil, fmt.Errorf("count active subscriptions: %w", err)
+	}
+	if len(existing) >= MaxStackedSubscriptionsPerUserGroup {
+		return nil, ErrTooManyStackedSubscriptions
+	}
+
+	sub, err := s.createSubscription(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	s.InvalidateSubCache(input.UserID, input.GroupID)
+	if s.billingCacheService != nil {
+		userID, groupID := input.UserID, input.GroupID
+		go func() {
+			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = s.billingCacheService.InvalidateSubscription(cacheCtx, userID, groupID)
+		}()
+	}
+
+	return sub, nil
+}
+
+// ErrRenewSubscriptionNotOwned 续期目标不属于当前用户。
+var ErrRenewSubscriptionNotOwned = infraerrors.BadRequest(
+	"RENEW_SUBSCRIPTION_NOT_OWNED",
+	"the subscription you are trying to renew does not belong to you",
+)
+
+// ErrRenewSubscriptionGroupMismatch 续期目标的分组与订单所选套餐的分组不一致。
+var ErrRenewSubscriptionGroupMismatch = infraerrors.BadRequest(
+	"RENEW_SUBSCRIPTION_GROUP_MISMATCH",
+	"the subscription being renewed does not match the plan's group",
+)
+
+// ValidateRenewTarget 在订单创建阶段（履约之前）做"续期目标"完整健全性校验，
+// 提前把无法履约的请求拦在付款页之前，避免用户付完钱才发现订单错误。
+//
+// 校验：
+//  1. subscriptionID > 0
+//  2. sub 存在且未被软删（ent SoftDeleteMixin interceptor 自动过滤 deleted_at）
+//  3. sub.UserID == userID（归属）
+//  4. sub.GroupID == expectedGroupID（套餐分组一致）
+//  5. sub 所属 group 仍 active 且仍是订阅型
+//
+// 仅做只读校验，无副作用、无事务。fulfillment 阶段 RenewSubscription 会再校验一次（双保险）。
+func (s *SubscriptionService) ValidateRenewTarget(ctx context.Context, userID, subscriptionID, expectedGroupID int64) error {
+	if subscriptionID <= 0 {
+		return fmt.Errorf("invalid subscription id")
+	}
+	sub, err := s.userSubRepo.GetByID(ctx, subscriptionID)
+	if err != nil {
+		// repo 已把 NotFound 翻译过；软删 sub 也走这条（被 ent interceptor 过滤）
+		return err
+	}
+	if sub.UserID != userID {
+		return ErrRenewSubscriptionNotOwned
+	}
+	if sub.GroupID != expectedGroupID {
+		return ErrRenewSubscriptionGroupMismatch
+	}
+	group, err := s.groupRepo.GetByID(ctx, sub.GroupID)
+	if err != nil {
+		return fmt.Errorf("renew target group not found: %w", err)
+	}
+	if !group.IsSubscriptionType() {
+		return ErrGroupNotSubscriptionType
+	}
+	if group.Status != "active" {
+		return fmt.Errorf("renew target group is not active")
+	}
+	return nil
+}
+
+// RenewSubscription 按 subscription_id 给指定的一张 sub 续期：纯延长 expires_at，
+// 不重置 daily/weekly/monthly usage 与 window_start，保持购买历史不被破坏。
+//
+// 用户在"我的订阅"页对某张卡点击"续期"时调用（区别于"再买一张" → CreateNewSubscription）。
+//
+// 全部校验都在事务开始前完成，并把 expectedGroupID 作为强制参数 —— 避免历史 bug：
+// "履约时先 extend 再验组，组不一致时 DB 已落库回滚不掉"。
+//
+// 校验顺序：
+//  1. 入参非法（id<=0）→ 直接错
+//  2. sub 不存在 / 软删 → ErrSubscriptionNotFound（repo 翻译过）
+//  3. sub 不属于 userID → ErrRenewSubscriptionNotOwned
+//  4. sub.GroupID != expectedGroupID → ErrRenewSubscriptionGroupMismatch
+//  5. group 不存在 / 非订阅型 / inactive → 相应错误
+//
+// 全部通过后才开事务做 ExtendExpiry + 可选 UpdateStatus（与原 AssignOrExtend 行为一致）。
+func (s *SubscriptionService) RenewSubscription(ctx context.Context, userID, subscriptionID, expectedGroupID int64, validityDays int) (*UserSubscription, error) {
+	if subscriptionID <= 0 {
+		return nil, fmt.Errorf("invalid subscription id")
+	}
+	existingSub, err := s.userSubRepo.GetByID(ctx, subscriptionID)
+	if err != nil {
+		return nil, fmt.Errorf("get subscription: %w", err)
+	}
+	if existingSub.UserID != userID {
+		return nil, ErrRenewSubscriptionNotOwned
+	}
+	if expectedGroupID > 0 && existingSub.GroupID != expectedGroupID {
+		return nil, ErrRenewSubscriptionGroupMismatch
+	}
+	// 校验 group 状态：deactivated 后不应该再续期；防止 admin 关停后用户仍续费
+	group, err := s.groupRepo.GetByID(ctx, existingSub.GroupID)
+	if err != nil {
+		return nil, fmt.Errorf("group not found: %w", err)
+	}
+	if !group.IsSubscriptionType() {
+		return nil, ErrGroupNotSubscriptionType
+	}
+	if group.Status != "active" {
+		return nil, fmt.Errorf("subscription group is not active")
+	}
+
+	if validityDays <= 0 {
+		validityDays = 30
+	}
+	if validityDays > MaxValidityDays {
+		validityDays = MaxValidityDays
+	}
+
+	now := time.Now()
+	var newExpiresAt time.Time
+	if existingSub.ExpiresAt.After(now) {
+		newExpiresAt = existingSub.ExpiresAt.AddDate(0, 0, validityDays)
+	} else {
+		newExpiresAt = now.AddDate(0, 0, validityDays)
+	}
+	if newExpiresAt.After(MaxExpiresAt) {
+		newExpiresAt = MaxExpiresAt
+	}
+
+	tx, err := s.entClient.Tx(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin transaction: %w", err)
+	}
+	txCtx := dbent.NewTxContext(ctx, tx)
+
+	if err := s.userSubRepo.ExtendExpiry(txCtx, existingSub.ID, newExpiresAt); err != nil {
+		_ = tx.Rollback()
+		return nil, fmt.Errorf("extend subscription: %w", err)
+	}
+	if existingSub.Status != SubscriptionStatusActive {
+		if err := s.userSubRepo.UpdateStatus(txCtx, existingSub.ID, SubscriptionStatusActive); err != nil {
+			_ = tx.Rollback()
+			return nil, fmt.Errorf("reactivate subscription: %w", err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	// 失效订阅缓存：列表里的 expires_at/status 已变
+	s.InvalidateSubCache(existingSub.UserID, existingSub.GroupID)
+	if s.billingCacheService != nil {
+		userID, groupID := existingSub.UserID, existingSub.GroupID
+		go func() {
+			cacheCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = s.billingCacheService.InvalidateSubscription(cacheCtx, userID, groupID)
+		}()
+	}
+
+	return s.userSubRepo.GetByID(ctx, existingSub.ID)
+}
+
+// CountActiveSubscriptionsForUserGroup 返回用户当前 (group) 下并行 active sub 的数量，
+// 供 PaymentService 在订单创建阶段预检叠加上限 —— 避免用户付完钱才被叠加上限拒绝。
+func (s *SubscriptionService) CountActiveSubscriptionsForUserGroup(ctx context.Context, userID, groupID int64) (int, error) {
+	subs, err := s.userSubRepo.ListActiveByUserIDAndGroupID(ctx, userID, groupID)
+	if err != nil {
+		return 0, err
+	}
+	return len(subs), nil
+}
+
 // createSubscription 创建新订阅（内部方法）
 func (s *SubscriptionService) createSubscription(ctx context.Context, input *AssignSubscriptionInput) (*UserSubscription, error) {
 	validityDays := input.ValidityDays
@@ -560,44 +772,78 @@ func (s *SubscriptionService) GetByID(ctx context.Context, id int64) (*UserSubsc
 	return s.userSubRepo.GetByID(ctx, id)
 }
 
-// GetActiveSubscription 获取用户对特定分组的有效订阅
-// 使用 L1 缓存 + singleflight 加速中间件热路径。
+// GetActiveSubscription 获取用户对特定分组的有效订阅。
+//
+// 当用户在该分组下有多张并行订阅（叠加套餐）时，按 expires_at ASC 排序，
+// 挑第一张未触发限额的（FIFO + 跳过耗尽）。如果所有 sub 都触限，返回 expires_at
+// 最早的一张，让既有 ValidateAndCheckLimits 产出标准超限错误。
+//
+// 使用 L1 缓存 + singleflight 加速中间件热路径，L1 缓存值是 []UserSubscription 列表。
 // 返回缓存对象的浅拷贝，调用方可安全修改字段而不会污染缓存或触发 data race。
 func (s *SubscriptionService) GetActiveSubscription(ctx context.Context, userID, groupID int64) (*UserSubscription, error) {
 	key := subCacheKey(userID, groupID)
 
-	// L1 缓存命中：返回浅拷贝
+	// L1 缓存命中：picker 选一张并返回浅拷贝
 	if s.subCacheL1 != nil {
 		if v, ok := s.subCacheL1.Get(key); ok {
-			if sub, ok := v.(*UserSubscription); ok {
-				cp := *sub
-				return &cp, nil
+			if list, ok := v.([]UserSubscription); ok && len(list) > 0 {
+				return s.pickAndCopy(list), nil
 			}
 		}
 	}
 
 	// singleflight 防止并发击穿
 	value, err, _ := s.subCacheGroup.Do(key, func() (any, error) {
-		sub, err := s.userSubRepo.GetActiveByUserIDAndGroupID(ctx, userID, groupID)
+		list, err := s.userSubRepo.ListActiveByUserIDAndGroupID(ctx, userID, groupID)
 		if err != nil {
-			return nil, err // 直接透传 repo 已翻译的错误（NotFound → ErrSubscriptionNotFound，其他错误原样返回）
+			return nil, err
 		}
-		// 写入 L1 缓存
+		if len(list) == 0 {
+			return nil, ErrSubscriptionNotFound
+		}
+		// 写入 L1 缓存（成本按列表长度计，便于 ristretto 估算）
 		if s.subCacheL1 != nil {
-			_ = s.subCacheL1.SetWithTTL(key, sub, 1, s.jitteredTTL(s.subCacheTTL))
+			_ = s.subCacheL1.SetWithTTL(key, list, int64(len(list)), s.jitteredTTL(s.subCacheTTL))
 		}
-		return sub, nil
+		return list, nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	// singleflight 返回的也是缓存指针，需要浅拷贝
-	sub, ok := value.(*UserSubscription)
-	if !ok || sub == nil {
+	list, ok := value.([]UserSubscription)
+	if !ok || len(list) == 0 {
 		return nil, ErrSubscriptionNotFound
 	}
-	cp := *sub
-	return &cp, nil
+	return s.pickAndCopy(list), nil
+}
+
+// pickAndCopy 从已按 expires_at ASC 排序的列表里挑第一张未超限的 sub，返回浅拷贝。
+// 全部超限时回退最早过期的那张，保持现有"超限错误从 ValidateAndCheckLimits 抛出"的语义。
+func (s *SubscriptionService) pickAndCopy(list []UserSubscription) *UserSubscription {
+	picked := pickUsableSubscriptionIndex(s, list)
+	cp := list[picked]
+	return &cp
+}
+
+// pickUsableSubscriptionIndex 返回挑选出的 sub 在 list 中的下标。
+// list 必须按 expires_at ASC 排序。picker 用 ValidateAndCheckLimits 的副本做无副作用检测：
+// 命中第一张未超限的；如果全部超限，回退 index=0（最早过期）。
+func pickUsableSubscriptionIndex(s *SubscriptionService, list []UserSubscription) int {
+	if len(list) == 0 {
+		return 0
+	}
+	for i := range list {
+		g := list[i].Group
+		if g == nil {
+			// 缺失 Group 信息时无法判定限额，按"可用"处理 — ValidateAndCheckLimits 会兜底
+			return i
+		}
+		probe := list[i]
+		if _, err := s.ValidateAndCheckLimits(&probe, g); err == nil {
+			return i
+		}
+	}
+	return 0
 }
 
 // ListUserSubscriptions 获取用户的所有订阅

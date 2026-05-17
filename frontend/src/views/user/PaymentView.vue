@@ -94,6 +94,13 @@
           <template v-else-if="activeTab === 'subscription'">
             <!-- Subscription confirm (inline, replaces plan list) -->
             <template v-if="selectedPlan">
+              <!-- 续期模式横幅：明示用户当前是 renew sub X 状态，避免跨分组切换后还以为是续期 -->
+              <div
+                v-if="purchaseIntent === 'renew' && renewSubscriptionId"
+                class="rounded-xl border border-primary-300 bg-primary-50 px-4 py-3 text-sm text-primary-700 dark:border-primary-700 dark:bg-primary-900/30 dark:text-primary-200"
+              >
+                {{ t('payment.renewModeBanner', { subId: renewSubscriptionId }) }}
+              </div>
               <div class="card p-5">
                 <!-- Header: platform badge + plan name -->
                 <div class="mb-3 flex flex-wrap items-center gap-2">
@@ -661,6 +668,31 @@ const planTextClass = computed(() => platformTextClass(selectedPlan.value?.group
 // Renewal modal state
 const showRenewalModal = ref(false)
 const renewGroupId = ref<number | null>(null)
+
+// 用户在"我的订阅"页弹窗选择"续期"后跳过来：query 里带 intent=renew&sub_id=<sub.id>。
+// 我们把这两个值保存下来，等下单时透传给后端 → payment_orders 写入 purchase_intent，
+// 履约时（payment_fulfillment.doSub）按 intent 路由到 RenewSubscription 或 CreateNewSubscription。
+// 默认 intent=new（叠加套餐场景，履约新建一行），与改造前行为完全一致。
+const purchaseIntent = ref<'new' | 'renew'>('new')
+const renewSubscriptionId = ref<number | null>(null)
+// renewSourceGroupId 记录"用户进入续期模式时锁定的分组" —— 用于跨分组切换检测。
+// 用户从 SubscriptionsView 续期按钮跳来时，query 里带的 group 就是 sub 的分组；保存下来。
+// 之后如果用户在购买页改选了其他分组的套餐，watch 会把 intent 重置为 'new'。
+const renewSourceGroupId = ref<number | null>(null)
+
+// 监听 selectedPlan：当用户在续期模式下切换到了不同分组的套餐时，
+// 自动把意图回退为 'new'（即"叠加新购"），避免到后端被 RENEW_SUBSCRIPTION_GROUP_MISMATCH 拒绝。
+// 这是 UX 安全网，而非强制约束 —— 用户切回原分组的套餐时不会自动恢复 renew 意图（语义会乱）。
+watch(selectedPlan, (plan) => {
+  if (purchaseIntent.value !== 'renew' || renewSourceGroupId.value == null) return
+  if (!plan) return
+  if (plan.group_id !== renewSourceGroupId.value) {
+    purchaseIntent.value = 'new'
+    renewSubscriptionId.value = null
+    renewSourceGroupId.value = null
+    appStore.showInfo(t('payment.renewModeCleared'))
+  }
+})
 const renewalPlans = computed(() => {
   if (renewGroupId.value == null) return []
   return checkout.value.plans.filter(p => p.group_id === renewGroupId.value)
@@ -715,6 +747,11 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       origin: typeof window !== 'undefined' ? window.location.origin : '',
       isMobile: isMobileDevice(),
       isWechatBrowser: typeof window !== 'undefined' && /MicroMessenger/i.test(window.navigator.userAgent),
+      // 续期意图只对订阅订单有意义；余额充值订单忽略这两个字段
+      purchaseIntent: orderType === 'subscription' ? purchaseIntent.value : undefined,
+      renewSubscriptionId: orderType === 'subscription' && purchaseIntent.value === 'renew' && renewSubscriptionId.value
+        ? renewSubscriptionId.value
+        : undefined,
     })
     if (options.openid) {
       payload.openid = options.openid
@@ -939,6 +976,11 @@ async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackCo
       origin: typeof window !== 'undefined' ? window.location.origin : '',
       isMobile: false,
       isWechatBrowser: false,
+      // mobile-QR 回退仍然要保持续期意图（用户原本选了续期，回退后不应该改成新建）
+      purchaseIntent: context.orderType === 'subscription' ? purchaseIntent.value : undefined,
+      renewSubscriptionId: context.orderType === 'subscription' && purchaseIntent.value === 'renew' && renewSubscriptionId.value
+        ? renewSubscriptionId.value
+        : undefined,
     })
     const result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
     const stripeMethod = visibleMethod === 'wxpay' ? 'wechat_pay' : 'alipay'
@@ -1070,9 +1112,25 @@ onMounted(async () => {
     if (checkout.value.balance_disabled) {
       activeTab.value = 'subscription'
     }
-    // Handle renewal navigation: ?tab=subscription&group=123
+    // Handle renewal navigation: ?tab=subscription&group=123&intent=renew&sub_id=42
     if (route.query.tab === 'subscription') {
       activeTab.value = 'subscription'
+      // 从"我的订阅"页弹窗带来的购买意图（"renew" / "new"）。
+      // intent=renew 且 sub_id 合法时，下单走 purchase_intent=renew，履约延长指定 sub；
+      // 其他情况一律按 'new'（叠加套餐新建），与购买页直接入口的行为一致。
+      const rawIntent = typeof route.query.intent === 'string' ? route.query.intent : ''
+      const rawSubID = typeof route.query.sub_id === 'string' ? Number(route.query.sub_id) : NaN
+      const rawGroup = route.query.group ? Number(route.query.group) : NaN
+      if (rawIntent === 'renew' && Number.isFinite(rawSubID) && rawSubID > 0 && Number.isFinite(rawGroup) && rawGroup > 0) {
+        purchaseIntent.value = 'renew'
+        renewSubscriptionId.value = rawSubID
+        renewSourceGroupId.value = rawGroup
+      } else {
+        purchaseIntent.value = 'new'
+        renewSubscriptionId.value = null
+        renewSourceGroupId.value = null
+      }
+
       if (route.query.group) {
         const groupId = Number(route.query.group)
         const groupPlans = checkout.value.plans.filter(p => p.group_id === groupId)

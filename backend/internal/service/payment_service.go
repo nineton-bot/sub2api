@@ -83,6 +83,14 @@ type CreateOrderRequest struct {
 	PaymentSource   string
 	OrderType       string
 	PlanID          int64
+	// PurchaseIntent 区分新购/叠加 vs 续期。
+	// 空或 "new"（默认）→ 履约时走 CreateNewSubscription（新建一行）。
+	// "renew" → 履约时按 RenewSubscriptionID 给指定 sub 延长 expires_at，不重置 usage。
+	// 仅订阅订单生效；余额充值订单忽略该字段。
+	PurchaseIntent string
+	// RenewSubscriptionID 仅 PurchaseIntent="renew" 时必填，指向要续期的 user_subscriptions.id。
+	// 履约时会校验归属（必须等于 UserID）。
+	RenewSubscriptionID int64
 }
 
 type CreateOrderResponse struct {

@@ -204,6 +204,43 @@ func (s *PaymentService) createOrderInTx(ctx context.Context, req CreateOrderReq
 	if plan != nil {
 		b.SetPlanID(plan.ID).SetSubscriptionGroupID(plan.GroupID).SetSubscriptionDays(psComputeValidityDays(plan.ValidityDays, plan.ValidityUnit))
 	}
+	// 写入购买意图（仅订阅订单有意义；余额订单 PurchaseIntent 留空 → 走默认 "new"）。
+	// 全部 renew/叠加上限的健全性校验必须在订单创建阶段完成 —— 历史上把校验放在 fulfillment
+	// 阶段会让用户付完钱才发现订单异常（资金卡在中间状态，需要人工退款），是个高风险 bug。
+	intent := strings.TrimSpace(req.PurchaseIntent)
+	if intent == "renew" {
+		if req.RenewSubscriptionID <= 0 {
+			return nil, fmt.Errorf("purchase_intent=renew requires renew_subscription_id")
+		}
+		// plan 必须存在才有 GroupID 可校验；订阅订单 plan 一定非 nil（上文已保证）
+		if plan == nil {
+			return nil, fmt.Errorf("renew order must reference a subscription plan")
+		}
+		// 校验 sub 存在、归属、分组、group 状态。失败直接拒单（HTTP 400），不允许进入支付流程。
+		if err := s.subscriptionSvc.ValidateRenewTarget(ctx, req.UserID, req.RenewSubscriptionID, plan.GroupID); err != nil {
+			return nil, err
+		}
+		b.SetPurchaseIntent("renew").SetRenewSubscriptionID(req.RenewSubscriptionID)
+	} else if intent == "" || intent == "new" {
+		// 叠加场景：预检上限，避免用户付完钱才被 CreateNewSubscription 拒绝。
+		// 仅订阅订单需要检查（余额订单 plan 为 nil，跳过）。
+		if plan != nil {
+			n, err := s.subscriptionSvc.CountActiveSubscriptionsForUserGroup(ctx, req.UserID, plan.GroupID)
+			if err != nil {
+				return nil, fmt.Errorf("count active subscriptions: %w", err)
+			}
+			if n >= MaxStackedSubscriptionsPerUserGroup {
+				return nil, ErrTooManyStackedSubscriptions.WithMetadata(map[string]string{
+					"max":      fmt.Sprintf("%d", MaxStackedSubscriptionsPerUserGroup),
+					"current":  fmt.Sprintf("%d", n),
+					"group_id": fmt.Sprintf("%d", plan.GroupID),
+				})
+			}
+		}
+	} else {
+		return nil, fmt.Errorf("invalid purchase_intent: %q", intent)
+	}
+	// 显式写 "new" 也支持，但走 ent default 也一样。
 	order, err := b.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("create order: %w", err)

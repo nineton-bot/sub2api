@@ -365,6 +365,47 @@ func (_u *PaymentOrderUpdate) ClearSubscriptionDays() *PaymentOrderUpdate {
 	return _u
 }
 
+// SetPurchaseIntent sets the "purchase_intent" field.
+func (_u *PaymentOrderUpdate) SetPurchaseIntent(v string) *PaymentOrderUpdate {
+	_u.mutation.SetPurchaseIntent(v)
+	return _u
+}
+
+// SetNillablePurchaseIntent sets the "purchase_intent" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillablePurchaseIntent(v *string) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetPurchaseIntent(*v)
+	}
+	return _u
+}
+
+// SetRenewSubscriptionID sets the "renew_subscription_id" field.
+func (_u *PaymentOrderUpdate) SetRenewSubscriptionID(v int64) *PaymentOrderUpdate {
+	_u.mutation.ResetRenewSubscriptionID()
+	_u.mutation.SetRenewSubscriptionID(v)
+	return _u
+}
+
+// SetNillableRenewSubscriptionID sets the "renew_subscription_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdate) SetNillableRenewSubscriptionID(v *int64) *PaymentOrderUpdate {
+	if v != nil {
+		_u.SetRenewSubscriptionID(*v)
+	}
+	return _u
+}
+
+// AddRenewSubscriptionID adds value to the "renew_subscription_id" field.
+func (_u *PaymentOrderUpdate) AddRenewSubscriptionID(v int64) *PaymentOrderUpdate {
+	_u.mutation.AddRenewSubscriptionID(v)
+	return _u
+}
+
+// ClearRenewSubscriptionID clears the value of the "renew_subscription_id" field.
+func (_u *PaymentOrderUpdate) ClearRenewSubscriptionID() *PaymentOrderUpdate {
+	_u.mutation.ClearRenewSubscriptionID()
+	return _u
+}
+
 // SetProviderInstanceID sets the "provider_instance_id" field.
 func (_u *PaymentOrderUpdate) SetProviderInstanceID(v string) *PaymentOrderUpdate {
 	_u.mutation.SetProviderInstanceID(v)
@@ -844,6 +885,11 @@ func (_u *PaymentOrderUpdate) check() error {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PurchaseIntent(); ok {
+		if err := paymentorder.PurchaseIntentValidator(v); err != nil {
+			return &ValidationError{Name: "purchase_intent", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.purchase_intent": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ProviderInstanceID(); ok {
 		if err := paymentorder.ProviderInstanceIDValidator(v); err != nil {
 			return &ValidationError{Name: "provider_instance_id", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.provider_instance_id": %w`, err)}
@@ -986,6 +1032,18 @@ func (_u *PaymentOrderUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.SubscriptionDaysCleared() {
 		_spec.ClearField(paymentorder.FieldSubscriptionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.PurchaseIntent(); ok {
+		_spec.SetField(paymentorder.FieldPurchaseIntent, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.RenewSubscriptionID(); ok {
+		_spec.SetField(paymentorder.FieldRenewSubscriptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRenewSubscriptionID(); ok {
+		_spec.AddField(paymentorder.FieldRenewSubscriptionID, field.TypeInt64, value)
+	}
+	if _u.mutation.RenewSubscriptionIDCleared() {
+		_spec.ClearField(paymentorder.FieldRenewSubscriptionID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.ProviderInstanceID(); ok {
 		_spec.SetField(paymentorder.FieldProviderInstanceID, field.TypeString, value)
@@ -1486,6 +1544,47 @@ func (_u *PaymentOrderUpdateOne) ClearSubscriptionDays() *PaymentOrderUpdateOne 
 	return _u
 }
 
+// SetPurchaseIntent sets the "purchase_intent" field.
+func (_u *PaymentOrderUpdateOne) SetPurchaseIntent(v string) *PaymentOrderUpdateOne {
+	_u.mutation.SetPurchaseIntent(v)
+	return _u
+}
+
+// SetNillablePurchaseIntent sets the "purchase_intent" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillablePurchaseIntent(v *string) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetPurchaseIntent(*v)
+	}
+	return _u
+}
+
+// SetRenewSubscriptionID sets the "renew_subscription_id" field.
+func (_u *PaymentOrderUpdateOne) SetRenewSubscriptionID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.ResetRenewSubscriptionID()
+	_u.mutation.SetRenewSubscriptionID(v)
+	return _u
+}
+
+// SetNillableRenewSubscriptionID sets the "renew_subscription_id" field if the given value is not nil.
+func (_u *PaymentOrderUpdateOne) SetNillableRenewSubscriptionID(v *int64) *PaymentOrderUpdateOne {
+	if v != nil {
+		_u.SetRenewSubscriptionID(*v)
+	}
+	return _u
+}
+
+// AddRenewSubscriptionID adds value to the "renew_subscription_id" field.
+func (_u *PaymentOrderUpdateOne) AddRenewSubscriptionID(v int64) *PaymentOrderUpdateOne {
+	_u.mutation.AddRenewSubscriptionID(v)
+	return _u
+}
+
+// ClearRenewSubscriptionID clears the value of the "renew_subscription_id" field.
+func (_u *PaymentOrderUpdateOne) ClearRenewSubscriptionID() *PaymentOrderUpdateOne {
+	_u.mutation.ClearRenewSubscriptionID()
+	return _u
+}
+
 // SetProviderInstanceID sets the "provider_instance_id" field.
 func (_u *PaymentOrderUpdateOne) SetProviderInstanceID(v string) *PaymentOrderUpdateOne {
 	_u.mutation.SetProviderInstanceID(v)
@@ -1978,6 +2077,11 @@ func (_u *PaymentOrderUpdateOne) check() error {
 			return &ValidationError{Name: "order_type", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.order_type": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.PurchaseIntent(); ok {
+		if err := paymentorder.PurchaseIntentValidator(v); err != nil {
+			return &ValidationError{Name: "purchase_intent", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.purchase_intent": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ProviderInstanceID(); ok {
 		if err := paymentorder.ProviderInstanceIDValidator(v); err != nil {
 			return &ValidationError{Name: "provider_instance_id", err: fmt.Errorf(`ent: validator failed for field "PaymentOrder.provider_instance_id": %w`, err)}
@@ -2137,6 +2241,18 @@ func (_u *PaymentOrderUpdateOne) sqlSave(ctx context.Context) (_node *PaymentOrd
 	}
 	if _u.mutation.SubscriptionDaysCleared() {
 		_spec.ClearField(paymentorder.FieldSubscriptionDays, field.TypeInt)
+	}
+	if value, ok := _u.mutation.PurchaseIntent(); ok {
+		_spec.SetField(paymentorder.FieldPurchaseIntent, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.RenewSubscriptionID(); ok {
+		_spec.SetField(paymentorder.FieldRenewSubscriptionID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRenewSubscriptionID(); ok {
+		_spec.AddField(paymentorder.FieldRenewSubscriptionID, field.TypeInt64, value)
+	}
+	if _u.mutation.RenewSubscriptionIDCleared() {
+		_spec.ClearField(paymentorder.FieldRenewSubscriptionID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.ProviderInstanceID(); ok {
 		_spec.SetField(paymentorder.FieldProviderInstanceID, field.TypeString, value)

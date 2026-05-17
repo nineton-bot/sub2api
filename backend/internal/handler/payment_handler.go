@@ -259,6 +259,11 @@ type CreateOrderRequest struct {
 	// nil we fall back to User-Agent heuristics (which miss iPadOS / some
 	// embedded browsers that strip the "Mobile" keyword).
 	IsMobile *bool `json:"is_mobile,omitempty"`
+	// PurchaseIntent 仅订阅订单生效；缺省/"new" → 履约新建一行（叠加套餐场景），
+	// "renew" → 履约延长 RenewSubscriptionID 指定的 sub。前端"我的订阅"弹窗驱动。
+	PurchaseIntent string `json:"purchase_intent,omitempty"`
+	// RenewSubscriptionID 仅 PurchaseIntent="renew" 时必填。
+	RenewSubscriptionID int64 `json:"renew_subscription_id,omitempty"`
 }
 
 // CreateOrder creates a new payment order.
@@ -291,19 +296,21 @@ func (h *PaymentHandler) CreateOrder(c *gin.Context) {
 		mobile = *req.IsMobile
 	}
 	result, err := h.paymentService.CreateOrder(c.Request.Context(), service.CreateOrderRequest{
-		UserID:          subject.UserID,
-		Amount:          req.Amount,
-		PaymentType:     req.PaymentType,
-		OpenID:          req.OpenID,
-		ClientIP:        c.ClientIP(),
-		IsMobile:        mobile,
-		IsWeChatBrowser: isWeChatBrowser(c),
-		SrcHost:         c.Request.Host,
-		SrcURL:          c.Request.Referer(),
-		ReturnURL:       req.ReturnURL,
-		PaymentSource:   req.PaymentSource,
-		OrderType:       req.OrderType,
-		PlanID:          req.PlanID,
+		UserID:              subject.UserID,
+		Amount:              req.Amount,
+		PaymentType:         req.PaymentType,
+		OpenID:              req.OpenID,
+		ClientIP:            c.ClientIP(),
+		IsMobile:            mobile,
+		IsWeChatBrowser:     isWeChatBrowser(c),
+		SrcHost:             c.Request.Host,
+		SrcURL:              c.Request.Referer(),
+		ReturnURL:           req.ReturnURL,
+		PaymentSource:       req.PaymentSource,
+		OrderType:           req.OrderType,
+		PlanID:              req.PlanID,
+		PurchaseIntent:      req.PurchaseIntent,
+		RenewSubscriptionID: req.RenewSubscriptionID,
 	})
 	if err != nil {
 		response.ErrorFrom(c, err)

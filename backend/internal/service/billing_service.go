@@ -29,10 +29,14 @@ type BillingCache interface {
 	InvalidateUserBalance(ctx context.Context, userID int64) error
 
 	// Subscription operations
-	GetSubscriptionCache(ctx context.Context, userID, groupID int64) (*SubscriptionCacheData, error)
-	SetSubscriptionCache(ctx context.Context, userID, groupID int64, data *SubscriptionCacheData) error
-	UpdateSubscriptionUsage(ctx context.Context, userID, groupID int64, cost float64) error
-	UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID int64, count int) error
+	//
+	// 注：(userID, groupID) 下可能存在多张并行 subscription（叠加套餐场景）。
+	// Get/Set/Update 按 subID 维度操作单张 sub 的用量缓存；Invalidate 按 (user, group)
+	// 整体清除该用户该分组下所有 sub 的缓存（SCAN MATCH 实现）。
+	GetSubscriptionCache(ctx context.Context, userID, groupID, subID int64) (*SubscriptionCacheData, error)
+	SetSubscriptionCache(ctx context.Context, userID, groupID, subID int64, data *SubscriptionCacheData) error
+	UpdateSubscriptionUsage(ctx context.Context, userID, groupID, subID int64, cost float64) error
+	UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID, subID int64, count int) error
 	InvalidateSubscriptionCache(ctx context.Context, userID, groupID int64) error
 
 	// API Key rate limit operations

@@ -285,9 +285,20 @@ func (h *APIKeyHandler) GetAvailableGroups(c *gin.Context) {
 		return
 	}
 
+	// 同时拿叠加套餐计数（同 (user, group) 下并行 active sub 数量）。失败不阻塞主流程，
+	// 仅前端"×N"标签缺失。
+	stackCounts, err := h.apiKeyService.GetUserSubscriptionStackCounts(c.Request.Context(), subject.UserID)
+	if err != nil {
+		stackCounts = nil
+	}
+
 	out := make([]dto.Group, 0, len(groups))
 	for i := range groups {
-		out = append(out, *dto.GroupFromService(&groups[i]))
+		g := *dto.GroupFromService(&groups[i])
+		if n := stackCounts[groups[i].ID]; n > 0 {
+			g.StackCount = n
+		}
+		out = append(out, g)
 	}
 	response.Success(c, out)
 }

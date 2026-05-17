@@ -523,6 +523,9 @@ export interface Group {
   config_template?: GroupConfigTemplate
   // 国产 Anthropic 协议组的 tier 映射（仅 domestic_anthropic 有效）
   tier_mapping?: GroupTierMapping
+  // 用户在该订阅分组下持有的并行 active 订阅数量（叠加套餐场景）。
+  // 仅 /api/v1/groups/available 返回时填充；>1 表示有多张同套餐叠加。
+  stack_count?: number
   created_at: string
   updated_at: string
 }

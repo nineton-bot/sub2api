@@ -43,8 +43,19 @@ func billingBalanceKey(userID int64) string {
 }
 
 // billingSubKey generates the Redis key for subscription cache.
-func billingSubKey(userID, groupID int64) string {
-	return fmt.Sprintf("%s%d:%d", billingSubKeyPrefix, userID, groupID)
+//
+// Key includes subID so users with multiple parallel subscriptions for the same
+// (user, group) — i.e. "stacked plans" — each get their own usage hash. The
+// (user, group) prefix is retained to support cheap SCAN-based bulk invalidation.
+func billingSubKey(userID, groupID, subID int64) string {
+	return fmt.Sprintf("%s%d:%d:%d", billingSubKeyPrefix, userID, groupID, subID)
+}
+
+// billingSubKeyPattern returns the SCAN MATCH pattern that covers every sub-id
+// under a given (user, group), used by InvalidateSubscriptionCache to wipe all
+// stacked subs in one call.
+func billingSubKeyPattern(userID, groupID int64) string {
+	return fmt.Sprintf("%s%d:%d:*", billingSubKeyPrefix, userID, groupID)
 }
 
 const (
@@ -191,8 +202,8 @@ func (c *billingCache) InvalidateUserBalance(ctx context.Context, userID int64) 
 	return c.rdb.Del(ctx, key).Err()
 }
 
-func (c *billingCache) GetSubscriptionCache(ctx context.Context, userID, groupID int64) (*service.SubscriptionCacheData, error) {
-	key := billingSubKey(userID, groupID)
+func (c *billingCache) GetSubscriptionCache(ctx context.Context, userID, groupID, subID int64) (*service.SubscriptionCacheData, error) {
+	key := billingSubKey(userID, groupID, subID)
 	result, err := c.rdb.HGetAll(ctx, key).Result()
 	if err != nil {
 		return nil, err
@@ -269,12 +280,12 @@ func (c *billingCache) parseSubscriptionCache(data map[string]string) (*service.
 	return result, nil
 }
 
-func (c *billingCache) SetSubscriptionCache(ctx context.Context, userID, groupID int64, data *service.SubscriptionCacheData) error {
+func (c *billingCache) SetSubscriptionCache(ctx context.Context, userID, groupID, subID int64, data *service.SubscriptionCacheData) error {
 	if data == nil {
 		return nil
 	}
 
-	key := billingSubKey(userID, groupID)
+	key := billingSubKey(userID, groupID, subID)
 
 	fields := map[string]any{
 		subFieldStatus:              data.Status,
@@ -305,29 +316,42 @@ func (c *billingCache) SetSubscriptionCache(ctx context.Context, userID, groupID
 	return err
 }
 
-func (c *billingCache) UpdateSubscriptionUsage(ctx context.Context, userID, groupID int64, cost float64) error {
-	key := billingSubKey(userID, groupID)
+func (c *billingCache) UpdateSubscriptionUsage(ctx context.Context, userID, groupID, subID int64, cost float64) error {
+	key := billingSubKey(userID, groupID, subID)
 	_, err := updateSubUsageScript.Run(ctx, c.rdb, []string{key}, cost, int(jitteredTTL().Seconds())).Result()
 	if err != nil && !errors.Is(err, redis.Nil) {
-		log.Printf("Warning: update subscription usage cache failed for user %d group %d: %v", userID, groupID, err)
+		log.Printf("Warning: update subscription usage cache failed for user %d group %d sub %d: %v", userID, groupID, subID, err)
 		return err
 	}
 	return nil
 }
 
-func (c *billingCache) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID int64, count int) error {
-	key := billingSubKey(userID, groupID)
+func (c *billingCache) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID, subID int64, count int) error {
+	key := billingSubKey(userID, groupID, subID)
 	_, err := updateSubRequestCountScript.Run(ctx, c.rdb, []string{key}, count, int(jitteredTTL().Seconds())).Result()
 	if err != nil && !errors.Is(err, redis.Nil) {
-		log.Printf("Warning: update subscription request count cache failed for user %d group %d: %v", userID, groupID, err)
+		log.Printf("Warning: update subscription request count cache failed for user %d group %d sub %d: %v", userID, groupID, subID, err)
 		return err
 	}
 	return nil
 }
 
+// InvalidateSubscriptionCache 清除 (user, group) 下所有 sub 的缓存（叠加套餐场景）。
+// 使用 SCAN MATCH + DEL，对单 sub 用户成本与 KEYS 等价但避免阻塞 Redis。
 func (c *billingCache) InvalidateSubscriptionCache(ctx context.Context, userID, groupID int64) error {
-	key := billingSubKey(userID, groupID)
-	return c.rdb.Del(ctx, key).Err()
+	pattern := billingSubKeyPattern(userID, groupID)
+	iter := c.rdb.Scan(ctx, 0, pattern, 32).Iterator()
+	var keys []string
+	for iter.Next(ctx) {
+		keys = append(keys, iter.Val())
+	}
+	if err := iter.Err(); err != nil {
+		return err
+	}
+	if len(keys) == 0 {
+		return nil
+	}
+	return c.rdb.Del(ctx, keys...).Err()
 }
 
 func (c *billingCache) GetAPIKeyRateLimit(ctx context.Context, keyID int64) (*service.APIKeyRateLimitCacheData, error) {

@@ -129,6 +129,11 @@ type Group struct {
 	// RPMLimit 分组级每分钟请求数上限（0 = 不限制），设置后覆盖用户级 rpm_limit。
 	RPMLimit int `json:"rpm_limit"`
 
+	// StackCount 用户当前在该分组下持有的并行 active 订阅数量（叠加套餐场景）。
+	// 标准计费组恒为 0；订阅组为 0 表示用户尚未订阅，≥1 表示已订阅，>1 表示叠加多张。
+	// 仅由 /api/v1/groups/available 填充，admin 列表里始终为 0。
+	StackCount int `json:"stack_count,omitempty"`
+
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

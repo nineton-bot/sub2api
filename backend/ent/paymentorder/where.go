@@ -145,6 +145,16 @@ func SubscriptionDays(v int) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldSubscriptionDays, v))
 }
 
+// PurchaseIntent applies equality check predicate on the "purchase_intent" field. It's identical to PurchaseIntentEQ.
+func PurchaseIntent(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPurchaseIntent, v))
+}
+
+// RenewSubscriptionID applies equality check predicate on the "renew_subscription_id" field. It's identical to RenewSubscriptionIDEQ.
+func RenewSubscriptionID(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldRenewSubscriptionID, v))
+}
+
 // ProviderInstanceID applies equality check predicate on the "provider_instance_id" field. It's identical to ProviderInstanceIDEQ.
 func ProviderInstanceID(v string) predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldEQ(FieldProviderInstanceID, v))
@@ -1298,6 +1308,121 @@ func SubscriptionDaysIsNil() predicate.PaymentOrder {
 // SubscriptionDaysNotNil applies the NotNil predicate on the "subscription_days" field.
 func SubscriptionDaysNotNil() predicate.PaymentOrder {
 	return predicate.PaymentOrder(sql.FieldNotNull(FieldSubscriptionDays))
+}
+
+// PurchaseIntentEQ applies the EQ predicate on the "purchase_intent" field.
+func PurchaseIntentEQ(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldPurchaseIntent, v))
+}
+
+// PurchaseIntentNEQ applies the NEQ predicate on the "purchase_intent" field.
+func PurchaseIntentNEQ(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldPurchaseIntent, v))
+}
+
+// PurchaseIntentIn applies the In predicate on the "purchase_intent" field.
+func PurchaseIntentIn(vs ...string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldPurchaseIntent, vs...))
+}
+
+// PurchaseIntentNotIn applies the NotIn predicate on the "purchase_intent" field.
+func PurchaseIntentNotIn(vs ...string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldPurchaseIntent, vs...))
+}
+
+// PurchaseIntentGT applies the GT predicate on the "purchase_intent" field.
+func PurchaseIntentGT(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldPurchaseIntent, v))
+}
+
+// PurchaseIntentGTE applies the GTE predicate on the "purchase_intent" field.
+func PurchaseIntentGTE(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldPurchaseIntent, v))
+}
+
+// PurchaseIntentLT applies the LT predicate on the "purchase_intent" field.
+func PurchaseIntentLT(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldPurchaseIntent, v))
+}
+
+// PurchaseIntentLTE applies the LTE predicate on the "purchase_intent" field.
+func PurchaseIntentLTE(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldPurchaseIntent, v))
+}
+
+// PurchaseIntentContains applies the Contains predicate on the "purchase_intent" field.
+func PurchaseIntentContains(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldContains(FieldPurchaseIntent, v))
+}
+
+// PurchaseIntentHasPrefix applies the HasPrefix predicate on the "purchase_intent" field.
+func PurchaseIntentHasPrefix(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldHasPrefix(FieldPurchaseIntent, v))
+}
+
+// PurchaseIntentHasSuffix applies the HasSuffix predicate on the "purchase_intent" field.
+func PurchaseIntentHasSuffix(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldHasSuffix(FieldPurchaseIntent, v))
+}
+
+// PurchaseIntentEqualFold applies the EqualFold predicate on the "purchase_intent" field.
+func PurchaseIntentEqualFold(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEqualFold(FieldPurchaseIntent, v))
+}
+
+// PurchaseIntentContainsFold applies the ContainsFold predicate on the "purchase_intent" field.
+func PurchaseIntentContainsFold(v string) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldContainsFold(FieldPurchaseIntent, v))
+}
+
+// RenewSubscriptionIDEQ applies the EQ predicate on the "renew_subscription_id" field.
+func RenewSubscriptionIDEQ(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldEQ(FieldRenewSubscriptionID, v))
+}
+
+// RenewSubscriptionIDNEQ applies the NEQ predicate on the "renew_subscription_id" field.
+func RenewSubscriptionIDNEQ(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNEQ(FieldRenewSubscriptionID, v))
+}
+
+// RenewSubscriptionIDIn applies the In predicate on the "renew_subscription_id" field.
+func RenewSubscriptionIDIn(vs ...int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIn(FieldRenewSubscriptionID, vs...))
+}
+
+// RenewSubscriptionIDNotIn applies the NotIn predicate on the "renew_subscription_id" field.
+func RenewSubscriptionIDNotIn(vs ...int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotIn(FieldRenewSubscriptionID, vs...))
+}
+
+// RenewSubscriptionIDGT applies the GT predicate on the "renew_subscription_id" field.
+func RenewSubscriptionIDGT(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGT(FieldRenewSubscriptionID, v))
+}
+
+// RenewSubscriptionIDGTE applies the GTE predicate on the "renew_subscription_id" field.
+func RenewSubscriptionIDGTE(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldGTE(FieldRenewSubscriptionID, v))
+}
+
+// RenewSubscriptionIDLT applies the LT predicate on the "renew_subscription_id" field.
+func RenewSubscriptionIDLT(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLT(FieldRenewSubscriptionID, v))
+}
+
+// RenewSubscriptionIDLTE applies the LTE predicate on the "renew_subscription_id" field.
+func RenewSubscriptionIDLTE(v int64) predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldLTE(FieldRenewSubscriptionID, v))
+}
+
+// RenewSubscriptionIDIsNil applies the IsNil predicate on the "renew_subscription_id" field.
+func RenewSubscriptionIDIsNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldIsNull(FieldRenewSubscriptionID))
+}
+
+// RenewSubscriptionIDNotNil applies the NotNil predicate on the "renew_subscription_id" field.
+func RenewSubscriptionIDNotNil() predicate.PaymentOrder {
+	return predicate.PaymentOrder(sql.FieldNotNull(FieldRenewSubscriptionID))
 }
 
 // ProviderInstanceIDEQ applies the EQ predicate on the "provider_instance_id" field.

@@ -78,6 +78,9 @@ export interface BuildCreateOrderPayloadInput {
   origin?: string
   isMobile: boolean
   isWechatBrowser: boolean
+  // 订阅订单可选；"renew" 时同时需要 renewSubscriptionId
+  purchaseIntent?: 'new' | 'renew'
+  renewSubscriptionId?: number
 }
 
 type CreateOrderFlowResult = CreateOrderResult & {
@@ -126,6 +129,13 @@ export function buildCreateOrderPayload(input: BuildCreateOrderPayloadInput): Cr
   }
   if (normalizedOrigin) {
     payload.return_url = `${normalizedOrigin}/payment/result`
+  }
+  if (input.purchaseIntent === 'renew' && input.renewSubscriptionId && input.renewSubscriptionId > 0) {
+    payload.purchase_intent = 'renew'
+    payload.renew_subscription_id = input.renewSubscriptionId
+  } else if (input.purchaseIntent === 'new') {
+    // 显式 "new" 不必带（后端默认就是 new），但带上便于审计
+    payload.purchase_intent = 'new'
   }
 
   return payload

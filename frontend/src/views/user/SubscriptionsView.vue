@@ -67,7 +67,7 @@
               <button
                 v-if="subscription.status === 'active'"
                 :class="['rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors', platformButtonClass(subscription.group?.platform || '')]"
-                @click="router.push({ path: '/purchase', query: { tab: 'subscription', group: String(subscription.group_id) } })"
+                @click="openRenewChoice(subscription)"
               >
                 {{ t('payment.renewNow') }}
               </button>
@@ -264,6 +264,50 @@
         </div>
       </div>
     </div>
+
+    <!-- 续期 / 再买一张 选择对话框 -->
+    <BaseDialog
+      :show="renewChoiceOpen"
+      :title="t('userSubscriptions.renewChoiceTitle')"
+      width="normal"
+      :close-on-click-outside="true"
+      @close="renewChoiceOpen = false"
+    >
+      <div class="space-y-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+          {{ t('userSubscriptions.renewChoiceIntro', { name: renewTarget?.group?.name || '' }) }}
+        </p>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <button
+            class="group flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-4 text-left transition hover:border-primary-500 hover:bg-primary-50 dark:border-dark-600 dark:bg-dark-800 dark:hover:border-primary-400 dark:hover:bg-primary-900/10"
+            @click="confirmRenewChoice('renew')"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="creditCard" size="md" class="text-primary-500" />
+              <span class="font-semibold text-gray-900 dark:text-white">{{ t('userSubscriptions.renewChoiceRenewLabel') }}</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ t('userSubscriptions.renewChoiceRenewDesc') }}
+            </p>
+          </button>
+          <button
+            class="group flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-4 text-left transition hover:border-indigo-500 hover:bg-indigo-50 dark:border-dark-600 dark:bg-dark-800 dark:hover:border-indigo-400 dark:hover:bg-indigo-900/10"
+            @click="confirmRenewChoice('new')"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="creditCard" size="md" class="text-indigo-500" />
+              <span class="font-semibold text-gray-900 dark:text-white">{{ t('userSubscriptions.renewChoiceBuyLabel') }}</span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ t('userSubscriptions.renewChoiceBuyDesc') }}
+            </p>
+          </button>
+        </div>
+        <p class="text-[11px] text-gray-400 dark:text-gray-500">
+          {{ t('userSubscriptions.renewChoiceHint') }}
+        </p>
+      </div>
+    </BaseDialog>
   </AppLayout>
 </template>
 
@@ -275,6 +319,7 @@ import { useAppStore } from '@/stores/app'
 import subscriptionsAPI from '@/api/subscriptions'
 import type { UserSubscription } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { formatDateOnly } from '@/utils/format'
 import { platformBorderClass, platformBadgeClass, platformButtonClass, platformLabel } from '@/utils/platformColors'
@@ -295,6 +340,31 @@ const appStore = useAppStore()
 
 const subscriptions = ref<UserSubscription[]>([])
 const loading = ref(true)
+
+// 续期/再买选择弹窗状态
+const renewChoiceOpen = ref(false)
+const renewTarget = ref<UserSubscription | null>(null)
+
+function openRenewChoice(sub: UserSubscription) {
+  renewTarget.value = sub
+  renewChoiceOpen.value = true
+}
+
+function confirmRenewChoice(intent: 'renew' | 'new') {
+  const sub = renewTarget.value
+  renewChoiceOpen.value = false
+  renewTarget.value = null
+  if (!sub) return
+  const query: Record<string, string> = {
+    tab: 'subscription',
+    group: String(sub.group_id),
+    intent,
+  }
+  if (intent === 'renew') {
+    query.sub_id = String(sub.id)
+  }
+  router.push({ path: '/purchase', query })
+}
 
 async function loadSubscriptions() {
   try {

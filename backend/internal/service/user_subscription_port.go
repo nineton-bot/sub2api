@@ -10,8 +10,15 @@ import (
 type UserSubscriptionRepository interface {
 	Create(ctx context.Context, sub *UserSubscription) error
 	GetByID(ctx context.Context, id int64) (*UserSubscription, error)
+	// GetByUserIDAndGroupID 返回 (user, group) 下任一行（多行时按 expires_at ASC 取最早一张）。
+	// 适用于明确只关心"任意一张"的兑换码/admin 场景；多行扣费场景请用 ListActiveByUserIDAndGroupID。
 	GetByUserIDAndGroupID(ctx context.Context, userID, groupID int64) (*UserSubscription, error)
+	// GetActiveByUserIDAndGroupID 返回 (user, group) 下任一 active 行（多行时按 expires_at ASC 取最早）。
+	// 仅供保持向后兼容的调用方使用。请求计费热路径应改用 ListActiveByUserIDAndGroupID。
 	GetActiveByUserIDAndGroupID(ctx context.Context, userID, groupID int64) (*UserSubscription, error)
+	// ListActiveByUserIDAndGroupID 返回 (user, group) 下所有 active 且未过期的订阅，
+	// 按 expires_at ASC, id ASC 排序（FIFO 消化策略 + 稳定 tiebreak）。
+	ListActiveByUserIDAndGroupID(ctx context.Context, userID, groupID int64) ([]UserSubscription, error)
 	Update(ctx context.Context, sub *UserSubscription) error
 	Delete(ctx context.Context, id int64) error
 

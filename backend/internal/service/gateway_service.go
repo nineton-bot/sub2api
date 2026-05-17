@@ -7963,7 +7963,7 @@ func postUsageBilling(ctx context.Context, p *postUsageBillingParams, deps *bill
 			if err := deps.userSubRepo.IncrementUsage(billingCtx, p.Subscription.ID, 0); err != nil {
 				slog.Error("increment subscription request count failed", "subscription_id", p.Subscription.ID, "error", err)
 			}
-			deps.billingCacheService.QueueUpdateSubscriptionRequestCount(p.User.ID, *p.APIKey.GroupID, 1)
+			deps.billingCacheService.QueueUpdateSubscriptionRequestCount(p.User.ID, *p.APIKey.GroupID, p.Subscription.ID, 1)
 		} else if cost.ActualCost > 0 {
 			// 订阅使用量按 ActualCost 计：分组倍率会以预期速度消耗配额（070f0774）。
 			if err := deps.userSubRepo.IncrementUsage(billingCtx, p.Subscription.ID, cost.ActualCost); err != nil {
@@ -8134,10 +8134,24 @@ func finalizePostUsageBilling(p *postUsageBillingParams, deps *billingDeps, resu
 	}
 
 	if p.IsSubscriptionBill {
-		if p.IsRequestQuotaSubscription && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
-			deps.billingCacheService.QueueUpdateSubscriptionRequestCount(p.User.ID, *p.APIKey.GroupID, 1)
-		} else if p.Cost.ActualCost > 0 && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
-			deps.billingCacheService.QueueUpdateSubscriptionUsage(p.User.ID, *p.APIKey.GroupID, p.Cost.ActualCost)
+		// 叠加套餐场景下，p.Subscription 是 picker 选中的具体 sub，其 ID 作为缓存 key 维度，
+		// 保证用量记到正确的那张 sub 上。p.Subscription 在订阅计费路径下应永远非 nil；
+		// 防御性跳过避免把缓存写到 billing:sub:U:G:0（理论不应发生）。
+		if p.Subscription == nil || p.Subscription.ID <= 0 {
+			slog.Warn("finalizePostUsageBilling: subscription bill missing sub id; skipping cache update",
+				"user_id", func() int64 {
+					if p.User != nil {
+						return p.User.ID
+					}
+					return 0
+				}())
+		} else {
+			subID := p.Subscription.ID
+			if p.IsRequestQuotaSubscription && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
+				deps.billingCacheService.QueueUpdateSubscriptionRequestCount(p.User.ID, *p.APIKey.GroupID, subID, 1)
+			} else if p.Cost.ActualCost > 0 && p.User != nil && p.APIKey != nil && p.APIKey.GroupID != nil {
+				deps.billingCacheService.QueueUpdateSubscriptionUsage(p.User.ID, *p.APIKey.GroupID, subID, p.Cost.ActualCost)
+			}
 		}
 	} else if p.Cost.ActualCost > 0 && p.User != nil {
 		deps.billingCacheService.QueueDeductBalance(p.User.ID, p.Cost.ActualCost)

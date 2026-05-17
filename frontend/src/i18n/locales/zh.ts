@@ -682,6 +682,7 @@ export default {
     namePlaceholder: '我的 API 密钥',
     groupLabel: '分组',
     selectGroup: '选择分组',
+    stackedSubsTooltip: '您在该套餐下持有 {n} 张并行订阅，配额自动按到期顺序使用，无需手动切换',
     statusLabel: '状态',
     selectStatus: '选择状态',
     saving: '保存中...',
@@ -6679,7 +6680,14 @@ export default {
     expiresOn: '{date} 到期',
     resetIn: '{time} 后重置',
     windowNotActive: '等待首次使用',
-    usageOf: '已用 {used} / {limit}'
+    usageOf: '已用 {used} / {limit}',
+    renewChoiceTitle: '请选择如何继续购买',
+    renewChoiceIntro: '您当前已拥有套餐"{name}"，请选择本次购买的处理方式：',
+    renewChoiceRenewLabel: '续期当前套餐',
+    renewChoiceRenewDesc: '仅延长当前订阅的有效期，本期已用配额会继续累计到原窗口，到期才会重置。适合"现在还在用、只想延寿"的场景。',
+    renewChoiceBuyLabel: '再买一张（独立计费）',
+    renewChoiceBuyDesc: '新建一张同款订阅，配额独立、月度窗口从下单时起算。当前订阅配额若已用完，可立即用上新订阅。"我的订阅"页会同时展示两张卡。',
+    renewChoiceHint: '说明：续期不会重置已消耗的配额；如需立刻获得新一份额度请选择"再买一张"。'
   },
 
   // Onboarding Tour
@@ -7007,6 +7015,11 @@ export default {
       BALANCE_NOT_ENOUGH: '退款金额超过余额',
       REFUND_AMOUNT_EXCEEDED: '退款金额超过充值金额',
       REFUND_FAILED: '退款失败',
+      SUBSCRIPTION_STACK_LIMIT_EXCEEDED: '该套餐您已经叠加了 {current} 张并行订阅，达到上限（{max} 张）。请先等待部分订阅到期、或退款掉一些，再来购买新的。',
+      RENEW_SUBSCRIPTION_NOT_OWNED: '您要续期的订阅不属于当前账号，请刷新"我的订阅"页后重试。',
+      RENEW_SUBSCRIPTION_GROUP_MISMATCH: '您选择的套餐与要续期的订阅不在同一分组，无法续期。请回到"我的订阅"页重新点击对应卡片的续期按钮。',
+      SUBSCRIPTION_NOT_FOUND: '要续期的订阅不存在或已被删除，请刷新"我的订阅"页后重试。',
+      GROUP_NOT_SUBSCRIPTION_TYPE: '该分组不是订阅型，无法发起订阅订单。',
     },
     airwallexPay: 'Airwallex 支付',
     stripePay: '立即支付',
@@ -7019,6 +7032,8 @@ export default {
     },
     subscribeNow: '立即开通',
     renewNow: '续费',
+    renewModeBanner: '当前为续期模式：本次付款将延长订阅 #{subId} 的有效期，不重置已用配额。',
+    renewModeCleared: '已切换到不同分组的套餐，续期意图已自动取消，本次购买将作为新一份订阅。',
     selectPlan: '选择套餐',
     planFeatures: '功能特性',
     planCard: {
@@ -7220,11 +7235,11 @@ export default {
     loadFailed: '加载返佣数据失败',
     howItWorksTitle: '规则说明',
     howItWorksLine1: '分享您的邀请链接，新用户通过链接注册即与您终身绑定',
-    howItWorksLine2: '他们每次充值或订阅，您可获得 {rate}% 的账面佣金',
+    howItWorksLine2: '他们每次充值或订阅，您可获得当前返佣比例对应的账面佣金（当前为 {rate}%，比例可能根据平台政策调整）',
     howItWorksLine3: '佣金随被邀请人实际消费逐步释放（充值按余额消费进度，订阅按生效天数）',
     howItWorksLine4: '可使用佣金将直接并入您的账户余额，无需手动提现',
     useUsableTitle: '使用可使用佣金',
-    useUsableHint: '将可使用佣金转入账户余额，立即用于 API 消费；或申请提现至微信/支付宝/银行卡',
+    useUsableHint: '将可使用佣金转入账户余额，立即用于 API 消费',
     withdrawalComingSoon: '提现功能即将开放，敬请期待',
     transfer: {
       action: '转入余额',

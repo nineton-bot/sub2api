@@ -775,6 +775,20 @@ func (s *APIKeyService) GetAvailableGroups(ctx context.Context, userID int64) ([
 	return availableGroups, nil
 }
 
+// GetUserSubscriptionStackCounts 返回用户在每个订阅分组下当前持有的并行 active sub 数量。
+// 标准计费分组不会出现在 map 里。叠加套餐场景下 value > 1。
+func (s *APIKeyService) GetUserSubscriptionStackCounts(ctx context.Context, userID int64) (map[int64]int, error) {
+	subs, err := s.userSubRepo.ListActiveByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list active subscriptions: %w", err)
+	}
+	counts := make(map[int64]int, len(subs))
+	for _, sub := range subs {
+		counts[sub.GroupID]++
+	}
+	return counts, nil
+}
+
 // canUserBindGroupInternal 内部方法，检查用户是否可以绑定分组（使用预加载的订阅数据）
 func (s *APIKeyService) canUserBindGroupInternal(user *User, group *Group, subscribedGroupIDs map[int64]bool) bool {
 	// 订阅类型分组：需要有效订阅

@@ -395,9 +395,30 @@ func (s *PaymentService) doSub(ctx context.Context, o *dbent.PaymentOrder) error
 		return nil
 	}
 	orderNote := fmt.Sprintf("payment order %d", o.ID)
-	sub, _, err := s.subscriptionSvc.AssignOrExtendSubscription(ctx, &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote})
-	if err != nil {
-		return fmt.Errorf("assign subscription: %w", err)
+	// 按订单的 purchase_intent 路由：
+	//   - "renew"：给 RenewSubscriptionID 指定的那张 sub 纯延长 expires_at（保留 usage/window，
+	//     不破坏购买历史与系统记录）。前端"我的订阅"页弹窗选"续期"时走这条。
+	//   - "new" 或为空：CreateNewSubscription 新建一行（叠加套餐场景）。
+	//     前端弹窗选"再买一张"或购买页直接下单都走这条。
+	// 历史订单 purchase_intent 默认 "new"，行为与改造前完全一致。
+	var (
+		sub *UserSubscription
+	)
+	if o.PurchaseIntent == "renew" {
+		if o.RenewSubscriptionID == nil || *o.RenewSubscriptionID <= 0 {
+			return fmt.Errorf("renew order missing renew_subscription_id (order %d)", o.ID)
+		}
+		// 把订单的 group_id 作为 expectedGroupID 传入：归属/分组一致性校验在事务内完成，
+		// 不匹配时直接报错且 DB 没有任何写入（修复早期"先 extend 再校验组、不一致也已落库"的 bug）。
+		sub, err = s.subscriptionSvc.RenewSubscription(ctx, o.UserID, *o.RenewSubscriptionID, gid, days)
+		if err != nil {
+			return fmt.Errorf("renew subscription: %w", err)
+		}
+	} else {
+		sub, err = s.subscriptionSvc.CreateNewSubscription(ctx, &AssignSubscriptionInput{UserID: o.UserID, GroupID: gid, ValidityDays: days, AssignedBy: 0, Notes: orderNote})
+		if err != nil {
+			return fmt.Errorf("assign subscription: %w", err)
+		}
 	}
 	if err := s.markCompleted(ctx, o, "SUBSCRIPTION_SUCCESS"); err != nil {
 		return err

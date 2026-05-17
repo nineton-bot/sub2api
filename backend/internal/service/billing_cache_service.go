@@ -80,6 +80,7 @@ type cacheWriteTask struct {
 	kind             cacheWriteKind
 	userID           int64
 	groupID          int64
+	subID            int64 // subscription id（订阅类任务必填，叠加套餐下区分同 (user, group) 的不同 sub）
 	apiKeyID         int64
 	balance          float64
 	amount           float64
@@ -208,17 +209,17 @@ func (s *BillingCacheService) cacheWriteWorker(ch <-chan cacheWriteTask) {
 		case cacheWriteSetBalance:
 			s.setBalanceCache(ctx, task.userID, task.balance)
 		case cacheWriteSetSubscription:
-			s.setSubscriptionCache(ctx, task.userID, task.groupID, task.subscriptionData)
+			s.setSubscriptionCache(ctx, task.userID, task.groupID, task.subID, task.subscriptionData)
 		case cacheWriteUpdateSubscriptionUsage:
 			if s.cache != nil {
-				if err := s.cache.UpdateSubscriptionUsage(ctx, task.userID, task.groupID, task.amount); err != nil {
-					logger.LegacyPrintf("service.billing_cache", "Warning: update subscription cache failed for user %d group %d: %v", task.userID, task.groupID, err)
+				if err := s.cache.UpdateSubscriptionUsage(ctx, task.userID, task.groupID, task.subID, task.amount); err != nil {
+					logger.LegacyPrintf("service.billing_cache", "Warning: update subscription cache failed for user %d group %d sub %d: %v", task.userID, task.groupID, task.subID, err)
 				}
 			}
 		case cacheWriteUpdateSubscriptionRequestCount:
 			if s.cache != nil {
-				if err := s.cache.UpdateSubscriptionRequestCount(ctx, task.userID, task.groupID, task.requestCount); err != nil {
-					logger.LegacyPrintf("service.billing_cache", "Warning: update subscription request count cache failed for user %d group %d: %v", task.userID, task.groupID, err)
+				if err := s.cache.UpdateSubscriptionRequestCount(ctx, task.userID, task.groupID, task.subID, task.requestCount); err != nil {
+					logger.LegacyPrintf("service.billing_cache", "Warning: update subscription request count cache failed for user %d group %d sub %d: %v", task.userID, task.groupID, task.subID, err)
 				}
 			}
 		case cacheWriteDeductBalance:
@@ -406,20 +407,23 @@ func (s *BillingCacheService) InvalidateUserBalance(ctx context.Context, userID 
 // 订阅缓存方法
 // ============================================
 
-// GetSubscriptionStatus 获取订阅状态（优先从缓存读取）
-func (s *BillingCacheService) GetSubscriptionStatus(ctx context.Context, userID, groupID int64) (*subscriptionCacheData, error) {
+// GetSubscriptionStatus 获取特定订阅的状态（优先从缓存读取）。
+//
+// subID 由请求路径上层 picker（SubscriptionService.GetActiveSubscription）选定，
+// 缓存按 (user, group, sub) 维度，叠加套餐场景下每张 sub 独立计数。
+func (s *BillingCacheService) GetSubscriptionStatus(ctx context.Context, userID, groupID, subID int64) (*subscriptionCacheData, error) {
 	if s.cache == nil {
-		return s.getSubscriptionFromDB(ctx, userID, groupID)
+		return s.getSubscriptionFromDB(ctx, subID)
 	}
 
 	// 尝试从缓存读取
-	cacheData, err := s.cache.GetSubscriptionCache(ctx, userID, groupID)
+	cacheData, err := s.cache.GetSubscriptionCache(ctx, userID, groupID, subID)
 	if err == nil && cacheData != nil {
 		return s.convertFromPortsData(cacheData), nil
 	}
 
 	// 缓存未命中，从数据库读取
-	data, err := s.getSubscriptionFromDB(ctx, userID, groupID)
+	data, err := s.getSubscriptionFromDB(ctx, subID)
 	if err != nil {
 		return nil, err
 	}
@@ -429,6 +433,7 @@ func (s *BillingCacheService) GetSubscriptionStatus(ctx context.Context, userID,
 		kind:             cacheWriteSetSubscription,
 		userID:           userID,
 		groupID:          groupID,
+		subID:            subID,
 		subscriptionData: data,
 	})
 
@@ -471,17 +476,22 @@ func (s *BillingCacheService) convertToPortsData(data *subscriptionCacheData) *S
 	}
 }
 
-// getSubscriptionFromDB 从数据库获取订阅数据
-func (s *BillingCacheService) getSubscriptionFromDB(ctx context.Context, userID, groupID int64) (*subscriptionCacheData, error) {
-	sub, err := s.subRepo.GetActiveByUserIDAndGroupID(ctx, userID, groupID)
+// getSubscriptionFromDB 按 subID 直接拉取订阅快照。叠加套餐场景下，调用方已通过
+// SubscriptionService.GetActiveSubscription 选定具体 sub，这里只需按 ID 取行。
+func (s *BillingCacheService) getSubscriptionFromDB(ctx context.Context, subID int64) (*subscriptionCacheData, error) {
+	sub, err := s.subRepo.GetByID(ctx, subID)
 	if err != nil {
 		return nil, fmt.Errorf("get subscription: %w", err)
+	}
+	meter := ""
+	if sub.Group != nil {
+		meter = sub.Group.SubscriptionMeter
 	}
 
 	return &subscriptionCacheData{
 		Status:              sub.Status,
 		ExpiresAt:           sub.ExpiresAt,
-		SubscriptionMeter:   sub.Group.SubscriptionMeter,
+		SubscriptionMeter:   meter,
 		DailyWindowStart:    sub.DailyWindowStart,
 		WeeklyWindowStart:   sub.WeeklyWindowStart,
 		MonthlyWindowStart:  sub.MonthlyWindowStart,
@@ -496,25 +506,26 @@ func (s *BillingCacheService) getSubscriptionFromDB(ctx context.Context, userID,
 }
 
 // setSubscriptionCache 设置订阅缓存
-func (s *BillingCacheService) setSubscriptionCache(ctx context.Context, userID, groupID int64, data *subscriptionCacheData) {
+func (s *BillingCacheService) setSubscriptionCache(ctx context.Context, userID, groupID, subID int64, data *subscriptionCacheData) {
 	if s.cache == nil || data == nil {
 		return
 	}
-	if err := s.cache.SetSubscriptionCache(ctx, userID, groupID, s.convertToPortsData(data)); err != nil {
-		logger.LegacyPrintf("service.billing_cache", "Warning: set subscription cache failed for user %d group %d: %v", userID, groupID, err)
+	if err := s.cache.SetSubscriptionCache(ctx, userID, groupID, subID, s.convertToPortsData(data)); err != nil {
+		logger.LegacyPrintf("service.billing_cache", "Warning: set subscription cache failed for user %d group %d sub %d: %v", userID, groupID, subID, err)
 	}
 }
 
-// UpdateSubscriptionUsage 更新订阅用量缓存（同步调用）
-func (s *BillingCacheService) UpdateSubscriptionUsage(ctx context.Context, userID, groupID int64, costUSD float64) error {
+// UpdateSubscriptionUsage 更新订阅用量缓存（同步调用）。
+// subID 标识 (user, group) 下被本次请求选中的具体订阅（叠加套餐场景）。
+func (s *BillingCacheService) UpdateSubscriptionUsage(ctx context.Context, userID, groupID, subID int64, costUSD float64) error {
 	if s.cache == nil {
 		return nil
 	}
-	return s.cache.UpdateSubscriptionUsage(ctx, userID, groupID, costUSD)
+	return s.cache.UpdateSubscriptionUsage(ctx, userID, groupID, subID, costUSD)
 }
 
 // QueueUpdateSubscriptionUsage 异步更新订阅用量缓存
-func (s *BillingCacheService) QueueUpdateSubscriptionUsage(userID, groupID int64, costUSD float64) {
+func (s *BillingCacheService) QueueUpdateSubscriptionUsage(userID, groupID, subID int64, costUSD float64) {
 	if s.cache == nil {
 		return
 	}
@@ -523,25 +534,26 @@ func (s *BillingCacheService) QueueUpdateSubscriptionUsage(userID, groupID int64
 		kind:    cacheWriteUpdateSubscriptionUsage,
 		userID:  userID,
 		groupID: groupID,
+		subID:   subID,
 		amount:  costUSD,
 	}) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), cacheWriteTimeout)
 	defer cancel()
-	if err := s.UpdateSubscriptionUsage(ctx, userID, groupID, costUSD); err != nil {
-		logger.LegacyPrintf("service.billing_cache", "Warning: update subscription cache fallback failed for user %d group %d: %v", userID, groupID, err)
+	if err := s.UpdateSubscriptionUsage(ctx, userID, groupID, subID, costUSD); err != nil {
+		logger.LegacyPrintf("service.billing_cache", "Warning: update subscription cache fallback failed for user %d group %d sub %d: %v", userID, groupID, subID, err)
 	}
 }
 
-func (s *BillingCacheService) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID int64, count int) error {
+func (s *BillingCacheService) UpdateSubscriptionRequestCount(ctx context.Context, userID, groupID, subID int64, count int) error {
 	if s.cache == nil {
 		return nil
 	}
-	return s.cache.UpdateSubscriptionRequestCount(ctx, userID, groupID, count)
+	return s.cache.UpdateSubscriptionRequestCount(ctx, userID, groupID, subID, count)
 }
 
-func (s *BillingCacheService) QueueUpdateSubscriptionRequestCount(userID, groupID int64, count int) {
+func (s *BillingCacheService) QueueUpdateSubscriptionRequestCount(userID, groupID, subID int64, count int) {
 	if s.cache == nil {
 		return
 	}
@@ -549,14 +561,15 @@ func (s *BillingCacheService) QueueUpdateSubscriptionRequestCount(userID, groupI
 		kind:         cacheWriteUpdateSubscriptionRequestCount,
 		userID:       userID,
 		groupID:      groupID,
+		subID:        subID,
 		requestCount: count,
 	}) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), cacheWriteTimeout)
 	defer cancel()
-	if err := s.UpdateSubscriptionRequestCount(ctx, userID, groupID, count); err != nil {
-		logger.LegacyPrintf("service.billing_cache", "Warning: update subscription request count cache fallback failed for user %d group %d: %v", userID, groupID, err)
+	if err := s.UpdateSubscriptionRequestCount(ctx, userID, groupID, subID, count); err != nil {
+		logger.LegacyPrintf("service.billing_cache", "Warning: update subscription request count cache fallback failed for user %d group %d sub %d: %v", userID, groupID, subID, err)
 	}
 }
 
@@ -873,8 +886,8 @@ func (s *BillingCacheService) checkBalanceEligibility(ctx context.Context, userI
 
 // checkSubscriptionEligibility 检查订阅模式资格
 func (s *BillingCacheService) checkSubscriptionEligibility(ctx context.Context, userID int64, group *Group, subscription *UserSubscription) error {
-	// 获取订阅缓存数据
-	subData, err := s.GetSubscriptionStatus(ctx, userID, group.ID)
+	// 获取订阅缓存数据（按 sub.ID 命中具体那张 sub 的用量，叠加套餐场景下不会窜行）
+	subData, err := s.GetSubscriptionStatus(ctx, userID, group.ID, subscription.ID)
 	if err != nil {
 		if s.circuitBreaker != nil {
 			s.circuitBreaker.OnFailure(err)
