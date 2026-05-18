@@ -144,7 +144,7 @@ type QueryInvoiceDataEntry struct {
 	Message          string `json:"Message"`
 	InvoiceCode      string `json:"InvoiceCode"` // 发票代码（数电票通常为空）
 	InvoiceNumeric   string `json:"InvoiceNumeric"`
-	InvoiceOpenState string `json:"InvoiceOpenState"` // "3" 开具成功 / "0" 待开 / "1" 开具中 / "2" 失败
+	InvoiceOpenState string `json:"InvoiceOpenState"` // 1 未开票 / 2 开票中 / 3 已开票 / 4 开票失败 / 3999 全电失败
 	InvalidFlag      string `json:"InvalidFlag"`      // "1" 已作废
 	RedFlag          string `json:"RedFlag"`          // "1" 红票
 
