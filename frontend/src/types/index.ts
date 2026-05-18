@@ -1308,6 +1308,10 @@ export interface GenerateRedeemCodesRequest {
 
 export interface RedeemCodeRequest {
   code: string
+  // 仅 subscription 类型有效；缺省 = 老行为（AssignOrExtend）
+  purchase_intent?: 'renew' | 'new'
+  // intent='renew' 时必填
+  renew_subscription_id?: number
 }
 
 // ==================== Dashboard & Statistics ====================

@@ -265,61 +265,27 @@
       </div>
     </div>
 
-    <!-- 续期 / 再买一张 选择对话框 -->
-    <BaseDialog
+    <!-- 续期 / 再买一张 选择对话框（与兑换码页共用同一组件） -->
+    <RenewChoiceDialog
       :show="renewChoiceOpen"
-      :title="t('userSubscriptions.renewChoiceTitle')"
-      width="normal"
-      :close-on-click-outside="true"
+      :group-name="renewTarget?.group?.name || ''"
+      :existing-subs="renewExistingSubs"
+      :hint="t('userSubscriptions.renewChoiceHint')"
+      @confirm="onRenewChoiceConfirm"
       @close="renewChoiceOpen = false"
-    >
-      <div class="space-y-4">
-        <p class="text-sm text-gray-600 dark:text-gray-400">
-          {{ t('userSubscriptions.renewChoiceIntro', { name: renewTarget?.group?.name || '' }) }}
-        </p>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <button
-            class="group flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-4 text-left transition hover:border-primary-500 hover:bg-primary-50 dark:border-dark-600 dark:bg-dark-800 dark:hover:border-primary-400 dark:hover:bg-primary-900/10"
-            @click="confirmRenewChoice('renew')"
-          >
-            <div class="flex items-center gap-2">
-              <Icon name="creditCard" size="md" class="text-primary-500" />
-              <span class="font-semibold text-gray-900 dark:text-white">{{ t('userSubscriptions.renewChoiceRenewLabel') }}</span>
-            </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ t('userSubscriptions.renewChoiceRenewDesc') }}
-            </p>
-          </button>
-          <button
-            class="group flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-4 text-left transition hover:border-indigo-500 hover:bg-indigo-50 dark:border-dark-600 dark:bg-dark-800 dark:hover:border-indigo-400 dark:hover:bg-indigo-900/10"
-            @click="confirmRenewChoice('new')"
-          >
-            <div class="flex items-center gap-2">
-              <Icon name="creditCard" size="md" class="text-indigo-500" />
-              <span class="font-semibold text-gray-900 dark:text-white">{{ t('userSubscriptions.renewChoiceBuyLabel') }}</span>
-            </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              {{ t('userSubscriptions.renewChoiceBuyDesc') }}
-            </p>
-          </button>
-        </div>
-        <p class="text-[11px] text-gray-400 dark:text-gray-500">
-          {{ t('userSubscriptions.renewChoiceHint') }}
-        </p>
-      </div>
-    </BaseDialog>
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import subscriptionsAPI from '@/api/subscriptions'
 import type { UserSubscription } from '@/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import BaseDialog from '@/components/common/BaseDialog.vue'
+import RenewChoiceDialog from '@/components/subscription/RenewChoiceDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { formatDateOnly } from '@/utils/format'
 import { platformBorderClass, platformBadgeClass, platformButtonClass, platformLabel } from '@/utils/platformColors'
@@ -345,12 +311,21 @@ const loading = ref(true)
 const renewChoiceOpen = ref(false)
 const renewTarget = ref<UserSubscription | null>(null)
 
+// 订阅页弹窗的入口是某一张具体卡，所以 existing-subs 始终为单元素列表（来自当前卡）。
+// 兑换码页则可能传入多张让用户选目标。
+// 即使 expires_at 为空（如管理员发放的永久订阅），也保留行项以维持改造前的"按钮可点"行为。
+const renewExistingSubs = computed(() => {
+  const t = renewTarget.value
+  if (!t) return []
+  return [{ id: t.id, expires_at: t.expires_at || '' }]
+})
+
 function openRenewChoice(sub: UserSubscription) {
   renewTarget.value = sub
   renewChoiceOpen.value = true
 }
 
-function confirmRenewChoice(intent: 'renew' | 'new') {
+function onRenewChoiceConfirm(payload: { intent: 'renew' | 'new'; subscriptionId?: number }) {
   const sub = renewTarget.value
   renewChoiceOpen.value = false
   renewTarget.value = null
@@ -358,10 +333,10 @@ function confirmRenewChoice(intent: 'renew' | 'new') {
   const query: Record<string, string> = {
     tab: 'subscription',
     group: String(sub.group_id),
-    intent,
+    intent: payload.intent,
   }
-  if (intent === 'renew') {
-    query.sub_id = String(sub.id)
+  if (payload.intent === 'renew') {
+    query.sub_id = String(payload.subscriptionId ?? sub.id)
   }
   router.push({ path: '/purchase', query })
 }

@@ -1191,7 +1191,8 @@ export default {
     codeRedeemSuccess: '兑换成功！',
     failedToRedeem: '兑换失败，请检查兑换码后重试。',
     subscriptionRefreshFailed: '兑换成功，但订阅状态刷新失败。',
-    pleaseEnterCode: '请输入兑换码'
+    pleaseEnterCode: '请输入兑换码',
+    renewChoiceHint: '兑换码将在你确认后才被消耗，取消不会扣除。'
   },
 
   // Profile
@@ -6683,10 +6684,14 @@ export default {
     usageOf: '已用 {used} / {limit}',
     renewChoiceTitle: '请选择如何继续购买',
     renewChoiceIntro: '您当前已拥有套餐"{name}"，请选择本次购买的处理方式：',
+    renewChoicePickTarget: '选择要续期的订阅（按到期顺序）',
     renewChoiceRenewLabel: '续期当前套餐',
-    renewChoiceRenewDesc: '仅延长当前订阅的有效期，本期已用配额会继续累计到原窗口，到期才会重置。适合"现在还在用、只想延寿"的场景。',
+    renewChoiceRenewDesc: '在已有订阅上延长 {days} 天有效期，本期已用配额继续累计到原窗口，到期才会重置。适合"现在还在用、只想延寿"的场景。',
+    renewChoiceRenewDescGeneric: '仅延长当前订阅的有效期，本期已用配额会继续累计到原窗口，到期才会重置。适合"现在还在用、只想延寿"的场景。',
     renewChoiceBuyLabel: '再买一张（独立计费）',
-    renewChoiceBuyDesc: '新建一张同款订阅，配额独立、月度窗口从下单时起算。当前订阅配额若已用完，可立即用上新订阅。"我的订阅"页会同时展示两张卡。',
+    renewChoiceBuyDesc: '新建一张同款独立订阅，配额和月度窗口从今天起算（当前已叠加 {count}/{cap} 张）。当前订阅配额若已用完，可立即用上新订阅。"我的订阅"页会同时展示两张卡。',
+    renewChoiceBuyDescGeneric: '新建一张同款独立订阅，配额和月度窗口从今天起算。当前订阅配额若已用完，可立即用上新订阅。"我的订阅"页会同时展示两张卡。',
+    renewChoiceBuyDisabledHint: '已达堆叠上限，本次只能选择续期',
     renewChoiceHint: '说明：续期不会重置已消耗的配额；如需立刻获得新一份额度请选择"再买一张"。'
   },
 

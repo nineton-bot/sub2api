@@ -1187,7 +1187,8 @@ export default {
     codeRedeemSuccess: 'Code redeemed successfully!',
     failedToRedeem: 'Failed to redeem code. Please check the code and try again.',
     subscriptionRefreshFailed: 'Redeemed successfully, but failed to refresh subscription status.',
-    pleaseEnterCode: 'Please enter a redeem code'
+    pleaseEnterCode: 'Please enter a redeem code',
+    renewChoiceHint: 'The code is only consumed after you confirm — cancelling does not spend it.'
   },
 
   // Profile
@@ -6525,10 +6526,14 @@ export default {
     usageOf: '{used} of {limit}',
     renewChoiceTitle: 'How would you like to proceed?',
     renewChoiceIntro: 'You already own a subscription for "{name}". Pick what this purchase should do:',
+    renewChoicePickTarget: 'Pick which subscription to renew (sorted by expiry)',
     renewChoiceRenewLabel: 'Renew the current plan',
-    renewChoiceRenewDesc: 'Extends the existing subscription\'s expiry only. Used quota keeps accumulating into the current window until it resets naturally. Best when you simply want to extend service.',
+    renewChoiceRenewDesc: 'Extends the existing subscription by {days} days. Used quota keeps accumulating into the current window until it resets naturally. Best when you simply want to extend service.',
+    renewChoiceRenewDescGeneric: 'Extends the existing subscription\'s expiry only. Used quota keeps accumulating into the current window until it resets naturally. Best when you simply want to extend service.',
     renewChoiceBuyLabel: 'Buy another (independent)',
-    renewChoiceBuyDesc: 'Creates a new parallel subscription with its own quota and a fresh monthly window starting now. If your current one is exhausted, you can use the new one immediately. Both cards will show on My Subscriptions.',
+    renewChoiceBuyDesc: 'Creates a new parallel subscription with its own quota and a fresh monthly window starting now (currently stacked {count}/{cap}). If your current one is exhausted, you can use the new one immediately. Both cards will show on My Subscriptions.',
+    renewChoiceBuyDescGeneric: 'Creates a new parallel subscription with its own quota and a fresh monthly window starting now. If your current one is exhausted, you can use the new one immediately. Both cards will show on My Subscriptions.',
+    renewChoiceBuyDisabledHint: 'Stack limit reached — only renewal is available this time.',
     renewChoiceHint: 'Note: renewal does NOT reset already-used quota. If you need fresh capacity right away, pick "Buy another".'
   },
 

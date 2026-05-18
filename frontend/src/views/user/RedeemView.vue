@@ -338,6 +338,19 @@
         </div>
       </div>
     </div>
+
+    <!-- 续期 / 再买一张 选择对话框（共用组件） -->
+    <RenewChoiceDialog
+      :show="renewChoiceOpen"
+      :group-name="pendingPreview?.group_name || ''"
+      :existing-subs="pendingPreview?.existing_active_subs || []"
+      :validity-days="pendingPreview?.validity_days || 30"
+      :stack-count="pendingPreview?.stack_count || 0"
+      :stack-cap="pendingPreview?.stack_cap || 0"
+      :hint="t('redeem.renewChoiceHint')"
+      @confirm="onRenewChoiceConfirm"
+      @close="onRenewChoiceCancel"
+    />
   </AppLayout>
 </template>
 
@@ -348,7 +361,9 @@ import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useSubscriptionStore } from '@/stores/subscriptions'
 import { redeemAPI, authAPI, type RedeemHistoryItem } from '@/api'
+import type { RedeemPreviewResponse } from '@/api/redeem'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import RenewChoiceDialog from '@/components/subscription/RenewChoiceDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { formatDateTime } from '@/utils/format'
 
@@ -431,8 +446,15 @@ const fetchHistory = async () => {
   }
 }
 
+// 续期/再买一张弹窗状态：兑换码可能命中"用户已持有同套餐未过期订阅"的场景，
+// 此时先 preview 拿到 group + 已持有列表，再弹窗让用户选择 intent，最后才 redeem。
+const renewChoiceOpen = ref(false)
+const pendingPreview = ref<RedeemPreviewResponse | null>(null)
+const pendingCode = ref('')
+
 const handleRedeem = async () => {
-  if (!redeemCode.value.trim()) {
+  const code = redeemCode.value.trim()
+  if (!code) {
     appStore.showError(t('redeem.pleaseEnterCode'))
     return
   }
@@ -441,8 +463,70 @@ const handleRedeem = async () => {
   errorMessage.value = ''
   redeemResult.value = null
 
+  let openedDialog = false
   try {
-    const result = await redeemAPI.redeem(redeemCode.value.trim())
+    // 1. 预览：只读校验，确认码可用并拿到 type / group / 已持有订阅列表
+    const preview = await redeemAPI.preview(code)
+
+    // 2. 判定是否需要弹窗：subscription 类型 + 非扣减码 + 已持有未过期订阅
+    const needChoice =
+      preview.type === 'subscription' &&
+      !preview.is_reduce &&
+      (preview.existing_active_subs?.length ?? 0) > 0
+
+    if (!needChoice) {
+      // 直接走老逻辑（缺省 intent → AssignOrExtendSubscription / balance / concurrency）
+      await doRedeem(code)
+      return
+    }
+
+    // 3. 暂存上下文，打开弹窗让用户选择。
+    //    submitting 保持 true，弹窗期间表单和按钮锁定，避免用户重复点提交导致 pendingCode 被覆盖。
+    pendingPreview.value = preview
+    pendingCode.value = code
+    renewChoiceOpen.value = true
+    openedDialog = true
+  } catch (error: any) {
+    errorMessage.value = error.response?.data?.detail || t('redeem.failedToRedeem')
+    appStore.showError(t('redeem.redeemFailed'))
+  } finally {
+    // 只有"未开弹窗、走完直接路径或抛错"时才解锁；弹窗路径由 confirm/cancel 自己解锁。
+    if (!openedDialog) {
+      submitting.value = false
+    }
+  }
+}
+
+const onRenewChoiceCancel = () => {
+  renewChoiceOpen.value = false
+  pendingPreview.value = null
+  pendingCode.value = ''
+  submitting.value = false // 表单解锁
+}
+
+const onRenewChoiceConfirm = async (payload: { intent: 'renew' | 'new'; subscriptionId?: number }) => {
+  const code = pendingCode.value
+  renewChoiceOpen.value = false
+  pendingPreview.value = null
+  pendingCode.value = ''
+  if (!code) {
+    submitting.value = false
+    return
+  }
+  // doRedeem 自己管理 submitting；这里不再手动复位，避免 race
+  await doRedeem(code, payload.intent, payload.subscriptionId)
+}
+
+const doRedeem = async (
+  code: string,
+  intent?: 'renew' | 'new',
+  subscriptionId?: number,
+) => {
+  submitting.value = true
+  errorMessage.value = ''
+
+  try {
+    const result = await redeemAPI.redeem(code, intent, subscriptionId)
 
     redeemResult.value = result
 
