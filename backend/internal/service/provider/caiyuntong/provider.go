@@ -310,8 +310,9 @@ func (p *Provider) Query(ctx context.Context, params QueryParams) (*QueryResult,
 		if invoiceNo == "" {
 			invoiceNo = entry.InvoiceCode + entry.InvoiceNumeric
 		}
-		// 优先用内嵌的 InvoicePdfBase64 — 测试环境 DownloadUrl 是 HTML 预览页，
-		// 直接 HTTP GET 会拿到 HTML 而非 PDF，必须用 base64 字段还原。
+		// PDF 版式文件下载源：文档 2.3.1 定义 InvoiceImg 为「发票PDF版式文件下载url」，
+		// 才是真正的 PDF 直链；DownloadUrl 是「发票交付地址」(交付落地页/HTML)，
+		// 直接 HTTP GET 会拿到 HTML 而非 PDF。InvoicePdfBase64 非文档字段，仅留作兜底。
 		var pdfBytes []byte
 		if entry.InvoicePdfBase64 != "" {
 			if b, err := base64.StdEncoding.DecodeString(entry.InvoicePdfBase64); err == nil {
@@ -321,7 +322,7 @@ func (p *Provider) Query(ctx context.Context, params QueryParams) (*QueryResult,
 		return &QueryResult{
 			Stage:     "issued",
 			InvoiceNo: invoiceNo,
-			PDFURL:    fallback(entry.DownloadUrl, entry.InvoiceOfd),
+			PDFURL:    fallback(entry.InvoiceImg, entry.DownloadUrl),
 			PDFBytes:  pdfBytes,
 			Payload:   payload,
 		}, nil
