@@ -15,12 +15,31 @@ import (
 )
 
 var (
-	ErrRedeemCodeNotFound  = infraerrors.NotFound("REDEEM_CODE_NOT_FOUND", "redeem code not found")
-	ErrRedeemCodeUsed      = infraerrors.Conflict("REDEEM_CODE_USED", "redeem code already used")
-	ErrInsufficientBalance = infraerrors.BadRequest("INSUFFICIENT_BALANCE", "insufficient balance")
-	ErrRedeemRateLimited   = infraerrors.TooManyRequests("REDEEM_RATE_LIMITED", "too many failed attempts, please try again later")
-	ErrRedeemCodeLocked    = infraerrors.Conflict("REDEEM_CODE_LOCKED", "redeem code is being processed, please try again")
+	ErrRedeemCodeNotFound      = infraerrors.NotFound("REDEEM_CODE_NOT_FOUND", "redeem code not found")
+	ErrRedeemCodeUsed          = infraerrors.Conflict("REDEEM_CODE_USED", "redeem code already used")
+	ErrInsufficientBalance     = infraerrors.BadRequest("INSUFFICIENT_BALANCE", "insufficient balance")
+	ErrRedeemRateLimited       = infraerrors.TooManyRequests("REDEEM_RATE_LIMITED", "too many failed attempts, please try again later")
+	ErrRedeemCodeLocked        = infraerrors.Conflict("REDEEM_CODE_LOCKED", "redeem code is being processed, please try again")
+	ErrRedeemRenewRequiresSub  = infraerrors.BadRequest("REDEEM_RENEW_REQUIRES_SUB_ID", "renew intent requires renew_subscription_id")
+	ErrRedeemIntentNotApplicable = infraerrors.BadRequest("REDEEM_INTENT_NOT_APPLICABLE", "purchase_intent is only valid for subscription redeem codes")
 )
+
+// RedeemPurchaseIntent enumerates how a subscription-type redeem code should be applied
+// when the user already owns an active subscription of the same group.
+//   - "" / RedeemIntentAuto  : legacy behavior (AssignOrExtend), kept for backward compat with old frontends.
+//   - "renew"                : extend an existing subscription's expires_at; quota window NOT reset.
+//   - "new"                  : create a brand-new parallel subscription row; quota window starts now.
+const (
+	RedeemIntentAuto  = ""
+	RedeemIntentRenew = "renew"
+	RedeemIntentNew   = "new"
+)
+
+// RedeemOptions carries per-call hints for Redeem(). Empty struct = legacy behavior.
+type RedeemOptions struct {
+	PurchaseIntent      string // "" / "renew" / "new"
+	RenewSubscriptionID int64  // required when PurchaseIntent == "renew"
+}
 
 const (
 	redeemMaxErrorsPerHour  = 20
@@ -253,8 +272,27 @@ func (s *RedeemService) releaseRedeemLock(ctx context.Context, code string) {
 	_ = s.cache.ReleaseRedeemLock(ctx, code)
 }
 
-// Redeem 使用兑换码
+// Redeem 使用兑换码（向后兼容入口，opt 取零值 = 老行为）
 func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (*RedeemCode, error) {
+	return s.RedeemWithOptions(ctx, userID, code, RedeemOptions{})
+}
+
+// RedeemWithOptions 使用兑换码，opt.PurchaseIntent 决定 subscription 类型的处理路径：
+//   - "" (RedeemIntentAuto)：调用 AssignOrExtendSubscription（旧行为，向后兼容）
+//   - "renew"：对 opt.RenewSubscriptionID 指定的现有订阅纯延长 expires_at
+//   - "new"：新建一行独立订阅（叠加），配额窗口从今天起算
+//
+// validityDays < 0 的"缩减/取消"路径忽略 intent。
+// balance / concurrency / invitation 类型传入 PurchaseIntent != "" 会被拒绝（ErrRedeemIntentNotApplicable），
+// 防止调用方误用。
+func (s *RedeemService) RedeemWithOptions(ctx context.Context, userID int64, code string, opt RedeemOptions) (*RedeemCode, error) {
+	// fail-fast：非法 intent 直接拒绝，避免无谓的限流计数 / 锁 / 事务开销。
+	switch opt.PurchaseIntent {
+	case RedeemIntentAuto, RedeemIntentRenew, RedeemIntentNew:
+	default:
+		return nil, infraerrors.BadRequest("REDEEM_INTENT_INVALID", "unsupported purchase_intent: "+opt.PurchaseIntent)
+	}
+
 	// 检查限流
 	if err := s.checkRedeemRateLimit(ctx, userID); err != nil {
 		return nil, err
@@ -285,6 +323,11 @@ func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (
 	// 验证兑换码类型的前置条件
 	if redeemCode.Type == RedeemTypeSubscription && redeemCode.GroupID == nil {
 		return nil, infraerrors.BadRequest("REDEEM_CODE_INVALID", "invalid subscription redeem code: missing group_id")
+	}
+
+	// intent 仅对 subscription 类型有意义；其他类型若显式带 intent 则拒绝，防止上层误用。
+	if opt.PurchaseIntent != RedeemIntentAuto && redeemCode.Type != RedeemTypeSubscription {
+		return nil, ErrRedeemIntentNotApplicable
 	}
 
 	// 获取用户信息
@@ -337,7 +380,7 @@ func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (
 	case RedeemTypeSubscription:
 		validityDays := redeemCode.ValidityDays
 		if validityDays < 0 {
-			// 负数天数：缩短订阅，减到 0 则取消订阅
+			// 负数天数：缩短订阅，减到 0 则取消订阅。忽略 intent（用户拿"扣减码"没法选续期/再买）。
 			if err := s.reduceOrCancelSubscription(txCtx, userID, *redeemCode.GroupID, -validityDays, redeemCode.Code); err != nil {
 				return nil, fmt.Errorf("reduce or cancel subscription: %w", err)
 			}
@@ -345,15 +388,41 @@ func (s *RedeemService) Redeem(ctx context.Context, userID int64, code string) (
 			if validityDays == 0 {
 				validityDays = 30
 			}
-			_, _, err := s.subscriptionService.AssignOrExtendSubscription(txCtx, &AssignSubscriptionInput{
-				UserID:       userID,
-				GroupID:      *redeemCode.GroupID,
-				ValidityDays: validityDays,
-				AssignedBy:   0, // 系统分配
-				Notes:        fmt.Sprintf("通过兑换码 %s 兑换", redeemCode.Code),
-			})
-			if err != nil {
-				return nil, fmt.Errorf("assign or extend subscription: %w", err)
+			switch opt.PurchaseIntent {
+			case RedeemIntentRenew:
+				if opt.RenewSubscriptionID <= 0 {
+					return nil, ErrRedeemRenewRequiresSub
+				}
+				// 复用支付路径的所有权 + 分组归属校验（友好错误码）
+				if err := s.subscriptionService.ValidateRenewTarget(txCtx, userID, opt.RenewSubscriptionID, *redeemCode.GroupID); err != nil {
+					return nil, err
+				}
+				if _, err := s.subscriptionService.RenewSubscription(
+					txCtx, userID, opt.RenewSubscriptionID, *redeemCode.GroupID, validityDays,
+				); err != nil {
+					return nil, fmt.Errorf("renew subscription: %w", err)
+				}
+			case RedeemIntentNew:
+				if _, err := s.subscriptionService.CreateNewSubscription(txCtx, &AssignSubscriptionInput{
+					UserID:       userID,
+					GroupID:      *redeemCode.GroupID,
+					ValidityDays: validityDays,
+					AssignedBy:   0,
+					Notes:        fmt.Sprintf("通过兑换码 %s 兑换（再买一张）", redeemCode.Code),
+				}); err != nil {
+					// 触底叠加上限时 CreateNewSubscription 返回 ErrTooManyStackedSubscriptions（已是友好错误码）
+					return nil, fmt.Errorf("create new subscription: %w", err)
+				}
+			default: // RedeemIntentAuto（"" 缺省）：fail-fast 已经确保 intent 必属 {auto, renew, new}
+				if _, _, err := s.subscriptionService.AssignOrExtendSubscription(txCtx, &AssignSubscriptionInput{
+					UserID:       userID,
+					GroupID:      *redeemCode.GroupID,
+					ValidityDays: validityDays,
+					AssignedBy:   0,
+					Notes:        fmt.Sprintf("通过兑换码 %s 兑换", redeemCode.Code),
+				}); err != nil {
+					return nil, fmt.Errorf("assign or extend subscription: %w", err)
+				}
 			}
 		}
 
@@ -416,6 +485,100 @@ func (s *RedeemService) invalidateRedeemCaches(ctx context.Context, userID int64
 			}()
 		}
 	}
+}
+
+// RedeemPreviewSubInfo 用于 PreviewRedeem 返回"用户已持有的同 group 活跃订阅"快照。
+type RedeemPreviewSubInfo struct {
+	ID        int64     `json:"id"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+// RedeemPreview 是 PreviewRedeem 的返回结构。前端拿到后判断是否需要弹"续期 / 再买一张"二选一弹窗。
+//
+// 不弹窗的场景（前端直接走 Redeem 即可）：
+//   - Type != "subscription"
+//   - IsReduce == true（扣减/取消，validityDays<0）
+//   - len(ExistingActive) == 0（用户该 group 当前无未过期订阅）
+type RedeemPreview struct {
+	Type           string                 `json:"type"`
+	Value          float64                `json:"value"`
+	GroupID        *int64                 `json:"group_id,omitempty"`
+	GroupName      string                 `json:"group_name,omitempty"`
+	ValidityDays   int                    `json:"validity_days,omitempty"`
+	ExistingActive []RedeemPreviewSubInfo `json:"existing_active_subs,omitempty"`
+	StackCap       int                    `json:"stack_cap,omitempty"`
+	StackCount     int                    `json:"stack_count,omitempty"`
+	IsReduce       bool                   `json:"is_reduce,omitempty"`
+}
+
+// PreviewRedeem 只读校验兑换码：不消耗码、不下发权益、不持有 redeem 分布式锁，
+// 同时共享 incrementRedeemErrorCount 防止暴力枚举 group 信息。
+//
+// 给前端兑换页用：在用户点"兑换"时先预览，若该 group 已持有未过期订阅就弹窗让用户选
+// "续期" vs "再买一张"，与"我的订阅"页右上角续费按钮的 UX 一致（参考 PR 81ee8105）。
+func (s *RedeemService) PreviewRedeem(ctx context.Context, userID int64, code string) (*RedeemPreview, error) {
+	if err := s.checkRedeemRateLimit(ctx, userID); err != nil {
+		return nil, err
+	}
+
+	rc, err := s.redeemRepo.GetByCode(ctx, code)
+	if err != nil {
+		if errors.Is(err, ErrRedeemCodeNotFound) {
+			s.incrementRedeemErrorCount(ctx, userID)
+			return nil, ErrRedeemCodeNotFound
+		}
+		return nil, fmt.Errorf("get redeem code: %w", err)
+	}
+	if !rc.CanUse() {
+		s.incrementRedeemErrorCount(ctx, userID)
+		return nil, ErrRedeemCodeUsed
+	}
+
+	out := &RedeemPreview{
+		Type:  rc.Type,
+		Value: rc.Value,
+	}
+
+	if rc.Type != RedeemTypeSubscription {
+		return out, nil
+	}
+
+	if rc.GroupID == nil {
+		return nil, infraerrors.BadRequest("REDEEM_CODE_INVALID", "invalid subscription redeem code: missing group_id")
+	}
+
+	out.GroupID = rc.GroupID
+	out.ValidityDays = rc.ValidityDays
+	out.IsReduce = rc.ValidityDays < 0
+	out.StackCap = MaxStackedSubscriptionsPerUserGroup
+
+	// 兑换码绑定的 group 应当始终存在；若取不到（被硬删 / 软删），是数据完整性问题，
+	// 直接报错而不是退化为空 group 名 —— 让用户在弹窗里看到 '您当前已拥有套餐""' 体感很差，
+	// 也容易让前端的"是否需要弹窗"判断逻辑跑偏。
+	group, gerr := s.subscriptionService.GetGroupByID(ctx, *rc.GroupID)
+	if gerr != nil || group == nil {
+		return nil, infraerrors.NotFound("REDEEM_CODE_GROUP_MISSING", "subscription group referenced by this redeem code no longer exists")
+	}
+	out.GroupName = group.Name
+
+	// 扣减码不需要弹窗，跳过活跃订阅列表（避免无谓查询）
+	if out.IsReduce {
+		return out, nil
+	}
+
+	list, lerr := s.subscriptionService.ListActiveSubscriptionsForUserGroup(ctx, userID, *rc.GroupID)
+	if lerr == nil {
+		out.StackCount = len(list)
+		out.ExistingActive = make([]RedeemPreviewSubInfo, 0, len(list))
+		for i := range list {
+			out.ExistingActive = append(out.ExistingActive, RedeemPreviewSubInfo{
+				ID:        list[i].ID,
+				ExpiresAt: list[i].ExpiresAt,
+			})
+		}
+	}
+
+	return out, nil
 }
 
 // GetByID 根据ID获取兑换码

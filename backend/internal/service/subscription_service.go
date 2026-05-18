@@ -496,6 +496,17 @@ func (s *SubscriptionService) CountActiveSubscriptionsForUserGroup(ctx context.C
 	return len(subs), nil
 }
 
+// ListActiveSubscriptionsForUserGroup 返回用户某 group 下全部未过期 active sub（按 expires_at ASC）。
+// 供 RedeemService.PreviewRedeem 等场景判断是否需要弹出"续期 / 再买一张"二选一弹窗。
+func (s *SubscriptionService) ListActiveSubscriptionsForUserGroup(ctx context.Context, userID, groupID int64) ([]UserSubscription, error) {
+	return s.userSubRepo.ListActiveByUserIDAndGroupID(ctx, userID, groupID)
+}
+
+// GetGroupByID 暴露 groupRepo 查询能力给同包但不持有 groupRepo 的服务（如 RedeemService）。
+func (s *SubscriptionService) GetGroupByID(ctx context.Context, groupID int64) (*Group, error) {
+	return s.groupRepo.GetByID(ctx, groupID)
+}
+
 // createSubscription 创建新订阅（内部方法）
 func (s *SubscriptionService) createSubscription(ctx context.Context, input *AssignSubscriptionInput) (*UserSubscription, error) {
 	validityDays := input.ValidityDays
