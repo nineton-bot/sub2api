@@ -5385,6 +5385,22 @@
               <Toggle v-model="form.invoice_default_for_all_users" />
             </div>
 
+            <!-- 最低开票金额 -->
+            <div v-if="form.invoice_enabled" class="border-t border-gray-100 pt-4 dark:border-dark-700">
+              <label class="mb-1 block text-sm font-medium text-gray-900 dark:text-white">最低开票金额（元）</label>
+              <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                用户单次申请发票的累计金额需达到该值；填 0 表示不限制。
+              </p>
+              <input
+                v-model.number="form.invoice_min_amount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0"
+                class="w-48 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white"
+              />
+            </div>
+
             <!-- 自动开票渠道（v3） -->
             <div
               v-if="form.invoice_enabled"
@@ -5528,6 +5544,10 @@
                   <div>
                     <label class="mb-1 block text-xs text-gray-500">默认税收分类编码（可选）</label>
                     <input v-model="form.invoice_caiyuntong.goods_code_default" type="text" placeholder="例 3040399000000000000（信息技术服务）" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-gray-500">发票商品名称（可选）</label>
+                    <input v-model="form.invoice_caiyuntong.item_name" type="text" placeholder="留空按订单生成；填「技术服务费」则发票显示 *分类*技术服务费" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-dark-600 dark:bg-dark-800 dark:text-white" />
                   </div>
                   <div>
                     <label class="mb-1 block text-xs text-gray-500">默认税率</label>
@@ -6541,6 +6561,7 @@ const form = reactive<SettingsForm>({
   referral_default_for_all_users: true,
   invoice_enabled: false,
   invoice_default_for_all_users: false,
+  invoice_min_amount: 0,
 
   // 自动开票渠道（v3）
   invoice_default_provider: 'manual',
@@ -6560,6 +6581,7 @@ const form = reactive<SettingsForm>({
     type_normal: '06',
     type_special: '05',
     goods_code_default: '',
+    item_name: '',
     default_tax_rate: 0.06,
   },
   invoice_poller: {
@@ -7678,6 +7700,7 @@ async function saveSettings() {
       referral_default_for_all_users: !!form.referral_default_for_all_users,
       invoice_enabled: !!form.invoice_enabled,
       invoice_default_for_all_users: !!form.invoice_default_for_all_users,
+      invoice_min_amount: Math.max(0, Number(form.invoice_min_amount) || 0),
       invoice_default_provider: form.invoice_default_provider || 'manual',
       invoice_caiyuntong: {
         endpoint: (form.invoice_caiyuntong?.endpoint || '').trim(),
@@ -7695,6 +7718,7 @@ async function saveSettings() {
         type_normal: form.invoice_caiyuntong?.type_normal || '06',
         type_special: form.invoice_caiyuntong?.type_special || '05',
         goods_code_default: form.invoice_caiyuntong?.goods_code_default || '',
+        item_name: form.invoice_caiyuntong?.item_name || '',
         default_tax_rate: Number(form.invoice_caiyuntong?.default_tax_rate) || 0.06,
       },
       invoice_poller: {

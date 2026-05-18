@@ -14,6 +14,18 @@ export interface EligibleOrder {
   paid_at: string
 }
 
+/** 用户最近一次发票申请的抬头信息，用于申请表单回显。 */
+export interface LastInvoiceTitle {
+  title_type: InvoiceTitleType
+  title: string
+  tax_no: string
+  contact_email: string
+  buyer_address: string
+  buyer_phone: string
+  buyer_bank_name: string
+  buyer_bank_account: string
+}
+
 /** v3：自动开票 / 自动红冲子状态。 */
 export type ProviderState =
   | ''

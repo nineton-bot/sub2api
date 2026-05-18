@@ -52,7 +52,16 @@ func (h *InvoiceHandler) ListEligibleOrders(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Success(c, gin.H{"items": orders})
+	lastTitle, err := h.invoiceService.GetLastInvoiceTitle(c.Request.Context(), subject.UserID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{
+		"items":      orders,
+		"last_title": lastTitle,
+		"min_amount": h.invoiceService.GetInvoiceMinAmount(c.Request.Context()),
+	})
 }
 
 // guardVisibility 在每个用户端 invoice 接口入口校验功能是否对该用户可见。

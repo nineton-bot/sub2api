@@ -128,6 +128,18 @@ type EligibleOrder struct {
 	PaidAt      time.Time `json:"paid_at"`
 }
 
+// LastInvoiceTitle 用户最近一次发票申请的抬头信息，用于申请表单回显、减少重复填写。
+type LastInvoiceTitle struct {
+	TitleType        string `json:"title_type"`
+	Title            string `json:"title"`
+	TaxNo            string `json:"tax_no"`
+	ContactEmail     string `json:"contact_email"`
+	BuyerAddress     string `json:"buyer_address"`
+	BuyerPhone       string `json:"buyer_phone"`
+	BuyerBankName    string `json:"buyer_bank_name"`
+	BuyerBankAccount string `json:"buyer_bank_account"`
+}
+
 // CreateInvoiceRequest 用户提交发票申请的入参
 type CreateInvoiceRequest struct {
 	TitleType    string  `json:"title_type"`
@@ -146,20 +158,20 @@ type CreateInvoiceRequest struct {
 
 // InvoiceDTO 列表视图
 type InvoiceDTO struct {
-	ID            int64  `json:"id"`
-	ApplicationNo string `json:"application_no"`
-	InvoiceNo     string `json:"invoice_no"`
-	UserID       int64     `json:"user_id"`
-	UserEmail    string    `json:"user_email"`
-	TitleType    string    `json:"title_type"`
-	Title        string    `json:"title"`
-	TaxNo        string    `json:"tax_no"`
-	Amount       float64   `json:"amount"`
-	Currency     string    `json:"currency"`
-	Status       string    `json:"status"`
-	OrderCount   int       `json:"order_count"`
-	SubmittedAt  time.Time `json:"submitted_at"`
-	ContactEmail string    `json:"contact_email"`
+	ID            int64     `json:"id"`
+	ApplicationNo string    `json:"application_no"`
+	InvoiceNo     string    `json:"invoice_no"`
+	UserID        int64     `json:"user_id"`
+	UserEmail     string    `json:"user_email"`
+	TitleType     string    `json:"title_type"`
+	Title         string    `json:"title"`
+	TaxNo         string    `json:"tax_no"`
+	Amount        float64   `json:"amount"`
+	Currency      string    `json:"currency"`
+	Status        string    `json:"status"`
+	OrderCount    int       `json:"order_count"`
+	SubmittedAt   time.Time `json:"submitted_at"`
+	ContactEmail  string    `json:"contact_email"`
 
 	// v3：开票渠道与子状态机
 	Provider          string `json:"provider"`
@@ -401,7 +413,7 @@ func (s *InvoiceService) PDFMaxBytes() int64 {
 //   - status = COMPLETED
 //   - paid_at >= now() - WindowDays
 //   - refund_amount = 0
-//   - invoice_status = '' （未被任何活跃发票占用）
+//   - invoice_status = ” （未被任何活跃发票占用）
 func (s *InvoiceService) ListEligibleOrders(ctx context.Context, userID int64) ([]EligibleOrder, error) {
 	if userID <= 0 {
 		return nil, ErrInvoiceForbidden
@@ -421,6 +433,7 @@ func (s *InvoiceService) ListEligibleOrders(ctx context.Context, userID int64) (
 		return nil, fmt.Errorf("list eligible orders: %w", err)
 	}
 	out := make([]EligibleOrder, 0, len(rows))
+	itemNameOverride := s.invoiceItemNameOverride(ctx)
 	for _, o := range rows {
 		var paidAt time.Time
 		if o.PaidAt != nil {
@@ -429,13 +442,56 @@ func (s *InvoiceService) ListEligibleOrders(ctx context.Context, userID int64) (
 		out = append(out, EligibleOrder{
 			ID:          o.ID,
 			OrderNo:     o.OutTradeNo,
-			ProductName: orderProductName(o),
+			ProductName: orderProductName(o, itemNameOverride),
 			OrderType:   o.OrderType,
 			PayAmount:   o.PayAmount,
 			PaidAt:      paidAt,
 		})
 	}
 	return out, nil
+}
+
+// GetLastInvoiceTitle 返回用户最近一次发票申请的抬头信息，用于申请表单回显。
+// 用户从未申请过发票时返回 (nil, nil)。
+func (s *InvoiceService) GetLastInvoiceTitle(ctx context.Context, userID int64) (*LastInvoiceTitle, error) {
+	if userID <= 0 {
+		return nil, ErrInvoiceForbidden
+	}
+	last, err := s.entClient.Invoice.Query().
+		Where(invoice.UserIDEQ(userID)).
+		Order(dbent.Desc(invoice.FieldSubmittedAt)).
+		First(ctx)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("query last invoice title: %w", err)
+	}
+	return &LastInvoiceTitle{
+		TitleType:        last.TitleType,
+		Title:            last.Title,
+		TaxNo:            last.TaxNo,
+		ContactEmail:     last.ContactEmail,
+		BuyerAddress:     last.BuyerAddress,
+		BuyerPhone:       last.BuyerPhone,
+		BuyerBankName:    last.BuyerBankName,
+		BuyerBankAccount: last.BuyerBankAccount,
+	}, nil
+}
+
+// GetInvoiceMinAmount 返回申请发票的最低累计金额（元）。0 表示不限制。
+func (s *InvoiceService) GetInvoiceMinAmount(ctx context.Context) float64 {
+	ss, err := s.settingService.GetAllSettings(ctx)
+	if err != nil || ss == nil || ss.InvoiceMinAmount < 0 {
+		return 0
+	}
+	return ss.InvoiceMinAmount
+}
+
+// errInvoiceAmountBelowMinimum 构造「累计金额未达开票门槛」错误，消息含动态门槛值。
+func errInvoiceAmountBelowMinimum(minAmt float64) error {
+	return infraerrors.BadRequest("INVOICE_AMOUNT_BELOW_MINIMUM",
+		fmt.Sprintf("申请发票的累计金额需满 %.2f 元", minAmt))
 }
 
 // CreateApplication 创建发票申请。事务内：
@@ -530,6 +586,9 @@ func (s *InvoiceService) CreateApplication(ctx context.Context, userID int64, re
 	if amount <= 0 {
 		return nil, ErrInvoiceInvalidAmount
 	}
+	if minAmt := s.GetInvoiceMinAmount(ctx); minAmt > 0 && amount < minAmt {
+		return nil, errInvoiceAmountBelowMinimum(minAmt)
+	}
 
 	now := time.Now()
 	contactEmail := strings.TrimSpace(req.ContactEmail)
@@ -571,6 +630,7 @@ func (s *InvoiceService) CreateApplication(ctx context.Context, userID int64, re
 	inv.ApplicationNo = applicationNo
 
 	// 创建 items + 标记订单
+	itemNameOverride := s.invoiceItemNameOverride(ctx)
 	for _, o := range orders {
 		paidAt := time.Time{}
 		if o.PaidAt != nil {
@@ -580,7 +640,7 @@ func (s *InvoiceService) CreateApplication(ctx context.Context, userID int64, re
 			SetInvoiceID(inv.ID).
 			SetPaymentOrderID(o.ID).
 			SetOrderNo(o.OutTradeNo).
-			SetProductName(orderProductName(o)).
+			SetProductName(orderProductName(o, itemNameOverride)).
 			SetOrderType(o.OrderType).
 			SetPayAmount(o.PayAmount).
 			SetPaidAt(paidAt).
@@ -1524,7 +1584,7 @@ func (s *InvoiceService) IsOrderInvoiceLocked(ctx context.Context, orderID int64
 
 // releaseInvoiceOrders 释放该发票占用的订单：
 //   - DELETE FROM invoice_items WHERE invoice_id = ?
-//   - UPDATE payment_orders SET invoice_status='', invoice_id=NULL WHERE invoice_id = ?
+//   - UPDATE payment_orders SET invoice_status=”, invoice_id=NULL WHERE invoice_id = ?
 //
 // 调用方负责事务提交。
 func releaseInvoiceOrders(ctx context.Context, tx *dbent.Tx, invoiceID int64) error {
@@ -1721,12 +1781,13 @@ func toInvoiceDTO(inv *dbent.Invoice, orderCount int) InvoiceDTO {
 	}
 }
 
-// orderProductName 按订单类型生成展示名。
-//   - balance: "RMB X 元 余额充值"
-//   - subscription: "订阅充值（X 天）"
-//
-// 当未来订单表里有真正的 product_name 字段时可改为读取该字段。
-func orderProductName(o *dbent.PaymentOrder) string {
+// orderProductName 生成发票行的商品名称。
+//   - override 非空（来自 invoice_caiyuntong_item_name 设置）→ 直接用该值，不带金额
+//   - 否则按订单类型生成：balance "余额充值 X 元" / subscription "订阅充值 X 天"
+func orderProductName(o *dbent.PaymentOrder, override string) string {
+	if v := strings.TrimSpace(override); v != "" {
+		return v
+	}
 	switch o.OrderType {
 	case payment.OrderTypeSubscription:
 		days := 0
@@ -1740,6 +1801,16 @@ func orderProductName(o *dbent.PaymentOrder) string {
 	default:
 		return fmt.Sprintf("余额充值 %.2f 元", o.PayAmount)
 	}
+}
+
+// invoiceItemNameOverride 读取发票行商品名的覆盖配置（invoice_caiyuntong_item_name）。
+// 留空或读取失败时返回 ""，orderProductName 据此回落到按订单类型生成。
+func (s *InvoiceService) invoiceItemNameOverride(ctx context.Context) string {
+	ss, err := s.settingService.GetAllSettings(ctx)
+	if err != nil || ss == nil {
+		return ""
+	}
+	return strings.TrimSpace(ss.InvoiceCaiyuntong.ItemName)
 }
 
 // logTransition 把发票状态流转写到结构化日志。

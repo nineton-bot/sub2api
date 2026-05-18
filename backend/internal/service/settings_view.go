@@ -201,11 +201,12 @@ type SystemSettings struct {
 	ReferralDefaultForAllUsers bool
 
 	// 发票（默认关闭）
-	InvoiceEnabled             bool // 主开关：全站发票功能
-	InvoiceDefaultForAllUsers  bool // 主开关 ON 时的默认可见性；false=白名单制（user.invoice_enabled）
+	InvoiceEnabled            bool // 主开关：全站发票功能
+	InvoiceDefaultForAllUsers bool // 主开关 ON 时的默认可见性；false=白名单制（user.invoice_enabled）
 
 	// 自动开票渠道配置（v3）
 	InvoiceDefaultProvider string                    `json:"invoice_default_provider"` // manual | caiyuntong | ...
+	InvoiceMinAmount       float64                   `json:"invoice_min_amount"`       // 申请发票最低累计金额（元）；0=不限制
 	InvoiceCaiyuntong      InvoiceCaiyuntongSettings `json:"invoice_caiyuntong"`
 	InvoicePoller          InvoicePollerSettings     `json:"invoice_poller"`
 	InvoiceReverse         InvoiceReverseSettings    `json:"invoice_reverse"`
@@ -230,6 +231,7 @@ type InvoiceCaiyuntongSettings struct {
 	TypeForNormal    string  `json:"type_normal"`
 	TypeForSpecial   string  `json:"type_special"`
 	GoodsCodeDefault string  `json:"goods_code_default"`
+	ItemName         string  `json:"item_name"` // 发票行商品名覆盖；空则按订单类型生成
 	DefaultTaxRate   float64 `json:"default_tax_rate"`
 }
 

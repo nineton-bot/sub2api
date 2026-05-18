@@ -270,6 +270,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		InvoiceDefaultForAllUsers: settings.InvoiceDefaultForAllUsers,
 
 		InvoiceDefaultProvider: settings.InvoiceDefaultProvider,
+		InvoiceMinAmount:       settings.InvoiceMinAmount,
 		InvoiceCaiyuntong: dto.InvoiceCaiyuntongSettings{
 			Endpoint:         settings.InvoiceCaiyuntong.Endpoint,
 			AccessKeyID:      settings.InvoiceCaiyuntong.AccessKeyID,
@@ -286,6 +287,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 			TypeForNormal:    settings.InvoiceCaiyuntong.TypeForNormal,
 			TypeForSpecial:   settings.InvoiceCaiyuntong.TypeForSpecial,
 			GoodsCodeDefault: settings.InvoiceCaiyuntong.GoodsCodeDefault,
+			ItemName:         settings.InvoiceCaiyuntong.ItemName,
 			DefaultTaxRate:   settings.InvoiceCaiyuntong.DefaultTaxRate,
 		},
 		InvoicePoller: dto.InvoicePollerSettings{
@@ -609,6 +611,7 @@ type UpdateSettingsRequest struct {
 
 	// 自动开票渠道（v3）
 	InvoiceDefaultProvider *string                        `json:"invoice_default_provider,omitempty"`
+	InvoiceMinAmount       *float64                       `json:"invoice_min_amount,omitempty"`
 	InvoiceCaiyuntong      *dto.InvoiceCaiyuntongSettings `json:"invoice_caiyuntong,omitempty"`
 	InvoicePoller          *dto.InvoicePollerSettings     `json:"invoice_poller,omitempty"`
 	InvoiceReverse         *dto.InvoiceReverseSettings    `json:"invoice_reverse,omitempty"`
@@ -1568,6 +1571,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.InvoiceDefaultProvider
 		}(),
+		InvoiceMinAmount: func() float64 {
+			if req.InvoiceMinAmount != nil {
+				return *req.InvoiceMinAmount
+			}
+			return previousSettings.InvoiceMinAmount
+		}(),
 		InvoiceCaiyuntong: mergeInvoiceCaiyuntong(req.InvoiceCaiyuntong, previousSettings.InvoiceCaiyuntong),
 		InvoicePoller: func() service.InvoicePollerSettings {
 			if req.InvoicePoller == nil {
@@ -1882,6 +1891,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		InvoiceDefaultForAllUsers: updatedSettings.InvoiceDefaultForAllUsers,
 
 		InvoiceDefaultProvider: updatedSettings.InvoiceDefaultProvider,
+		InvoiceMinAmount:       updatedSettings.InvoiceMinAmount,
 		InvoiceCaiyuntong: dto.InvoiceCaiyuntongSettings{
 			Endpoint:         updatedSettings.InvoiceCaiyuntong.Endpoint,
 			AccessKeyID:      updatedSettings.InvoiceCaiyuntong.AccessKeyID,
@@ -1898,6 +1908,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			TypeForNormal:    updatedSettings.InvoiceCaiyuntong.TypeForNormal,
 			TypeForSpecial:   updatedSettings.InvoiceCaiyuntong.TypeForSpecial,
 			GoodsCodeDefault: updatedSettings.InvoiceCaiyuntong.GoodsCodeDefault,
+			ItemName:         updatedSettings.InvoiceCaiyuntong.ItemName,
 			DefaultTaxRate:   updatedSettings.InvoiceCaiyuntong.DefaultTaxRate,
 		},
 		InvoicePoller: dto.InvoicePollerSettings{
@@ -3172,6 +3183,7 @@ func mergeInvoiceCaiyuntong(req *dto.InvoiceCaiyuntongSettings, prev service.Inv
 		TypeForNormal:    req.TypeForNormal,
 		TypeForSpecial:   req.TypeForSpecial,
 		GoodsCodeDefault: req.GoodsCodeDefault,
+		ItemName:         req.ItemName,
 		DefaultTaxRate:   req.DefaultTaxRate,
 	}
 }

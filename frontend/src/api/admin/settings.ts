@@ -332,6 +332,8 @@ export interface InvoiceCaiyuntongSettings {
   /** 专票对应的 InvoiceType 代码（默认 05 数电专）。 */
   type_special: string;
   goods_code_default: string;
+  /** 发票行商品名称覆盖；留空则按订单类型自动生成。 */
+  item_name: string;
   /** 默认税率，例 0.06 = 6%。 */
   default_tax_rate: number;
 }
@@ -562,6 +564,9 @@ export interface SystemSettings {
   invoice_enabled: boolean;
   invoice_default_for_all_users: boolean;
 
+  /** 申请发票的最低累计金额（元）；0=不限制。 */
+  invoice_min_amount: number;
+
   // 自动开票渠道（v3）
   invoice_default_provider: string;
   invoice_caiyuntong: InvoiceCaiyuntongSettings;
@@ -767,6 +772,8 @@ export interface UpdateSettingsRequest {
   // 发票
   invoice_enabled?: boolean;
   invoice_default_for_all_users?: boolean;
+
+  invoice_min_amount?: number;
 
   // 自动开票渠道（v3）
   invoice_default_provider?: string;

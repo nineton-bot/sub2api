@@ -10,6 +10,7 @@ import type {
   Invoice,
   InvoiceDetail,
   CreateInvoiceRequest,
+  LastInvoiceTitle,
 } from '@/types/invoice'
 
 export const invoiceAPI = {
@@ -18,9 +19,13 @@ export const invoiceAPI = {
     return apiClient.get<{ enabled: boolean }>('/invoices/eligibility')
   },
 
-  /** 列出半年内可开票订单 */
+  /** 列出半年内可开票订单，附带上次申请抬头与最低开票金额 */
   eligibleOrders() {
-    return apiClient.get<{ items: EligibleOrder[] }>('/invoices/eligible-orders')
+    return apiClient.get<{
+      items: EligibleOrder[]
+      last_title: LastInvoiceTitle | null
+      min_amount: number
+    }>('/invoices/eligible-orders')
   },
 
   /** 当前用户发票列表 */

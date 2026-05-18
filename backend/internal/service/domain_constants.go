@@ -411,6 +411,9 @@ const (
 	// "manual" 表示走传统人工上传 PDF 流程；其它值表示自动开票。
 	SettingKeyInvoiceDefaultProvider = "invoice_default_provider"
 
+	// SettingKeyInvoiceMinAmount 申请发票的最低累计金额（元）。0 表示不限制。
+	SettingKeyInvoiceMinAmount = "invoice_min_amount"
+
 	// 财云通（bigfintax）接入凭据
 	SettingKeyInvoiceCaiyuntongEndpoint    = "invoice_caiyuntong_endpoint"
 	SettingKeyInvoiceCaiyuntongAccessKeyID = "invoice_caiyuntong_access_key_id"
@@ -418,15 +421,15 @@ const (
 	SettingKeyInvoiceCaiyuntongAccessKeySecret = "invoice_caiyuntong_access_key_secret"
 
 	// 销方信息
-	SettingKeyInvoiceCaiyuntongSellerTaxNum     = "invoice_caiyuntong_seller_tax_num"
-	SettingKeyInvoiceCaiyuntongSellerName       = "invoice_caiyuntong_seller_name"
-	SettingKeyInvoiceCaiyuntongSellerAddress    = "invoice_caiyuntong_seller_address"
-	SettingKeyInvoiceCaiyuntongSellerPhone      = "invoice_caiyuntong_seller_phone"
-	SettingKeyInvoiceCaiyuntongSellerBankName   = "invoice_caiyuntong_seller_bank_name"
-	SettingKeyInvoiceCaiyuntongSellerBankAcc    = "invoice_caiyuntong_seller_bank_account"
-	SettingKeyInvoiceCaiyuntongDrawer           = "invoice_caiyuntong_drawer"
-	SettingKeyInvoiceCaiyuntongPayee            = "invoice_caiyuntong_payee"
-	SettingKeyInvoiceCaiyuntongReviewer         = "invoice_caiyuntong_reviewer"
+	SettingKeyInvoiceCaiyuntongSellerTaxNum   = "invoice_caiyuntong_seller_tax_num"
+	SettingKeyInvoiceCaiyuntongSellerName     = "invoice_caiyuntong_seller_name"
+	SettingKeyInvoiceCaiyuntongSellerAddress  = "invoice_caiyuntong_seller_address"
+	SettingKeyInvoiceCaiyuntongSellerPhone    = "invoice_caiyuntong_seller_phone"
+	SettingKeyInvoiceCaiyuntongSellerBankName = "invoice_caiyuntong_seller_bank_name"
+	SettingKeyInvoiceCaiyuntongSellerBankAcc  = "invoice_caiyuntong_seller_bank_account"
+	SettingKeyInvoiceCaiyuntongDrawer         = "invoice_caiyuntong_drawer"
+	SettingKeyInvoiceCaiyuntongPayee          = "invoice_caiyuntong_payee"
+	SettingKeyInvoiceCaiyuntongReviewer       = "invoice_caiyuntong_reviewer"
 
 	// 票种代码（财云通 InvoiceType 枚举：04 增普 / 10 数电普老 / 01 增专 / 08 数电专老 / 05 数电专 / 06 数电普）
 	SettingKeyInvoiceCaiyuntongTypeNormal  = "invoice_caiyuntong_type_normal"  // 默认 06
@@ -435,6 +438,10 @@ const (
 	// 商品/税收分类与税率
 	SettingKeyInvoiceCaiyuntongGoodsCodeDefault = "invoice_caiyuntong_goods_code_default"
 	SettingKeyInvoiceCaiyuntongDefaultTaxRate   = "invoice_caiyuntong_default_tax_rate" // 例 "0.06"
+
+	// SettingKeyInvoiceCaiyuntongItemName 发票行商品名称覆盖。
+	// 非空时，所有发票行的商品名统一用该值（不再按订单类型生成「余额充值 X 元」）。
+	SettingKeyInvoiceCaiyuntongItemName = "invoice_caiyuntong_item_name"
 
 	// 轮询与红冲（poll/reverse worker 读取）
 	SettingKeyInvoicePollerIntervalSeconds        = "invoice_poller_interval_seconds"

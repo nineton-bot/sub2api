@@ -212,6 +212,7 @@ type SystemSettings struct {
 
 	// 自动开票渠道（v3）
 	InvoiceDefaultProvider string                    `json:"invoice_default_provider"`
+	InvoiceMinAmount       float64                   `json:"invoice_min_amount"`
 	InvoiceCaiyuntong      InvoiceCaiyuntongSettings `json:"invoice_caiyuntong"`
 	InvoicePoller          InvoicePollerSettings     `json:"invoice_poller"`
 	InvoiceReverse         InvoiceReverseSettings    `json:"invoice_reverse"`
@@ -389,6 +390,7 @@ type InvoiceCaiyuntongSettings struct {
 	TypeForNormal    string  `json:"type_normal"`
 	TypeForSpecial   string  `json:"type_special"`
 	GoodsCodeDefault string  `json:"goods_code_default"`
+	ItemName         string  `json:"item_name"`
 	DefaultTaxRate   float64 `json:"default_tax_rate"`
 }
 

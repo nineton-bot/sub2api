@@ -1706,6 +1706,11 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	if strings.TrimSpace(settings.InvoiceDefaultProvider) != "" {
 		updates[SettingKeyInvoiceDefaultProvider] = strings.TrimSpace(settings.InvoiceDefaultProvider)
 	}
+	if settings.InvoiceMinAmount > 0 {
+		updates[SettingKeyInvoiceMinAmount] = strconv.FormatFloat(settings.InvoiceMinAmount, 'f', -1, 64)
+	} else {
+		updates[SettingKeyInvoiceMinAmount] = "0"
+	}
 	cy := settings.InvoiceCaiyuntong
 	updates[SettingKeyInvoiceCaiyuntongEndpoint] = strings.TrimSpace(cy.Endpoint)
 	updates[SettingKeyInvoiceCaiyuntongAccessKeyID] = strings.TrimSpace(cy.AccessKeyID)
@@ -1728,6 +1733,7 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 		updates[SettingKeyInvoiceCaiyuntongTypeSpecial] = strings.TrimSpace(cy.TypeForSpecial)
 	}
 	updates[SettingKeyInvoiceCaiyuntongGoodsCodeDefault] = cy.GoodsCodeDefault
+	updates[SettingKeyInvoiceCaiyuntongItemName] = strings.TrimSpace(cy.ItemName)
 	if cy.DefaultTaxRate > 0 {
 		updates[SettingKeyInvoiceCaiyuntongDefaultTaxRate] = strconv.FormatFloat(cy.DefaultTaxRate, 'f', -1, 64)
 	}
@@ -2597,6 +2603,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		// 发票渠道（v3 自动开票 + 自动红冲）
 		// default_provider="manual" 保持向后兼容：未填密钥前继续走人工上传 PDF。
 		SettingKeyInvoiceDefaultProvider:       "manual",
+		SettingKeyInvoiceMinAmount:             "0",
 		SettingKeyInvoiceCaiyuntongEndpoint:    "",
 		SettingKeyInvoiceCaiyuntongAccessKeyID: "",
 		// AccessKeySecret 不预置默认值，由管理员在 Settings UI 输入。
@@ -2613,6 +2620,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyInvoiceCaiyuntongTypeNormal:         "06",
 		SettingKeyInvoiceCaiyuntongTypeSpecial:        "05",
 		SettingKeyInvoiceCaiyuntongGoodsCodeDefault:   "",
+		SettingKeyInvoiceCaiyuntongItemName:           "",
 		SettingKeyInvoiceCaiyuntongDefaultTaxRate:     "0.06",
 		SettingKeyInvoicePollerIntervalSeconds:        "30",
 		SettingKeyInvoicePollerTimeoutMinutes:         "10",
@@ -3038,6 +3046,9 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	if result.InvoiceDefaultProvider == "" {
 		result.InvoiceDefaultProvider = "manual"
 	}
+	if minAmt, _ := strconv.ParseFloat(strings.TrimSpace(settings[SettingKeyInvoiceMinAmount]), 64); minAmt > 0 {
+		result.InvoiceMinAmount = minAmt
+	}
 	cyDefaultTaxRate, _ := strconv.ParseFloat(strings.TrimSpace(settings[SettingKeyInvoiceCaiyuntongDefaultTaxRate]), 64)
 	result.InvoiceCaiyuntong = InvoiceCaiyuntongSettings{
 		Endpoint:         settings[SettingKeyInvoiceCaiyuntongEndpoint],
@@ -3055,6 +3066,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		TypeForNormal:    fallbackOnEmpty(settings[SettingKeyInvoiceCaiyuntongTypeNormal], "06"),
 		TypeForSpecial:   fallbackOnEmpty(settings[SettingKeyInvoiceCaiyuntongTypeSpecial], "05"),
 		GoodsCodeDefault: settings[SettingKeyInvoiceCaiyuntongGoodsCodeDefault],
+		ItemName:         settings[SettingKeyInvoiceCaiyuntongItemName],
 		DefaultTaxRate:   cyDefaultTaxRate,
 	}
 	if result.InvoiceCaiyuntong.DefaultTaxRate <= 0 {

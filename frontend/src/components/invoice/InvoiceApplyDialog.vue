@@ -104,6 +104,12 @@
           </span>
           <span class="text-base font-bold text-emerald-600 dark:text-emerald-400">¥{{ totalAmount.toFixed(2) }}</span>
         </div>
+        <div
+          v-if="amountBelowMinimum"
+          class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+        >
+          开票金额不足，需累计满 ¥{{ minAmount.toFixed(2) }} 才可申请发票（当前 ¥{{ totalAmount.toFixed(2) }}）。
+        </div>
       </div>
 
       <!-- 备注 -->
@@ -141,7 +147,7 @@ import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import invoiceAPI from '@/api/invoices'
 import { extractApiErrorMessage } from "@/utils/apiError"
-import type { EligibleOrder, InvoiceTitleType } from '@/types/invoice'
+import type { EligibleOrder, InvoiceTitleType, LastInvoiceTitle } from '@/types/invoice'
 
 const props = defineProps<{
   show: boolean
@@ -178,10 +184,17 @@ const totalAmount = computed(() =>
     .reduce((sum, o) => sum + o.pay_amount, 0),
 )
 
+const minAmount = ref(0)
+
+const amountBelowMinimum = computed(
+  () => minAmount.value > 0 && totalAmount.value < minAmount.value,
+)
+
 const canSubmit = computed(() => {
   if (!form.title.trim()) return false
   if (form.title_type === 'business' && !form.tax_no.trim()) return false
   if (selectedIds.value.size === 0) return false
+  if (amountBelowMinimum.value) return false
   return true
 })
 
@@ -211,11 +224,26 @@ async function fetchEligible() {
   try {
     const res = await invoiceAPI.eligibleOrders()
     eligibleOrders.value = res.data.items || []
+    minAmount.value = res.data.min_amount || 0
+    applyLastTitle(res.data.last_title)
   } catch (err) {
     errorMsg.value = extractApiErrorMessage(err)
   } finally {
     ordersLoading.value = false
   }
+}
+
+// 用上次申请的抬头信息预填表单，减少重复填写。resetForm 已先执行，这里覆盖回显。
+function applyLastTitle(last: LastInvoiceTitle | null | undefined) {
+  if (!last) return
+  form.title_type = last.title_type || 'personal'
+  form.title = last.title || ''
+  form.tax_no = last.tax_no || ''
+  form.contact_email = last.contact_email || ''
+  form.buyer_address = last.buyer_address || ''
+  form.buyer_phone = last.buyer_phone || ''
+  form.buyer_bank_name = last.buyer_bank_name || ''
+  form.buyer_bank_account = last.buyer_bank_account || ''
 }
 
 function resetForm() {
