@@ -64,8 +64,14 @@
         </template>
       </div>
 
+      <!-- 对公转账开关 -->
+      <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+        <input v-model="form.is_bank_transfer" type="checkbox" class="h-4 w-4 rounded" />
+        对公转账（系统无订单，手动填写转账金额与日期）
+      </label>
+
       <!-- 订单选择 -->
-      <div class="space-y-2">
+      <div v-if="!form.is_bank_transfer" class="space-y-2">
         <h4 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('invoices.fields.selectOrders') }}</h4>
         <div v-if="ordersLoading" class="py-8 text-center text-sm text-gray-500">{{ t('common.loading') }}</div>
         <div v-else-if="eligibleOrders.length === 0" class="rounded-lg bg-gray-50 p-4 text-center text-sm text-gray-500 dark:bg-dark-800 dark:text-gray-400">
@@ -104,6 +110,27 @@
           </span>
           <span class="text-base font-bold text-emerald-600 dark:text-emerald-400">¥{{ totalAmount.toFixed(2) }}</span>
         </div>
+        <div
+          v-if="amountBelowMinimum"
+          class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+        >
+          开票金额不足，需累计满 ¥{{ minAmount.toFixed(2) }} 才可申请发票（当前 ¥{{ totalAmount.toFixed(2) }}）。
+        </div>
+      </div>
+
+      <!-- 对公转账信息 -->
+      <div v-if="form.is_bank_transfer" class="space-y-2">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white">对公转账信息</h4>
+        <input
+          v-model.number="form.transfer_amount"
+          type="number"
+          step="0.01"
+          min="0"
+          class="input w-full"
+          placeholder="转账金额（元）"
+        />
+        <label class="block text-xs text-gray-500 dark:text-gray-400">转账日期</label>
+        <input v-model="form.transfer_date" type="date" class="input w-full" />
         <div
           v-if="amountBelowMinimum"
           class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
@@ -170,6 +197,9 @@ const form = reactive({
   buyer_phone: '',
   buyer_bank_name: '',
   buyer_bank_account: '',
+  is_bank_transfer: false,
+  transfer_amount: 0,
+  transfer_date: '',
 })
 
 const eligibleOrders = ref<EligibleOrder[]>([])
@@ -178,11 +208,12 @@ const ordersLoading = ref(false)
 const submitting = ref(false)
 const errorMsg = ref('')
 
-const totalAmount = computed(() =>
-  eligibleOrders.value
+const totalAmount = computed(() => {
+  if (form.is_bank_transfer) return form.transfer_amount || 0
+  return eligibleOrders.value
     .filter((o) => selectedIds.value.has(o.id))
-    .reduce((sum, o) => sum + o.pay_amount, 0),
-)
+    .reduce((sum, o) => sum + o.pay_amount, 0)
+})
 
 const minAmount = ref(0)
 
@@ -193,8 +224,11 @@ const amountBelowMinimum = computed(
 const canSubmit = computed(() => {
   if (!form.title.trim()) return false
   if (form.title_type === 'business' && !form.tax_no.trim()) return false
-  if (selectedIds.value.size === 0) return false
   if (amountBelowMinimum.value) return false
+  if (form.is_bank_transfer) {
+    return form.transfer_amount > 0 && !!form.transfer_date
+  }
+  if (selectedIds.value.size === 0) return false
   return true
 })
 
@@ -256,6 +290,9 @@ function resetForm() {
   form.buyer_phone = ''
   form.buyer_bank_name = ''
   form.buyer_bank_account = ''
+  form.is_bank_transfer = false
+  form.transfer_amount = 0
+  form.transfer_date = ''
   selectedIds.value = new Set()
   errorMsg.value = ''
 }
@@ -291,11 +328,14 @@ async function submit() {
       tax_no: isBusiness ? form.tax_no.trim() : '',
       contact_email: form.contact_email.trim(),
       notes: form.notes.trim(),
-      order_ids: Array.from(selectedIds.value),
+      order_ids: form.is_bank_transfer ? [] : Array.from(selectedIds.value),
       buyer_address: isBusiness ? form.buyer_address.trim() : '',
       buyer_phone: isBusiness ? form.buyer_phone.trim() : '',
       buyer_bank_name: isBusiness ? form.buyer_bank_name.trim() : '',
       buyer_bank_account: isBusiness ? form.buyer_bank_account.trim() : '',
+      source: form.is_bank_transfer ? 'bank_transfer' : 'order',
+      transfer_amount: form.is_bank_transfer ? form.transfer_amount : 0,
+      transfer_date: form.is_bank_transfer ? form.transfer_date : '',
     })
     emit('submitted')
     onClose()

@@ -62,6 +62,15 @@
               <td class="whitespace-nowrap px-4 py-3">
                 <InvoiceStatusBadge :status="inv.status" />
                 <div
+                  v-if="inv.source === 'bank_transfer'"
+                  class="mt-1 inline-flex items-center whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-medium"
+                  :class="inv.transfer_confirmed
+                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+                    : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'"
+                >
+                  对公转账 · {{ inv.transfer_confirmed ? '已确认收款' : '待确认收款' }}
+                </div>
+                <div
                   v-if="inv.pending_void_request"
                   class="mt-1 inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300"
                 >
@@ -132,7 +141,18 @@
                     </button>
                   </template>
                   <template v-if="inv.status === 'pending'">
-                    <button class="action-btn text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20" @click="approve(inv)">
+                    <button
+                      v-if="inv.source === 'bank_transfer' && !inv.transfer_confirmed"
+                      class="action-btn text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20"
+                      @click="confirmTransfer(inv.id)"
+                    >
+                      确认收款
+                    </button>
+                    <button
+                      v-if="inv.source !== 'bank_transfer' || inv.transfer_confirmed"
+                      class="action-btn text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+                      @click="approve(inv)"
+                    >
                       {{ t('admin.invoices.actions.approve') }}
                     </button>
                     <button class="action-btn text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20" @click="rejectTargetId = inv.id">
@@ -423,6 +443,16 @@ function providerStateColor(inv: Invoice): string {
 async function retryIssue(id: number) {
   try {
     await adminInvoiceAPI.retryIssue(id)
+    fetchInvoices()
+  } catch (err) {
+    alert(extractApiErrorMessage(err))
+  }
+}
+
+async function confirmTransfer(id: number) {
+  if (!window.confirm('确认该对公转账发票已收到款项？确认后即可审批开票。')) return
+  try {
+    await adminInvoiceAPI.confirmTransfer(id)
     fetchInvoices()
   } catch (err) {
     alert(extractApiErrorMessage(err))

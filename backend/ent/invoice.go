@@ -105,6 +105,16 @@ type Invoice struct {
 	RedPdfPath string `json:"red_pdf_path,omitempty"`
 	// VoidedBy holds the value of the "voided_by" field.
 	VoidedBy *int64 `json:"voided_by,omitempty"`
+	// order 订单开票 | bank_transfer 对公转账
+	Source string `json:"source,omitempty"`
+	// 对公转账日期（用户填写）
+	TransferDate *time.Time `json:"transfer_date,omitempty"`
+	// 对公转账是否已确认收款
+	TransferConfirmed bool `json:"transfer_confirmed,omitempty"`
+	// 确认收款时间
+	TransferConfirmedAt *time.Time `json:"transfer_confirmed_at,omitempty"`
+	// 确认收款的管理员 user id
+	TransferConfirmedBy *int64 `json:"transfer_confirmed_by,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the InvoiceQuery when eager-loading is set.
 	Edges        InvoiceEdges `json:"edges"`
@@ -149,13 +159,15 @@ func (*Invoice) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case invoice.FieldProviderPayload:
 			values[i] = new([]byte)
+		case invoice.FieldTransferConfirmed:
+			values[i] = new(sql.NullBool)
 		case invoice.FieldAmount:
 			values[i] = new(sql.NullFloat64)
-		case invoice.FieldID, invoice.FieldUserID, invoice.FieldReviewedBy, invoice.FieldPdfSize, invoice.FieldProviderRetryCount, invoice.FieldVoidedBy:
+		case invoice.FieldID, invoice.FieldUserID, invoice.FieldReviewedBy, invoice.FieldPdfSize, invoice.FieldProviderRetryCount, invoice.FieldVoidedBy, invoice.FieldTransferConfirmedBy:
 			values[i] = new(sql.NullInt64)
-		case invoice.FieldUserEmail, invoice.FieldApplicationNo, invoice.FieldTitleType, invoice.FieldTitle, invoice.FieldTaxNo, invoice.FieldContactEmail, invoice.FieldBuyerAddress, invoice.FieldBuyerPhone, invoice.FieldBuyerBankName, invoice.FieldBuyerBankAccount, invoice.FieldCurrency, invoice.FieldNotes, invoice.FieldStatus, invoice.FieldReviewNotes, invoice.FieldInvoiceNo, invoice.FieldPdfPath, invoice.FieldPdfStorage, invoice.FieldPdfSha256, invoice.FieldPdfOriginalName, invoice.FieldInvoiceKind, invoice.FieldInvoiceTypeCode, invoice.FieldProvider, invoice.FieldProviderState, invoice.FieldProviderTraceID, invoice.FieldProviderLastError, invoice.FieldReverseStep, invoice.FieldRedAdviceNum, invoice.FieldRedConfirmNum, invoice.FieldReverseTraceID, invoice.FieldRedInvoiceNo, invoice.FieldRedPdfPath:
+		case invoice.FieldUserEmail, invoice.FieldApplicationNo, invoice.FieldTitleType, invoice.FieldTitle, invoice.FieldTaxNo, invoice.FieldContactEmail, invoice.FieldBuyerAddress, invoice.FieldBuyerPhone, invoice.FieldBuyerBankName, invoice.FieldBuyerBankAccount, invoice.FieldCurrency, invoice.FieldNotes, invoice.FieldStatus, invoice.FieldReviewNotes, invoice.FieldInvoiceNo, invoice.FieldPdfPath, invoice.FieldPdfStorage, invoice.FieldPdfSha256, invoice.FieldPdfOriginalName, invoice.FieldInvoiceKind, invoice.FieldInvoiceTypeCode, invoice.FieldProvider, invoice.FieldProviderState, invoice.FieldProviderTraceID, invoice.FieldProviderLastError, invoice.FieldReverseStep, invoice.FieldRedAdviceNum, invoice.FieldRedConfirmNum, invoice.FieldReverseTraceID, invoice.FieldRedInvoiceNo, invoice.FieldRedPdfPath, invoice.FieldSource:
 			values[i] = new(sql.NullString)
-		case invoice.FieldCreatedAt, invoice.FieldUpdatedAt, invoice.FieldSubmittedAt, invoice.FieldReviewedAt, invoice.FieldIssuedAt:
+		case invoice.FieldCreatedAt, invoice.FieldUpdatedAt, invoice.FieldSubmittedAt, invoice.FieldReviewedAt, invoice.FieldIssuedAt, invoice.FieldTransferDate, invoice.FieldTransferConfirmedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -442,6 +454,39 @@ func (_m *Invoice) assignValues(columns []string, values []any) error {
 				_m.VoidedBy = new(int64)
 				*_m.VoidedBy = value.Int64
 			}
+		case invoice.FieldSource:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source", values[i])
+			} else if value.Valid {
+				_m.Source = value.String
+			}
+		case invoice.FieldTransferDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field transfer_date", values[i])
+			} else if value.Valid {
+				_m.TransferDate = new(time.Time)
+				*_m.TransferDate = value.Time
+			}
+		case invoice.FieldTransferConfirmed:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field transfer_confirmed", values[i])
+			} else if value.Valid {
+				_m.TransferConfirmed = value.Bool
+			}
+		case invoice.FieldTransferConfirmedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field transfer_confirmed_at", values[i])
+			} else if value.Valid {
+				_m.TransferConfirmedAt = new(time.Time)
+				*_m.TransferConfirmedAt = value.Time
+			}
+		case invoice.FieldTransferConfirmedBy:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field transfer_confirmed_by", values[i])
+			} else if value.Valid {
+				_m.TransferConfirmedBy = new(int64)
+				*_m.TransferConfirmedBy = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -622,6 +667,27 @@ func (_m *Invoice) String() string {
 	builder.WriteString(", ")
 	if v := _m.VoidedBy; v != nil {
 		builder.WriteString("voided_by=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("source=")
+	builder.WriteString(_m.Source)
+	builder.WriteString(", ")
+	if v := _m.TransferDate; v != nil {
+		builder.WriteString("transfer_date=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("transfer_confirmed=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TransferConfirmed))
+	builder.WriteString(", ")
+	if v := _m.TransferConfirmedAt; v != nil {
+		builder.WriteString("transfer_confirmed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.TransferConfirmedBy; v != nil {
+		builder.WriteString("transfer_confirmed_by=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteByte(')')

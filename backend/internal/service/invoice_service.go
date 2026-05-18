@@ -39,26 +39,29 @@ import (
 // --- 错误定义 ---
 
 var (
-	ErrInvoiceNotFound          = infraerrors.NotFound("INVOICE_NOT_FOUND", "invoice not found")
-	ErrInvoiceForbidden         = infraerrors.Forbidden("INVOICE_FORBIDDEN", "invoice not accessible")
-	ErrInvoiceNotAvailable      = infraerrors.Forbidden("INVOICE_NOT_AVAILABLE", "invoice feature is not available for this account")
-	ErrInvoiceInvalidTitleType  = infraerrors.BadRequest("INVOICE_INVALID_TITLE_TYPE", "title_type must be personal or business")
-	ErrInvoiceTitleRequired     = infraerrors.BadRequest("INVOICE_TITLE_REQUIRED", "invoice title is required")
-	ErrInvoiceTaxNoRequired     = infraerrors.BadRequest("INVOICE_TAX_NO_REQUIRED", "tax_no is required for business invoices")
-	ErrInvoiceNoOrders          = infraerrors.BadRequest("INVOICE_NO_ORDERS", "at least one order must be selected")
-	ErrInvoiceTooManyOrders     = infraerrors.BadRequest("INVOICE_TOO_MANY_ORDERS", "too many orders selected")
-	ErrInvoiceOrderAlreadyUsed  = infraerrors.Conflict("INVOICE_ORDER_ALREADY_USED", "one or more orders are already bound to another invoice")
-	ErrInvoiceOrderIneligible   = infraerrors.BadRequest("INVOICE_ORDER_INELIGIBLE", "one or more orders are not eligible for invoicing")
-	ErrInvoiceNotPending        = infraerrors.Conflict("INVOICE_NOT_PENDING", "invoice is not in pending state")
-	ErrInvoiceNotApprovable     = infraerrors.Conflict("INVOICE_NOT_APPROVABLE", "invoice cannot be approved in current state")
-	ErrInvoiceNotIssuable       = infraerrors.Conflict("INVOICE_NOT_ISSUABLE", "invoice cannot be issued in current state")
-	ErrInvoiceNotVoidable       = infraerrors.Conflict("INVOICE_NOT_VOIDABLE", "invoice cannot be voided in current state")
-	ErrInvoicePDFMissing        = infraerrors.NotFound("INVOICE_PDF_MISSING", "invoice pdf is not available")
-	ErrInvoiceInvoiceNoRequired = infraerrors.BadRequest("INVOICE_NO_REQUIRED", "invoice_no is required to mark issued")
-	ErrInvoiceInvalidAmount     = infraerrors.BadRequest("INVOICE_INVALID_AMOUNT", "invoice amount must be greater than zero")
-	ErrInvoiceContactEmail      = infraerrors.BadRequest("INVOICE_CONTACT_EMAIL_INVALID", "contact_email format is invalid")
-	ErrInvoiceNotesTooLong      = infraerrors.BadRequest("INVOICE_NOTES_TOO_LONG", "notes is too long")
-	ErrInvoiceReasonTooLong     = infraerrors.BadRequest("INVOICE_REASON_TOO_LONG", "reason is too long")
+	ErrInvoiceNotFound             = infraerrors.NotFound("INVOICE_NOT_FOUND", "invoice not found")
+	ErrInvoiceForbidden            = infraerrors.Forbidden("INVOICE_FORBIDDEN", "invoice not accessible")
+	ErrInvoiceNotAvailable         = infraerrors.Forbidden("INVOICE_NOT_AVAILABLE", "invoice feature is not available for this account")
+	ErrInvoiceInvalidTitleType     = infraerrors.BadRequest("INVOICE_INVALID_TITLE_TYPE", "title_type must be personal or business")
+	ErrInvoiceTitleRequired        = infraerrors.BadRequest("INVOICE_TITLE_REQUIRED", "invoice title is required")
+	ErrInvoiceTaxNoRequired        = infraerrors.BadRequest("INVOICE_TAX_NO_REQUIRED", "tax_no is required for business invoices")
+	ErrInvoiceNoOrders             = infraerrors.BadRequest("INVOICE_NO_ORDERS", "at least one order must be selected")
+	ErrInvoiceTooManyOrders        = infraerrors.BadRequest("INVOICE_TOO_MANY_ORDERS", "too many orders selected")
+	ErrInvoiceOrderAlreadyUsed     = infraerrors.Conflict("INVOICE_ORDER_ALREADY_USED", "one or more orders are already bound to another invoice")
+	ErrInvoiceOrderIneligible      = infraerrors.BadRequest("INVOICE_ORDER_INELIGIBLE", "one or more orders are not eligible for invoicing")
+	ErrInvoiceNotPending           = infraerrors.Conflict("INVOICE_NOT_PENDING", "invoice is not in pending state")
+	ErrInvoiceNotApprovable        = infraerrors.Conflict("INVOICE_NOT_APPROVABLE", "invoice cannot be approved in current state")
+	ErrInvoiceNotIssuable          = infraerrors.Conflict("INVOICE_NOT_ISSUABLE", "invoice cannot be issued in current state")
+	ErrInvoiceNotVoidable          = infraerrors.Conflict("INVOICE_NOT_VOIDABLE", "invoice cannot be voided in current state")
+	ErrInvoicePDFMissing           = infraerrors.NotFound("INVOICE_PDF_MISSING", "invoice pdf is not available")
+	ErrInvoiceInvoiceNoRequired    = infraerrors.BadRequest("INVOICE_NO_REQUIRED", "invoice_no is required to mark issued")
+	ErrInvoiceInvalidAmount        = infraerrors.BadRequest("INVOICE_INVALID_AMOUNT", "invoice amount must be greater than zero")
+	ErrInvoiceContactEmail         = infraerrors.BadRequest("INVOICE_CONTACT_EMAIL_INVALID", "contact_email format is invalid")
+	ErrInvoiceNotesTooLong         = infraerrors.BadRequest("INVOICE_NOTES_TOO_LONG", "notes is too long")
+	ErrInvoiceReasonTooLong        = infraerrors.BadRequest("INVOICE_REASON_TOO_LONG", "reason is too long")
+	ErrInvoiceInvalidTransferDate  = infraerrors.BadRequest("INVOICE_INVALID_TRANSFER_DATE", "对公转账日期格式不正确")
+	ErrInvoiceTransferNotConfirmed = infraerrors.Conflict("INVOICE_TRANSFER_NOT_CONFIRMED", "对公转账发票需先确认收款才能审批")
+	ErrInvoiceNotBankTransfer      = infraerrors.BadRequest("INVOICE_NOT_BANK_TRANSFER", "只有对公转账发票需要确认收款")
 )
 
 // 字段长度限制
@@ -78,6 +81,10 @@ const (
 
 	InvoiceTitleTypePersonal = "personal"
 	InvoiceTitleTypeBusiness = "business"
+
+	// 发票来源（source 字段）
+	InvoiceSourceOrder        = "order"         // 关联系统订单开票
+	InvoiceSourceBankTransfer = "bank_transfer" // 对公转账，无系统订单
 
 	// PaymentOrder.invoice_status 反规范化字段值
 	orderInvoiceStatusPending = "pending"
@@ -154,6 +161,11 @@ type CreateInvoiceRequest struct {
 	BuyerPhone       string `json:"buyer_phone"`
 	BuyerBankName    string `json:"buyer_bank_name"`
 	BuyerBankAccount string `json:"buyer_bank_account"`
+
+	// 对公转账（source=bank_transfer 时无 OrderIDs，改用以下字段）
+	Source         string  `json:"source"`          // "" / "order" 普通；"bank_transfer" 对公转账
+	TransferAmount float64 `json:"transfer_amount"` // 对公转账金额（元）
+	TransferDate   string  `json:"transfer_date"`   // 对公转账日期 YYYY-MM-DD
 }
 
 // InvoiceDTO 列表视图
@@ -184,6 +196,12 @@ type InvoiceDTO struct {
 	BuyerPhone       string `json:"buyer_phone,omitempty"`
 	BuyerBankName    string `json:"buyer_bank_name,omitempty"`
 	BuyerBankAccount string `json:"buyer_bank_account,omitempty"`
+
+	// 对公转账（source=bank_transfer 时有效）
+	Source              string     `json:"source"`
+	TransferDate        *time.Time `json:"transfer_date,omitempty"`
+	TransferConfirmed   bool       `json:"transfer_confirmed"`
+	TransferConfirmedAt *time.Time `json:"transfer_confirmed_at,omitempty"`
 
 	// 挂起的作废申请（仅 admin / 用户自己看到的发票里 inline；nil 表示无挂起申请）
 	PendingVoidRequest *PendingVoidRequestInfo `json:"pending_void_request,omitempty"`
@@ -523,6 +541,12 @@ func (s *InvoiceService) CreateApplication(ctx context.Context, userID int64, re
 	if titleType == InvoiceTitleTypePersonal {
 		taxNo = ""
 	}
+
+	// 对公转账：系统内无订单，用户手填金额/日期，走独立创建路径。
+	if strings.TrimSpace(req.Source) == InvoiceSourceBankTransfer {
+		return s.createBankTransferApplication(ctx, userID, req, titleType, title, taxNo)
+	}
+
 	if len(req.OrderIDs) == 0 {
 		return nil, ErrInvoiceNoOrders
 	}
@@ -665,6 +689,115 @@ func (s *InvoiceService) CreateApplication(ctx context.Context, userID int64, re
 	s.logTransition(inv.ID, userID, "", InvoiceStatusPending, userID, fmt.Sprintf("create amount=%.2f orders=%d", amount, len(orders)))
 
 	return s.GetMyInvoiceDetail(ctx, userID, inv.ID)
+}
+
+// createBankTransferApplication 创建对公转账发票（无系统订单，金额/日期由用户手填）。
+// titleType/title/taxNo 已由 CreateApplication 校验完毕。
+func (s *InvoiceService) createBankTransferApplication(
+	ctx context.Context, userID int64, req CreateInvoiceRequest, titleType, title, taxNo string,
+) (*InvoiceDetailDTO, error) {
+	amount := req.TransferAmount
+	if amount <= 0 {
+		return nil, ErrInvoiceInvalidAmount
+	}
+	if minAmt := s.GetInvoiceMinAmount(ctx); minAmt > 0 && amount < minAmt {
+		return nil, errInvoiceAmountBelowMinimum(minAmt)
+	}
+	transferDate, err := parseTransferDate(req.TransferDate)
+	if err != nil {
+		return nil, err
+	}
+	contactEmail := strings.TrimSpace(req.ContactEmail)
+	if contactEmail != "" && !looksLikeEmail(contactEmail) {
+		return nil, ErrInvoiceContactEmail
+	}
+	notes := strings.TrimSpace(req.Notes)
+	if len(notes) > maxInvoiceNotesLen {
+		return nil, ErrInvoiceNotesTooLong
+	}
+
+	user, err := s.entClient.User.Get(ctx, userID)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return nil, ErrInvoiceForbidden
+		}
+		return nil, fmt.Errorf("load user: %w", err)
+	}
+
+	now := time.Now()
+	inv, err := s.entClient.Invoice.Create().
+		SetUserID(userID).
+		SetUserEmail(user.Email).
+		SetTitleType(titleType).
+		SetTitle(title).
+		SetTaxNo(taxNo).
+		SetContactEmail(contactEmail).
+		SetBuyerAddress(strings.TrimSpace(req.BuyerAddress)).
+		SetBuyerPhone(strings.TrimSpace(req.BuyerPhone)).
+		SetBuyerBankName(strings.TrimSpace(req.BuyerBankName)).
+		SetBuyerBankAccount(strings.TrimSpace(req.BuyerBankAccount)).
+		SetAmount(amount).
+		SetCurrency("CNY").
+		SetNotes(notes).
+		SetStatus(InvoiceStatusPending).
+		SetSubmittedAt(now).
+		SetProvider(InvoiceProviderManual).
+		SetSource(InvoiceSourceBankTransfer).
+		SetTransferDate(transferDate).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("create bank-transfer invoice: %w", err)
+	}
+	applicationNo := fmt.Sprintf("APP-%s-%06d", now.Format("20060102"), inv.ID)
+	if _, err := s.entClient.Invoice.UpdateOneID(inv.ID).SetApplicationNo(applicationNo).Save(ctx); err != nil {
+		return nil, fmt.Errorf("set application_no: %w", err)
+	}
+	s.logTransition(inv.ID, userID, "", InvoiceStatusPending, userID,
+		fmt.Sprintf("create bank_transfer amount=%.2f", amount))
+	return s.GetMyInvoiceDetail(ctx, userID, inv.ID)
+}
+
+// parseTransferDate 解析用户填写的对公转账日期，接受 YYYY-MM-DD 等常见格式。
+func parseTransferDate(raw string) (time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return time.Time{}, ErrInvoiceInvalidTransferDate
+	}
+	for _, layout := range []string{"2006-01-02", "2006/01/02", time.RFC3339, "2006-01-02 15:04:05"} {
+		if t, err := time.Parse(layout, raw); err == nil {
+			return t, nil
+		}
+	}
+	return time.Time{}, ErrInvoiceInvalidTransferDate
+}
+
+// AdminConfirmTransferReceived 管理员确认对公转账发票已收款；确认后该发票方可审批。
+func (s *InvoiceService) AdminConfirmTransferReceived(ctx context.Context, adminID, invoiceID int64) error {
+	inv, err := s.entClient.Invoice.Get(ctx, invoiceID)
+	if err != nil {
+		if dbent.IsNotFound(err) {
+			return ErrInvoiceNotFound
+		}
+		return fmt.Errorf("load invoice: %w", err)
+	}
+	if normalizeInvoiceSource(inv.Source) != InvoiceSourceBankTransfer {
+		return ErrInvoiceNotBankTransfer
+	}
+	if inv.Status != InvoiceStatusPending {
+		return ErrInvoiceNotPending
+	}
+	if inv.TransferConfirmed {
+		return nil // 幂等
+	}
+	if _, err := s.entClient.Invoice.UpdateOneID(invoiceID).
+		SetTransferConfirmed(true).
+		SetTransferConfirmedAt(time.Now()).
+		SetTransferConfirmedBy(adminID).
+		Save(ctx); err != nil {
+		return fmt.Errorf("confirm transfer received: %w", err)
+	}
+	s.logTransition(invoiceID, inv.UserID, InvoiceStatusPending, InvoiceStatusPending, adminID, "confirm bank transfer received")
+	return nil
 }
 
 // ListMyInvoices 用户自己的发票列表（带分页）。
@@ -949,6 +1082,11 @@ func (s *InvoiceService) adminApproveWith(ctx context.Context, adminID, invoiceI
 	}
 	if inv.Status != InvoiceStatusPending {
 		return ErrInvoiceNotApprovable
+	}
+
+	// 对公转账发票必须先「确认收款」才能审批开票
+	if normalizeInvoiceSource(inv.Source) == InvoiceSourceBankTransfer && !inv.TransferConfirmed {
+		return ErrInvoiceTransferNotConfirmed
 	}
 
 	// 专票必填校验：税号 + 地址 + 电话 + 开户行 + 银行账号（财云通强校验，
@@ -1756,29 +1894,41 @@ func invoiceItemCounts(ctx context.Context, client *dbent.Client, invoiceIDs []i
 
 func toInvoiceDTO(inv *dbent.Invoice, orderCount int) InvoiceDTO {
 	return InvoiceDTO{
-		ID:                inv.ID,
-		ApplicationNo:     inv.ApplicationNo,
-		InvoiceNo:         inv.InvoiceNo,
-		UserID:            inv.UserID,
-		UserEmail:         inv.UserEmail,
-		TitleType:         inv.TitleType,
-		Title:             inv.Title,
-		TaxNo:             inv.TaxNo,
-		Amount:            inv.Amount,
-		Currency:          inv.Currency,
-		Status:            inv.Status,
-		OrderCount:        orderCount,
-		SubmittedAt:       inv.SubmittedAt,
-		ContactEmail:      inv.ContactEmail,
-		Provider:          inv.Provider,
-		ProviderState:     inv.ProviderState,
-		InvoiceKind:       inv.InvoiceKind,
-		ProviderLastError: inv.ProviderLastError,
-		BuyerAddress:      inv.BuyerAddress,
-		BuyerPhone:        inv.BuyerPhone,
-		BuyerBankName:     inv.BuyerBankName,
-		BuyerBankAccount:  inv.BuyerBankAccount,
+		ID:                  inv.ID,
+		ApplicationNo:       inv.ApplicationNo,
+		InvoiceNo:           inv.InvoiceNo,
+		UserID:              inv.UserID,
+		UserEmail:           inv.UserEmail,
+		TitleType:           inv.TitleType,
+		Title:               inv.Title,
+		TaxNo:               inv.TaxNo,
+		Amount:              inv.Amount,
+		Currency:            inv.Currency,
+		Status:              inv.Status,
+		OrderCount:          orderCount,
+		SubmittedAt:         inv.SubmittedAt,
+		ContactEmail:        inv.ContactEmail,
+		Provider:            inv.Provider,
+		ProviderState:       inv.ProviderState,
+		InvoiceKind:         inv.InvoiceKind,
+		ProviderLastError:   inv.ProviderLastError,
+		BuyerAddress:        inv.BuyerAddress,
+		BuyerPhone:          inv.BuyerPhone,
+		BuyerBankName:       inv.BuyerBankName,
+		BuyerBankAccount:    inv.BuyerBankAccount,
+		Source:              normalizeInvoiceSource(inv.Source),
+		TransferDate:        inv.TransferDate,
+		TransferConfirmed:   inv.TransferConfirmed,
+		TransferConfirmedAt: inv.TransferConfirmedAt,
 	}
+}
+
+// normalizeInvoiceSource 兜底：迁移前的历史发票 source 为空，视为 order。
+func normalizeInvoiceSource(s string) string {
+	if strings.TrimSpace(s) == "" {
+		return InvoiceSourceOrder
+	}
+	return s
 }
 
 // orderProductName 生成发票行的商品名称。

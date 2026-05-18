@@ -20284,65 +20284,71 @@ func (m *IdentityAdoptionDecisionMutation) ResetEdge(name string) error {
 // InvoiceMutation represents an operation that mutates the Invoice nodes in the graph.
 type InvoiceMutation struct {
 	config
-	op                      Op
-	typ                     string
-	id                      *int64
-	created_at              *time.Time
-	updated_at              *time.Time
-	user_email              *string
-	application_no          *string
-	title_type              *string
-	title                   *string
-	tax_no                  *string
-	contact_email           *string
-	buyer_address           *string
-	buyer_phone             *string
-	buyer_bank_name         *string
-	buyer_bank_account      *string
-	amount                  *float64
-	addamount               *float64
-	currency                *string
-	notes                   *string
-	status                  *string
-	submitted_at            *time.Time
-	reviewed_at             *time.Time
-	reviewed_by             *int64
-	addreviewed_by          *int64
-	review_notes            *string
-	issued_at               *time.Time
-	invoice_no              *string
-	pdf_path                *string
-	pdf_storage             *string
-	pdf_size                *int64
-	addpdf_size             *int64
-	pdf_sha256              *string
-	pdf_original_name       *string
-	invoice_kind            *string
-	invoice_type_code       *string
-	provider                *string
-	provider_state          *string
-	provider_trace_id       *string
-	provider_last_error     *string
-	provider_retry_count    *int
-	addprovider_retry_count *int
-	provider_payload        *map[string]interface{}
-	reverse_step            *string
-	red_advice_num          *string
-	red_confirm_num         *string
-	reverse_trace_id        *string
-	red_invoice_no          *string
-	red_pdf_path            *string
-	voided_by               *int64
-	addvoided_by            *int64
-	clearedFields           map[string]struct{}
-	user                    *int64
-	cleareduser             bool
-	items                   map[int64]struct{}
-	removeditems            map[int64]struct{}
-	cleareditems            bool
-	done                    bool
-	oldValue                func(context.Context) (*Invoice, error)
-	predicates              []predicate.Invoice
+	op                       Op
+	typ                      string
+	id                       *int64
+	created_at               *time.Time
+	updated_at               *time.Time
+	user_email               *string
+	application_no           *string
+	title_type               *string
+	title                    *string
+	tax_no                   *string
+	contact_email            *string
+	buyer_address            *string
+	buyer_phone              *string
+	buyer_bank_name          *string
+	buyer_bank_account       *string
+	amount                   *float64
+	addamount                *float64
+	currency                 *string
+	notes                    *string
+	status                   *string
+	submitted_at             *time.Time
+	reviewed_at              *time.Time
+	reviewed_by              *int64
+	addreviewed_by           *int64
+	review_notes             *string
+	issued_at                *time.Time
+	invoice_no               *string
+	pdf_path                 *string
+	pdf_storage              *string
+	pdf_size                 *int64
+	addpdf_size              *int64
+	pdf_sha256               *string
+	pdf_original_name        *string
+	invoice_kind             *string
+	invoice_type_code        *string
+	provider                 *string
+	provider_state           *string
+	provider_trace_id        *string
+	provider_last_error      *string
+	provider_retry_count     *int
+	addprovider_retry_count  *int
+	provider_payload         *map[string]interface{}
+	reverse_step             *string
+	red_advice_num           *string
+	red_confirm_num          *string
+	reverse_trace_id         *string
+	red_invoice_no           *string
+	red_pdf_path             *string
+	voided_by                *int64
+	addvoided_by             *int64
+	source                   *string
+	transfer_date            *time.Time
+	transfer_confirmed       *bool
+	transfer_confirmed_at    *time.Time
+	transfer_confirmed_by    *int64
+	addtransfer_confirmed_by *int64
+	clearedFields            map[string]struct{}
+	user                     *int64
+	cleareduser              bool
+	items                    map[int64]struct{}
+	removeditems             map[int64]struct{}
+	cleareditems             bool
+	done                     bool
+	oldValue                 func(context.Context) (*Invoice, error)
+	predicates               []predicate.Invoice
 }
 
 var _ ent.Mutation = (*InvoiceMutation)(nil)
@@ -22158,6 +22164,246 @@ func (m *InvoiceMutation) ResetVoidedBy() {
 	delete(m.clearedFields, invoice.FieldVoidedBy)
 }
 
+// SetSource sets the "source" field.
+func (m *InvoiceMutation) SetSource(s string) {
+	m.source = &s
+}
+
+// Source returns the value of the "source" field in the mutation.
+func (m *InvoiceMutation) Source() (r string, exists bool) {
+	v := m.source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSource returns the old "source" field's value of the Invoice entity.
+// If the Invoice object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InvoiceMutation) OldSource(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSource: %w", err)
+	}
+	return oldValue.Source, nil
+}
+
+// ResetSource resets all changes to the "source" field.
+func (m *InvoiceMutation) ResetSource() {
+	m.source = nil
+}
+
+// SetTransferDate sets the "transfer_date" field.
+func (m *InvoiceMutation) SetTransferDate(t time.Time) {
+	m.transfer_date = &t
+}
+
+// TransferDate returns the value of the "transfer_date" field in the mutation.
+func (m *InvoiceMutation) TransferDate() (r time.Time, exists bool) {
+	v := m.transfer_date
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransferDate returns the old "transfer_date" field's value of the Invoice entity.
+// If the Invoice object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InvoiceMutation) OldTransferDate(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransferDate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransferDate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransferDate: %w", err)
+	}
+	return oldValue.TransferDate, nil
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (m *InvoiceMutation) ClearTransferDate() {
+	m.transfer_date = nil
+	m.clearedFields[invoice.FieldTransferDate] = struct{}{}
+}
+
+// TransferDateCleared returns if the "transfer_date" field was cleared in this mutation.
+func (m *InvoiceMutation) TransferDateCleared() bool {
+	_, ok := m.clearedFields[invoice.FieldTransferDate]
+	return ok
+}
+
+// ResetTransferDate resets all changes to the "transfer_date" field.
+func (m *InvoiceMutation) ResetTransferDate() {
+	m.transfer_date = nil
+	delete(m.clearedFields, invoice.FieldTransferDate)
+}
+
+// SetTransferConfirmed sets the "transfer_confirmed" field.
+func (m *InvoiceMutation) SetTransferConfirmed(b bool) {
+	m.transfer_confirmed = &b
+}
+
+// TransferConfirmed returns the value of the "transfer_confirmed" field in the mutation.
+func (m *InvoiceMutation) TransferConfirmed() (r bool, exists bool) {
+	v := m.transfer_confirmed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransferConfirmed returns the old "transfer_confirmed" field's value of the Invoice entity.
+// If the Invoice object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InvoiceMutation) OldTransferConfirmed(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransferConfirmed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransferConfirmed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransferConfirmed: %w", err)
+	}
+	return oldValue.TransferConfirmed, nil
+}
+
+// ResetTransferConfirmed resets all changes to the "transfer_confirmed" field.
+func (m *InvoiceMutation) ResetTransferConfirmed() {
+	m.transfer_confirmed = nil
+}
+
+// SetTransferConfirmedAt sets the "transfer_confirmed_at" field.
+func (m *InvoiceMutation) SetTransferConfirmedAt(t time.Time) {
+	m.transfer_confirmed_at = &t
+}
+
+// TransferConfirmedAt returns the value of the "transfer_confirmed_at" field in the mutation.
+func (m *InvoiceMutation) TransferConfirmedAt() (r time.Time, exists bool) {
+	v := m.transfer_confirmed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransferConfirmedAt returns the old "transfer_confirmed_at" field's value of the Invoice entity.
+// If the Invoice object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InvoiceMutation) OldTransferConfirmedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransferConfirmedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransferConfirmedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransferConfirmedAt: %w", err)
+	}
+	return oldValue.TransferConfirmedAt, nil
+}
+
+// ClearTransferConfirmedAt clears the value of the "transfer_confirmed_at" field.
+func (m *InvoiceMutation) ClearTransferConfirmedAt() {
+	m.transfer_confirmed_at = nil
+	m.clearedFields[invoice.FieldTransferConfirmedAt] = struct{}{}
+}
+
+// TransferConfirmedAtCleared returns if the "transfer_confirmed_at" field was cleared in this mutation.
+func (m *InvoiceMutation) TransferConfirmedAtCleared() bool {
+	_, ok := m.clearedFields[invoice.FieldTransferConfirmedAt]
+	return ok
+}
+
+// ResetTransferConfirmedAt resets all changes to the "transfer_confirmed_at" field.
+func (m *InvoiceMutation) ResetTransferConfirmedAt() {
+	m.transfer_confirmed_at = nil
+	delete(m.clearedFields, invoice.FieldTransferConfirmedAt)
+}
+
+// SetTransferConfirmedBy sets the "transfer_confirmed_by" field.
+func (m *InvoiceMutation) SetTransferConfirmedBy(i int64) {
+	m.transfer_confirmed_by = &i
+	m.addtransfer_confirmed_by = nil
+}
+
+// TransferConfirmedBy returns the value of the "transfer_confirmed_by" field in the mutation.
+func (m *InvoiceMutation) TransferConfirmedBy() (r int64, exists bool) {
+	v := m.transfer_confirmed_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTransferConfirmedBy returns the old "transfer_confirmed_by" field's value of the Invoice entity.
+// If the Invoice object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *InvoiceMutation) OldTransferConfirmedBy(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTransferConfirmedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTransferConfirmedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTransferConfirmedBy: %w", err)
+	}
+	return oldValue.TransferConfirmedBy, nil
+}
+
+// AddTransferConfirmedBy adds i to the "transfer_confirmed_by" field.
+func (m *InvoiceMutation) AddTransferConfirmedBy(i int64) {
+	if m.addtransfer_confirmed_by != nil {
+		*m.addtransfer_confirmed_by += i
+	} else {
+		m.addtransfer_confirmed_by = &i
+	}
+}
+
+// AddedTransferConfirmedBy returns the value that was added to the "transfer_confirmed_by" field in this mutation.
+func (m *InvoiceMutation) AddedTransferConfirmedBy() (r int64, exists bool) {
+	v := m.addtransfer_confirmed_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTransferConfirmedBy clears the value of the "transfer_confirmed_by" field.
+func (m *InvoiceMutation) ClearTransferConfirmedBy() {
+	m.transfer_confirmed_by = nil
+	m.addtransfer_confirmed_by = nil
+	m.clearedFields[invoice.FieldTransferConfirmedBy] = struct{}{}
+}
+
+// TransferConfirmedByCleared returns if the "transfer_confirmed_by" field was cleared in this mutation.
+func (m *InvoiceMutation) TransferConfirmedByCleared() bool {
+	_, ok := m.clearedFields[invoice.FieldTransferConfirmedBy]
+	return ok
+}
+
+// ResetTransferConfirmedBy resets all changes to the "transfer_confirmed_by" field.
+func (m *InvoiceMutation) ResetTransferConfirmedBy() {
+	m.transfer_confirmed_by = nil
+	m.addtransfer_confirmed_by = nil
+	delete(m.clearedFields, invoice.FieldTransferConfirmedBy)
+}
+
 // ClearUser clears the "user" edge to the User entity.
 func (m *InvoiceMutation) ClearUser() {
 	m.cleareduser = true
@@ -22273,7 +22519,7 @@ func (m *InvoiceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InvoiceMutation) Fields() []string {
-	fields := make([]string, 0, 43)
+	fields := make([]string, 0, 48)
 	if m.created_at != nil {
 		fields = append(fields, invoice.FieldCreatedAt)
 	}
@@ -22403,6 +22649,21 @@ func (m *InvoiceMutation) Fields() []string {
 	if m.voided_by != nil {
 		fields = append(fields, invoice.FieldVoidedBy)
 	}
+	if m.source != nil {
+		fields = append(fields, invoice.FieldSource)
+	}
+	if m.transfer_date != nil {
+		fields = append(fields, invoice.FieldTransferDate)
+	}
+	if m.transfer_confirmed != nil {
+		fields = append(fields, invoice.FieldTransferConfirmed)
+	}
+	if m.transfer_confirmed_at != nil {
+		fields = append(fields, invoice.FieldTransferConfirmedAt)
+	}
+	if m.transfer_confirmed_by != nil {
+		fields = append(fields, invoice.FieldTransferConfirmedBy)
+	}
 	return fields
 }
 
@@ -22497,6 +22758,16 @@ func (m *InvoiceMutation) Field(name string) (ent.Value, bool) {
 		return m.RedPdfPath()
 	case invoice.FieldVoidedBy:
 		return m.VoidedBy()
+	case invoice.FieldSource:
+		return m.Source()
+	case invoice.FieldTransferDate:
+		return m.TransferDate()
+	case invoice.FieldTransferConfirmed:
+		return m.TransferConfirmed()
+	case invoice.FieldTransferConfirmedAt:
+		return m.TransferConfirmedAt()
+	case invoice.FieldTransferConfirmedBy:
+		return m.TransferConfirmedBy()
 	}
 	return nil, false
 }
@@ -22592,6 +22863,16 @@ func (m *InvoiceMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldRedPdfPath(ctx)
 	case invoice.FieldVoidedBy:
 		return m.OldVoidedBy(ctx)
+	case invoice.FieldSource:
+		return m.OldSource(ctx)
+	case invoice.FieldTransferDate:
+		return m.OldTransferDate(ctx)
+	case invoice.FieldTransferConfirmed:
+		return m.OldTransferConfirmed(ctx)
+	case invoice.FieldTransferConfirmedAt:
+		return m.OldTransferConfirmedAt(ctx)
+	case invoice.FieldTransferConfirmedBy:
+		return m.OldTransferConfirmedBy(ctx)
 	}
 	return nil, fmt.Errorf("unknown Invoice field %s", name)
 }
@@ -22902,6 +23183,41 @@ func (m *InvoiceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetVoidedBy(v)
 		return nil
+	case invoice.FieldSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSource(v)
+		return nil
+	case invoice.FieldTransferDate:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransferDate(v)
+		return nil
+	case invoice.FieldTransferConfirmed:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransferConfirmed(v)
+		return nil
+	case invoice.FieldTransferConfirmedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransferConfirmedAt(v)
+		return nil
+	case invoice.FieldTransferConfirmedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTransferConfirmedBy(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Invoice field %s", name)
 }
@@ -22925,6 +23241,9 @@ func (m *InvoiceMutation) AddedFields() []string {
 	if m.addvoided_by != nil {
 		fields = append(fields, invoice.FieldVoidedBy)
 	}
+	if m.addtransfer_confirmed_by != nil {
+		fields = append(fields, invoice.FieldTransferConfirmedBy)
+	}
 	return fields
 }
 
@@ -22943,6 +23262,8 @@ func (m *InvoiceMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedProviderRetryCount()
 	case invoice.FieldVoidedBy:
 		return m.AddedVoidedBy()
+	case invoice.FieldTransferConfirmedBy:
+		return m.AddedTransferConfirmedBy()
 	}
 	return nil, false
 }
@@ -22987,6 +23308,13 @@ func (m *InvoiceMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddVoidedBy(v)
 		return nil
+	case invoice.FieldTransferConfirmedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTransferConfirmedBy(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Invoice numeric field %s", name)
 }
@@ -23009,6 +23337,15 @@ func (m *InvoiceMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(invoice.FieldVoidedBy) {
 		fields = append(fields, invoice.FieldVoidedBy)
+	}
+	if m.FieldCleared(invoice.FieldTransferDate) {
+		fields = append(fields, invoice.FieldTransferDate)
+	}
+	if m.FieldCleared(invoice.FieldTransferConfirmedAt) {
+		fields = append(fields, invoice.FieldTransferConfirmedAt)
+	}
+	if m.FieldCleared(invoice.FieldTransferConfirmedBy) {
+		fields = append(fields, invoice.FieldTransferConfirmedBy)
 	}
 	return fields
 }
@@ -23038,6 +23375,15 @@ func (m *InvoiceMutation) ClearField(name string) error {
 		return nil
 	case invoice.FieldVoidedBy:
 		m.ClearVoidedBy()
+		return nil
+	case invoice.FieldTransferDate:
+		m.ClearTransferDate()
+		return nil
+	case invoice.FieldTransferConfirmedAt:
+		m.ClearTransferConfirmedAt()
+		return nil
+	case invoice.FieldTransferConfirmedBy:
+		m.ClearTransferConfirmedBy()
 		return nil
 	}
 	return fmt.Errorf("unknown Invoice nullable field %s", name)
@@ -23175,6 +23521,21 @@ func (m *InvoiceMutation) ResetField(name string) error {
 		return nil
 	case invoice.FieldVoidedBy:
 		m.ResetVoidedBy()
+		return nil
+	case invoice.FieldSource:
+		m.ResetSource()
+		return nil
+	case invoice.FieldTransferDate:
+		m.ResetTransferDate()
+		return nil
+	case invoice.FieldTransferConfirmed:
+		m.ResetTransferConfirmed()
+		return nil
+	case invoice.FieldTransferConfirmedAt:
+		m.ResetTransferConfirmedAt()
+		return nil
+	case invoice.FieldTransferConfirmedBy:
+		m.ResetTransferConfirmedBy()
 		return nil
 	}
 	return fmt.Errorf("unknown Invoice field %s", name)

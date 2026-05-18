@@ -75,6 +75,7 @@ func RegisterInvoiceRoutes(
 		// v3：自动开票 / 自动红冲失败处理
 		adminGroup.POST("/:id/retry-issue", adminInvoiceHandler.RetryIssue)
 		adminGroup.POST("/:id/retry-reverse", adminInvoiceHandler.RetryReverse)
+		adminGroup.POST("/:id/confirm-transfer", adminInvoiceHandler.ConfirmTransfer)
 		adminGroup.POST("/:id/mark-reversed", adminInvoiceHandler.MarkReversed)
 	}
 

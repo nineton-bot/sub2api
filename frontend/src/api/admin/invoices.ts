@@ -54,6 +54,11 @@ export const adminInvoiceAPI = {
     return apiClient.post<{ message: string }>(`/admin/invoices/${id}/retry-reverse`, {})
   },
 
+  /** 对公转账：管理员确认已收款（确认后该发票方可审批）。 */
+  confirmTransfer(id: number) {
+    return apiClient.post<{ message: string }>(`/admin/invoices/${id}/confirm-transfer`, {})
+  },
+
   /** v3：标记「已在第三方平台手工红冲」兜底通道。 */
   markReversed(id: number, redInvoiceNo: string) {
     return apiClient.post<{ message: string }>(`/admin/invoices/${id}/mark-reversed`, { red_invoice_no: redInvoiceNo })

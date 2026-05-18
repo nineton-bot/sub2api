@@ -67,6 +67,12 @@ export interface Invoice {
   buyer_bank_name?: string
   buyer_bank_account?: string
 
+  // 对公转账（source=bank_transfer 时有效）
+  source?: 'order' | 'bank_transfer'
+  transfer_date?: string | null
+  transfer_confirmed?: boolean
+  transfer_confirmed_at?: string | null
+
   /** 用户对该发票提交的作废申请（仅当存在 pending_review 时由后端 inline）。 */
   pending_void_request?: PendingVoidRequestInfo
 }
@@ -113,4 +119,9 @@ export interface CreateInvoiceRequest {
   buyer_phone?: string
   buyer_bank_name?: string
   buyer_bank_account?: string
+
+  // 对公转账：source=bank_transfer 时 order_ids 为空，改用以下字段
+  source?: 'order' | 'bank_transfer'
+  transfer_amount?: number
+  transfer_date?: string
 }

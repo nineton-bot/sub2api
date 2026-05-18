@@ -100,6 +100,16 @@ const (
 	FieldRedPdfPath = "red_pdf_path"
 	// FieldVoidedBy holds the string denoting the voided_by field in the database.
 	FieldVoidedBy = "voided_by"
+	// FieldSource holds the string denoting the source field in the database.
+	FieldSource = "source"
+	// FieldTransferDate holds the string denoting the transfer_date field in the database.
+	FieldTransferDate = "transfer_date"
+	// FieldTransferConfirmed holds the string denoting the transfer_confirmed field in the database.
+	FieldTransferConfirmed = "transfer_confirmed"
+	// FieldTransferConfirmedAt holds the string denoting the transfer_confirmed_at field in the database.
+	FieldTransferConfirmedAt = "transfer_confirmed_at"
+	// FieldTransferConfirmedBy holds the string denoting the transfer_confirmed_by field in the database.
+	FieldTransferConfirmedBy = "transfer_confirmed_by"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeItems holds the string denoting the items edge name in mutations.
@@ -168,6 +178,11 @@ var Columns = []string{
 	FieldRedInvoiceNo,
 	FieldRedPdfPath,
 	FieldVoidedBy,
+	FieldSource,
+	FieldTransferDate,
+	FieldTransferConfirmed,
+	FieldTransferConfirmedAt,
+	FieldTransferConfirmedBy,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -303,6 +318,12 @@ var (
 	DefaultRedPdfPath string
 	// RedPdfPathValidator is a validator for the "red_pdf_path" field. It is called by the builders before save.
 	RedPdfPathValidator func(string) error
+	// DefaultSource holds the default value on creation for the "source" field.
+	DefaultSource string
+	// SourceValidator is a validator for the "source" field. It is called by the builders before save.
+	SourceValidator func(string) error
+	// DefaultTransferConfirmed holds the default value on creation for the "transfer_confirmed" field.
+	DefaultTransferConfirmed bool
 )
 
 // OrderOption defines the ordering options for the Invoice queries.
@@ -521,6 +542,31 @@ func ByRedPdfPath(opts ...sql.OrderTermOption) OrderOption {
 // ByVoidedBy orders the results by the voided_by field.
 func ByVoidedBy(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVoidedBy, opts...).ToFunc()
+}
+
+// BySource orders the results by the source field.
+func BySource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSource, opts...).ToFunc()
+}
+
+// ByTransferDate orders the results by the transfer_date field.
+func ByTransferDate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTransferDate, opts...).ToFunc()
+}
+
+// ByTransferConfirmed orders the results by the transfer_confirmed field.
+func ByTransferConfirmed(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTransferConfirmed, opts...).ToFunc()
+}
+
+// ByTransferConfirmedAt orders the results by the transfer_confirmed_at field.
+func ByTransferConfirmedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTransferConfirmedAt, opts...).ToFunc()
+}
+
+// ByTransferConfirmedBy orders the results by the transfer_confirmed_by field.
+func ByTransferConfirmedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTransferConfirmedBy, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.

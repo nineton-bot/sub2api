@@ -667,6 +667,101 @@ func (_u *InvoiceUpdate) ClearVoidedBy() *InvoiceUpdate {
 	return _u
 }
 
+// SetSource sets the "source" field.
+func (_u *InvoiceUpdate) SetSource(v string) *InvoiceUpdate {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *InvoiceUpdate) SetNillableSource(v *string) *InvoiceUpdate {
+	if v != nil {
+		_u.SetSource(*v)
+	}
+	return _u
+}
+
+// SetTransferDate sets the "transfer_date" field.
+func (_u *InvoiceUpdate) SetTransferDate(v time.Time) *InvoiceUpdate {
+	_u.mutation.SetTransferDate(v)
+	return _u
+}
+
+// SetNillableTransferDate sets the "transfer_date" field if the given value is not nil.
+func (_u *InvoiceUpdate) SetNillableTransferDate(v *time.Time) *InvoiceUpdate {
+	if v != nil {
+		_u.SetTransferDate(*v)
+	}
+	return _u
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (_u *InvoiceUpdate) ClearTransferDate() *InvoiceUpdate {
+	_u.mutation.ClearTransferDate()
+	return _u
+}
+
+// SetTransferConfirmed sets the "transfer_confirmed" field.
+func (_u *InvoiceUpdate) SetTransferConfirmed(v bool) *InvoiceUpdate {
+	_u.mutation.SetTransferConfirmed(v)
+	return _u
+}
+
+// SetNillableTransferConfirmed sets the "transfer_confirmed" field if the given value is not nil.
+func (_u *InvoiceUpdate) SetNillableTransferConfirmed(v *bool) *InvoiceUpdate {
+	if v != nil {
+		_u.SetTransferConfirmed(*v)
+	}
+	return _u
+}
+
+// SetTransferConfirmedAt sets the "transfer_confirmed_at" field.
+func (_u *InvoiceUpdate) SetTransferConfirmedAt(v time.Time) *InvoiceUpdate {
+	_u.mutation.SetTransferConfirmedAt(v)
+	return _u
+}
+
+// SetNillableTransferConfirmedAt sets the "transfer_confirmed_at" field if the given value is not nil.
+func (_u *InvoiceUpdate) SetNillableTransferConfirmedAt(v *time.Time) *InvoiceUpdate {
+	if v != nil {
+		_u.SetTransferConfirmedAt(*v)
+	}
+	return _u
+}
+
+// ClearTransferConfirmedAt clears the value of the "transfer_confirmed_at" field.
+func (_u *InvoiceUpdate) ClearTransferConfirmedAt() *InvoiceUpdate {
+	_u.mutation.ClearTransferConfirmedAt()
+	return _u
+}
+
+// SetTransferConfirmedBy sets the "transfer_confirmed_by" field.
+func (_u *InvoiceUpdate) SetTransferConfirmedBy(v int64) *InvoiceUpdate {
+	_u.mutation.ResetTransferConfirmedBy()
+	_u.mutation.SetTransferConfirmedBy(v)
+	return _u
+}
+
+// SetNillableTransferConfirmedBy sets the "transfer_confirmed_by" field if the given value is not nil.
+func (_u *InvoiceUpdate) SetNillableTransferConfirmedBy(v *int64) *InvoiceUpdate {
+	if v != nil {
+		_u.SetTransferConfirmedBy(*v)
+	}
+	return _u
+}
+
+// AddTransferConfirmedBy adds value to the "transfer_confirmed_by" field.
+func (_u *InvoiceUpdate) AddTransferConfirmedBy(v int64) *InvoiceUpdate {
+	_u.mutation.AddTransferConfirmedBy(v)
+	return _u
+}
+
+// ClearTransferConfirmedBy clears the value of the "transfer_confirmed_by" field.
+func (_u *InvoiceUpdate) ClearTransferConfirmedBy() *InvoiceUpdate {
+	_u.mutation.ClearTransferConfirmedBy()
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *InvoiceUpdate) SetUser(v *User) *InvoiceUpdate {
 	return _u.SetUserID(v.ID)
@@ -897,6 +992,11 @@ func (_u *InvoiceUpdate) check() error {
 			return &ValidationError{Name: "red_pdf_path", err: fmt.Errorf(`ent: validator failed for field "Invoice.red_pdf_path": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Source(); ok {
+		if err := invoice.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Invoice.source": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Invoice.user"`)
 	}
@@ -1067,6 +1167,33 @@ func (_u *InvoiceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.VoidedByCleared() {
 		_spec.ClearField(invoice.FieldVoidedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(invoice.FieldSource, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.TransferDate(); ok {
+		_spec.SetField(invoice.FieldTransferDate, field.TypeTime, value)
+	}
+	if _u.mutation.TransferDateCleared() {
+		_spec.ClearField(invoice.FieldTransferDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TransferConfirmed(); ok {
+		_spec.SetField(invoice.FieldTransferConfirmed, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TransferConfirmedAt(); ok {
+		_spec.SetField(invoice.FieldTransferConfirmedAt, field.TypeTime, value)
+	}
+	if _u.mutation.TransferConfirmedAtCleared() {
+		_spec.ClearField(invoice.FieldTransferConfirmedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TransferConfirmedBy(); ok {
+		_spec.SetField(invoice.FieldTransferConfirmedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedTransferConfirmedBy(); ok {
+		_spec.AddField(invoice.FieldTransferConfirmedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.TransferConfirmedByCleared() {
+		_spec.ClearField(invoice.FieldTransferConfirmedBy, field.TypeInt64)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1799,6 +1926,101 @@ func (_u *InvoiceUpdateOne) ClearVoidedBy() *InvoiceUpdateOne {
 	return _u
 }
 
+// SetSource sets the "source" field.
+func (_u *InvoiceUpdateOne) SetSource(v string) *InvoiceUpdateOne {
+	_u.mutation.SetSource(v)
+	return _u
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_u *InvoiceUpdateOne) SetNillableSource(v *string) *InvoiceUpdateOne {
+	if v != nil {
+		_u.SetSource(*v)
+	}
+	return _u
+}
+
+// SetTransferDate sets the "transfer_date" field.
+func (_u *InvoiceUpdateOne) SetTransferDate(v time.Time) *InvoiceUpdateOne {
+	_u.mutation.SetTransferDate(v)
+	return _u
+}
+
+// SetNillableTransferDate sets the "transfer_date" field if the given value is not nil.
+func (_u *InvoiceUpdateOne) SetNillableTransferDate(v *time.Time) *InvoiceUpdateOne {
+	if v != nil {
+		_u.SetTransferDate(*v)
+	}
+	return _u
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (_u *InvoiceUpdateOne) ClearTransferDate() *InvoiceUpdateOne {
+	_u.mutation.ClearTransferDate()
+	return _u
+}
+
+// SetTransferConfirmed sets the "transfer_confirmed" field.
+func (_u *InvoiceUpdateOne) SetTransferConfirmed(v bool) *InvoiceUpdateOne {
+	_u.mutation.SetTransferConfirmed(v)
+	return _u
+}
+
+// SetNillableTransferConfirmed sets the "transfer_confirmed" field if the given value is not nil.
+func (_u *InvoiceUpdateOne) SetNillableTransferConfirmed(v *bool) *InvoiceUpdateOne {
+	if v != nil {
+		_u.SetTransferConfirmed(*v)
+	}
+	return _u
+}
+
+// SetTransferConfirmedAt sets the "transfer_confirmed_at" field.
+func (_u *InvoiceUpdateOne) SetTransferConfirmedAt(v time.Time) *InvoiceUpdateOne {
+	_u.mutation.SetTransferConfirmedAt(v)
+	return _u
+}
+
+// SetNillableTransferConfirmedAt sets the "transfer_confirmed_at" field if the given value is not nil.
+func (_u *InvoiceUpdateOne) SetNillableTransferConfirmedAt(v *time.Time) *InvoiceUpdateOne {
+	if v != nil {
+		_u.SetTransferConfirmedAt(*v)
+	}
+	return _u
+}
+
+// ClearTransferConfirmedAt clears the value of the "transfer_confirmed_at" field.
+func (_u *InvoiceUpdateOne) ClearTransferConfirmedAt() *InvoiceUpdateOne {
+	_u.mutation.ClearTransferConfirmedAt()
+	return _u
+}
+
+// SetTransferConfirmedBy sets the "transfer_confirmed_by" field.
+func (_u *InvoiceUpdateOne) SetTransferConfirmedBy(v int64) *InvoiceUpdateOne {
+	_u.mutation.ResetTransferConfirmedBy()
+	_u.mutation.SetTransferConfirmedBy(v)
+	return _u
+}
+
+// SetNillableTransferConfirmedBy sets the "transfer_confirmed_by" field if the given value is not nil.
+func (_u *InvoiceUpdateOne) SetNillableTransferConfirmedBy(v *int64) *InvoiceUpdateOne {
+	if v != nil {
+		_u.SetTransferConfirmedBy(*v)
+	}
+	return _u
+}
+
+// AddTransferConfirmedBy adds value to the "transfer_confirmed_by" field.
+func (_u *InvoiceUpdateOne) AddTransferConfirmedBy(v int64) *InvoiceUpdateOne {
+	_u.mutation.AddTransferConfirmedBy(v)
+	return _u
+}
+
+// ClearTransferConfirmedBy clears the value of the "transfer_confirmed_by" field.
+func (_u *InvoiceUpdateOne) ClearTransferConfirmedBy() *InvoiceUpdateOne {
+	_u.mutation.ClearTransferConfirmedBy()
+	return _u
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_u *InvoiceUpdateOne) SetUser(v *User) *InvoiceUpdateOne {
 	return _u.SetUserID(v.ID)
@@ -2042,6 +2264,11 @@ func (_u *InvoiceUpdateOne) check() error {
 			return &ValidationError{Name: "red_pdf_path", err: fmt.Errorf(`ent: validator failed for field "Invoice.red_pdf_path": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Source(); ok {
+		if err := invoice.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Invoice.source": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Invoice.user"`)
 	}
@@ -2229,6 +2456,33 @@ func (_u *InvoiceUpdateOne) sqlSave(ctx context.Context) (_node *Invoice, err er
 	}
 	if _u.mutation.VoidedByCleared() {
 		_spec.ClearField(invoice.FieldVoidedBy, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.Source(); ok {
+		_spec.SetField(invoice.FieldSource, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.TransferDate(); ok {
+		_spec.SetField(invoice.FieldTransferDate, field.TypeTime, value)
+	}
+	if _u.mutation.TransferDateCleared() {
+		_spec.ClearField(invoice.FieldTransferDate, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TransferConfirmed(); ok {
+		_spec.SetField(invoice.FieldTransferConfirmed, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.TransferConfirmedAt(); ok {
+		_spec.SetField(invoice.FieldTransferConfirmedAt, field.TypeTime, value)
+	}
+	if _u.mutation.TransferConfirmedAtCleared() {
+		_spec.ClearField(invoice.FieldTransferConfirmedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TransferConfirmedBy(); ok {
+		_spec.SetField(invoice.FieldTransferConfirmedBy, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedTransferConfirmedBy(); ok {
+		_spec.AddField(invoice.FieldTransferConfirmedBy, field.TypeInt64, value)
+	}
+	if _u.mutation.TransferConfirmedByCleared() {
+		_spec.ClearField(invoice.FieldTransferConfirmedBy, field.TypeInt64)
 	}
 	if _u.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{

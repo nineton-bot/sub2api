@@ -1145,6 +1145,16 @@ func init() {
 	invoice.DefaultRedPdfPath = invoiceDescRedPdfPath.Default.(string)
 	// invoice.RedPdfPathValidator is a validator for the "red_pdf_path" field. It is called by the builders before save.
 	invoice.RedPdfPathValidator = invoiceDescRedPdfPath.Validators[0].(func(string) error)
+	// invoiceDescSource is the schema descriptor for source field.
+	invoiceDescSource := invoiceFields[41].Descriptor()
+	// invoice.DefaultSource holds the default value on creation for the source field.
+	invoice.DefaultSource = invoiceDescSource.Default.(string)
+	// invoice.SourceValidator is a validator for the "source" field. It is called by the builders before save.
+	invoice.SourceValidator = invoiceDescSource.Validators[0].(func(string) error)
+	// invoiceDescTransferConfirmed is the schema descriptor for transfer_confirmed field.
+	invoiceDescTransferConfirmed := invoiceFields[43].Descriptor()
+	// invoice.DefaultTransferConfirmed holds the default value on creation for the transfer_confirmed field.
+	invoice.DefaultTransferConfirmed = invoiceDescTransferConfirmed.Default.(bool)
 	invoiceitemFields := schema.InvoiceItem{}.Fields()
 	_ = invoiceitemFields
 	// invoiceitemDescOrderNo is the schema descriptor for order_no field.

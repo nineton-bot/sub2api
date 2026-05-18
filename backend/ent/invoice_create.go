@@ -570,6 +570,76 @@ func (_c *InvoiceCreate) SetNillableVoidedBy(v *int64) *InvoiceCreate {
 	return _c
 }
 
+// SetSource sets the "source" field.
+func (_c *InvoiceCreate) SetSource(v string) *InvoiceCreate {
+	_c.mutation.SetSource(v)
+	return _c
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableSource(v *string) *InvoiceCreate {
+	if v != nil {
+		_c.SetSource(*v)
+	}
+	return _c
+}
+
+// SetTransferDate sets the "transfer_date" field.
+func (_c *InvoiceCreate) SetTransferDate(v time.Time) *InvoiceCreate {
+	_c.mutation.SetTransferDate(v)
+	return _c
+}
+
+// SetNillableTransferDate sets the "transfer_date" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableTransferDate(v *time.Time) *InvoiceCreate {
+	if v != nil {
+		_c.SetTransferDate(*v)
+	}
+	return _c
+}
+
+// SetTransferConfirmed sets the "transfer_confirmed" field.
+func (_c *InvoiceCreate) SetTransferConfirmed(v bool) *InvoiceCreate {
+	_c.mutation.SetTransferConfirmed(v)
+	return _c
+}
+
+// SetNillableTransferConfirmed sets the "transfer_confirmed" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableTransferConfirmed(v *bool) *InvoiceCreate {
+	if v != nil {
+		_c.SetTransferConfirmed(*v)
+	}
+	return _c
+}
+
+// SetTransferConfirmedAt sets the "transfer_confirmed_at" field.
+func (_c *InvoiceCreate) SetTransferConfirmedAt(v time.Time) *InvoiceCreate {
+	_c.mutation.SetTransferConfirmedAt(v)
+	return _c
+}
+
+// SetNillableTransferConfirmedAt sets the "transfer_confirmed_at" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableTransferConfirmedAt(v *time.Time) *InvoiceCreate {
+	if v != nil {
+		_c.SetTransferConfirmedAt(*v)
+	}
+	return _c
+}
+
+// SetTransferConfirmedBy sets the "transfer_confirmed_by" field.
+func (_c *InvoiceCreate) SetTransferConfirmedBy(v int64) *InvoiceCreate {
+	_c.mutation.SetTransferConfirmedBy(v)
+	return _c
+}
+
+// SetNillableTransferConfirmedBy sets the "transfer_confirmed_by" field if the given value is not nil.
+func (_c *InvoiceCreate) SetNillableTransferConfirmedBy(v *int64) *InvoiceCreate {
+	if v != nil {
+		_c.SetTransferConfirmedBy(*v)
+	}
+	return _c
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (_c *InvoiceCreate) SetUser(v *User) *InvoiceCreate {
 	return _c.SetUserID(v.ID)
@@ -752,6 +822,14 @@ func (_c *InvoiceCreate) defaults() {
 	if _, ok := _c.mutation.RedPdfPath(); !ok {
 		v := invoice.DefaultRedPdfPath
 		_c.mutation.SetRedPdfPath(v)
+	}
+	if _, ok := _c.mutation.Source(); !ok {
+		v := invoice.DefaultSource
+		_c.mutation.SetSource(v)
+	}
+	if _, ok := _c.mutation.TransferConfirmed(); !ok {
+		v := invoice.DefaultTransferConfirmed
+		_c.mutation.SetTransferConfirmed(v)
 	}
 }
 
@@ -1011,6 +1089,17 @@ func (_c *InvoiceCreate) check() error {
 			return &ValidationError{Name: "red_pdf_path", err: fmt.Errorf(`ent: validator failed for field "Invoice.red_pdf_path": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.Source(); !ok {
+		return &ValidationError{Name: "source", err: errors.New(`ent: missing required field "Invoice.source"`)}
+	}
+	if v, ok := _c.mutation.Source(); ok {
+		if err := invoice.SourceValidator(v); err != nil {
+			return &ValidationError{Name: "source", err: fmt.Errorf(`ent: validator failed for field "Invoice.source": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.TransferConfirmed(); !ok {
+		return &ValidationError{Name: "transfer_confirmed", err: errors.New(`ent: missing required field "Invoice.transfer_confirmed"`)}
+	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Invoice.user"`)}
 	}
@@ -1208,6 +1297,26 @@ func (_c *InvoiceCreate) createSpec() (*Invoice, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.VoidedBy(); ok {
 		_spec.SetField(invoice.FieldVoidedBy, field.TypeInt64, value)
 		_node.VoidedBy = &value
+	}
+	if value, ok := _c.mutation.Source(); ok {
+		_spec.SetField(invoice.FieldSource, field.TypeString, value)
+		_node.Source = value
+	}
+	if value, ok := _c.mutation.TransferDate(); ok {
+		_spec.SetField(invoice.FieldTransferDate, field.TypeTime, value)
+		_node.TransferDate = &value
+	}
+	if value, ok := _c.mutation.TransferConfirmed(); ok {
+		_spec.SetField(invoice.FieldTransferConfirmed, field.TypeBool, value)
+		_node.TransferConfirmed = value
+	}
+	if value, ok := _c.mutation.TransferConfirmedAt(); ok {
+		_spec.SetField(invoice.FieldTransferConfirmedAt, field.TypeTime, value)
+		_node.TransferConfirmedAt = &value
+	}
+	if value, ok := _c.mutation.TransferConfirmedBy(); ok {
+		_spec.SetField(invoice.FieldTransferConfirmedBy, field.TypeInt64, value)
+		_node.TransferConfirmedBy = &value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1855,6 +1964,90 @@ func (u *InvoiceUpsert) AddVoidedBy(v int64) *InvoiceUpsert {
 // ClearVoidedBy clears the value of the "voided_by" field.
 func (u *InvoiceUpsert) ClearVoidedBy() *InvoiceUpsert {
 	u.SetNull(invoice.FieldVoidedBy)
+	return u
+}
+
+// SetSource sets the "source" field.
+func (u *InvoiceUpsert) SetSource(v string) *InvoiceUpsert {
+	u.Set(invoice.FieldSource, v)
+	return u
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateSource() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldSource)
+	return u
+}
+
+// SetTransferDate sets the "transfer_date" field.
+func (u *InvoiceUpsert) SetTransferDate(v time.Time) *InvoiceUpsert {
+	u.Set(invoice.FieldTransferDate, v)
+	return u
+}
+
+// UpdateTransferDate sets the "transfer_date" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateTransferDate() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldTransferDate)
+	return u
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (u *InvoiceUpsert) ClearTransferDate() *InvoiceUpsert {
+	u.SetNull(invoice.FieldTransferDate)
+	return u
+}
+
+// SetTransferConfirmed sets the "transfer_confirmed" field.
+func (u *InvoiceUpsert) SetTransferConfirmed(v bool) *InvoiceUpsert {
+	u.Set(invoice.FieldTransferConfirmed, v)
+	return u
+}
+
+// UpdateTransferConfirmed sets the "transfer_confirmed" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateTransferConfirmed() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldTransferConfirmed)
+	return u
+}
+
+// SetTransferConfirmedAt sets the "transfer_confirmed_at" field.
+func (u *InvoiceUpsert) SetTransferConfirmedAt(v time.Time) *InvoiceUpsert {
+	u.Set(invoice.FieldTransferConfirmedAt, v)
+	return u
+}
+
+// UpdateTransferConfirmedAt sets the "transfer_confirmed_at" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateTransferConfirmedAt() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldTransferConfirmedAt)
+	return u
+}
+
+// ClearTransferConfirmedAt clears the value of the "transfer_confirmed_at" field.
+func (u *InvoiceUpsert) ClearTransferConfirmedAt() *InvoiceUpsert {
+	u.SetNull(invoice.FieldTransferConfirmedAt)
+	return u
+}
+
+// SetTransferConfirmedBy sets the "transfer_confirmed_by" field.
+func (u *InvoiceUpsert) SetTransferConfirmedBy(v int64) *InvoiceUpsert {
+	u.Set(invoice.FieldTransferConfirmedBy, v)
+	return u
+}
+
+// UpdateTransferConfirmedBy sets the "transfer_confirmed_by" field to the value that was provided on create.
+func (u *InvoiceUpsert) UpdateTransferConfirmedBy() *InvoiceUpsert {
+	u.SetExcluded(invoice.FieldTransferConfirmedBy)
+	return u
+}
+
+// AddTransferConfirmedBy adds v to the "transfer_confirmed_by" field.
+func (u *InvoiceUpsert) AddTransferConfirmedBy(v int64) *InvoiceUpsert {
+	u.Add(invoice.FieldTransferConfirmedBy, v)
+	return u
+}
+
+// ClearTransferConfirmedBy clears the value of the "transfer_confirmed_by" field.
+func (u *InvoiceUpsert) ClearTransferConfirmedBy() *InvoiceUpsert {
+	u.SetNull(invoice.FieldTransferConfirmedBy)
 	return u
 }
 
@@ -2558,6 +2751,104 @@ func (u *InvoiceUpsertOne) UpdateVoidedBy() *InvoiceUpsertOne {
 func (u *InvoiceUpsertOne) ClearVoidedBy() *InvoiceUpsertOne {
 	return u.Update(func(s *InvoiceUpsert) {
 		s.ClearVoidedBy()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *InvoiceUpsertOne) SetSource(v string) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateSource() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateSource()
+	})
+}
+
+// SetTransferDate sets the "transfer_date" field.
+func (u *InvoiceUpsertOne) SetTransferDate(v time.Time) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetTransferDate(v)
+	})
+}
+
+// UpdateTransferDate sets the "transfer_date" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateTransferDate() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateTransferDate()
+	})
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (u *InvoiceUpsertOne) ClearTransferDate() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.ClearTransferDate()
+	})
+}
+
+// SetTransferConfirmed sets the "transfer_confirmed" field.
+func (u *InvoiceUpsertOne) SetTransferConfirmed(v bool) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetTransferConfirmed(v)
+	})
+}
+
+// UpdateTransferConfirmed sets the "transfer_confirmed" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateTransferConfirmed() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateTransferConfirmed()
+	})
+}
+
+// SetTransferConfirmedAt sets the "transfer_confirmed_at" field.
+func (u *InvoiceUpsertOne) SetTransferConfirmedAt(v time.Time) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetTransferConfirmedAt(v)
+	})
+}
+
+// UpdateTransferConfirmedAt sets the "transfer_confirmed_at" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateTransferConfirmedAt() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateTransferConfirmedAt()
+	})
+}
+
+// ClearTransferConfirmedAt clears the value of the "transfer_confirmed_at" field.
+func (u *InvoiceUpsertOne) ClearTransferConfirmedAt() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.ClearTransferConfirmedAt()
+	})
+}
+
+// SetTransferConfirmedBy sets the "transfer_confirmed_by" field.
+func (u *InvoiceUpsertOne) SetTransferConfirmedBy(v int64) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetTransferConfirmedBy(v)
+	})
+}
+
+// AddTransferConfirmedBy adds v to the "transfer_confirmed_by" field.
+func (u *InvoiceUpsertOne) AddTransferConfirmedBy(v int64) *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.AddTransferConfirmedBy(v)
+	})
+}
+
+// UpdateTransferConfirmedBy sets the "transfer_confirmed_by" field to the value that was provided on create.
+func (u *InvoiceUpsertOne) UpdateTransferConfirmedBy() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateTransferConfirmedBy()
+	})
+}
+
+// ClearTransferConfirmedBy clears the value of the "transfer_confirmed_by" field.
+func (u *InvoiceUpsertOne) ClearTransferConfirmedBy() *InvoiceUpsertOne {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.ClearTransferConfirmedBy()
 	})
 }
 
@@ -3427,6 +3718,104 @@ func (u *InvoiceUpsertBulk) UpdateVoidedBy() *InvoiceUpsertBulk {
 func (u *InvoiceUpsertBulk) ClearVoidedBy() *InvoiceUpsertBulk {
 	return u.Update(func(s *InvoiceUpsert) {
 		s.ClearVoidedBy()
+	})
+}
+
+// SetSource sets the "source" field.
+func (u *InvoiceUpsertBulk) SetSource(v string) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetSource(v)
+	})
+}
+
+// UpdateSource sets the "source" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateSource() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateSource()
+	})
+}
+
+// SetTransferDate sets the "transfer_date" field.
+func (u *InvoiceUpsertBulk) SetTransferDate(v time.Time) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetTransferDate(v)
+	})
+}
+
+// UpdateTransferDate sets the "transfer_date" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateTransferDate() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateTransferDate()
+	})
+}
+
+// ClearTransferDate clears the value of the "transfer_date" field.
+func (u *InvoiceUpsertBulk) ClearTransferDate() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.ClearTransferDate()
+	})
+}
+
+// SetTransferConfirmed sets the "transfer_confirmed" field.
+func (u *InvoiceUpsertBulk) SetTransferConfirmed(v bool) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetTransferConfirmed(v)
+	})
+}
+
+// UpdateTransferConfirmed sets the "transfer_confirmed" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateTransferConfirmed() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateTransferConfirmed()
+	})
+}
+
+// SetTransferConfirmedAt sets the "transfer_confirmed_at" field.
+func (u *InvoiceUpsertBulk) SetTransferConfirmedAt(v time.Time) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetTransferConfirmedAt(v)
+	})
+}
+
+// UpdateTransferConfirmedAt sets the "transfer_confirmed_at" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateTransferConfirmedAt() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateTransferConfirmedAt()
+	})
+}
+
+// ClearTransferConfirmedAt clears the value of the "transfer_confirmed_at" field.
+func (u *InvoiceUpsertBulk) ClearTransferConfirmedAt() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.ClearTransferConfirmedAt()
+	})
+}
+
+// SetTransferConfirmedBy sets the "transfer_confirmed_by" field.
+func (u *InvoiceUpsertBulk) SetTransferConfirmedBy(v int64) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.SetTransferConfirmedBy(v)
+	})
+}
+
+// AddTransferConfirmedBy adds v to the "transfer_confirmed_by" field.
+func (u *InvoiceUpsertBulk) AddTransferConfirmedBy(v int64) *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.AddTransferConfirmedBy(v)
+	})
+}
+
+// UpdateTransferConfirmedBy sets the "transfer_confirmed_by" field to the value that was provided on create.
+func (u *InvoiceUpsertBulk) UpdateTransferConfirmedBy() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.UpdateTransferConfirmedBy()
+	})
+}
+
+// ClearTransferConfirmedBy clears the value of the "transfer_confirmed_by" field.
+func (u *InvoiceUpsertBulk) ClearTransferConfirmedBy() *InvoiceUpsertBulk {
+	return u.Update(func(s *InvoiceUpsert) {
+		s.ClearTransferConfirmedBy()
 	})
 }
 

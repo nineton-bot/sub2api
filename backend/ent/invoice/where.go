@@ -265,6 +265,31 @@ func VoidedBy(v int64) predicate.Invoice {
 	return predicate.Invoice(sql.FieldEQ(FieldVoidedBy, v))
 }
 
+// Source applies equality check predicate on the "source" field. It's identical to SourceEQ.
+func Source(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldSource, v))
+}
+
+// TransferDate applies equality check predicate on the "transfer_date" field. It's identical to TransferDateEQ.
+func TransferDate(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldTransferDate, v))
+}
+
+// TransferConfirmed applies equality check predicate on the "transfer_confirmed" field. It's identical to TransferConfirmedEQ.
+func TransferConfirmed(v bool) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldTransferConfirmed, v))
+}
+
+// TransferConfirmedAt applies equality check predicate on the "transfer_confirmed_at" field. It's identical to TransferConfirmedAtEQ.
+func TransferConfirmedAt(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldTransferConfirmedAt, v))
+}
+
+// TransferConfirmedBy applies equality check predicate on the "transfer_confirmed_by" field. It's identical to TransferConfirmedByEQ.
+func TransferConfirmedBy(v int64) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldTransferConfirmedBy, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Invoice {
 	return predicate.Invoice(sql.FieldEQ(FieldCreatedAt, v))
@@ -2748,6 +2773,231 @@ func VoidedByIsNil() predicate.Invoice {
 // VoidedByNotNil applies the NotNil predicate on the "voided_by" field.
 func VoidedByNotNil() predicate.Invoice {
 	return predicate.Invoice(sql.FieldNotNull(FieldVoidedBy))
+}
+
+// SourceEQ applies the EQ predicate on the "source" field.
+func SourceEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldSource, v))
+}
+
+// SourceNEQ applies the NEQ predicate on the "source" field.
+func SourceNEQ(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldSource, v))
+}
+
+// SourceIn applies the In predicate on the "source" field.
+func SourceIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldSource, vs...))
+}
+
+// SourceNotIn applies the NotIn predicate on the "source" field.
+func SourceNotIn(vs ...string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldSource, vs...))
+}
+
+// SourceGT applies the GT predicate on the "source" field.
+func SourceGT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldSource, v))
+}
+
+// SourceGTE applies the GTE predicate on the "source" field.
+func SourceGTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldSource, v))
+}
+
+// SourceLT applies the LT predicate on the "source" field.
+func SourceLT(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldSource, v))
+}
+
+// SourceLTE applies the LTE predicate on the "source" field.
+func SourceLTE(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldSource, v))
+}
+
+// SourceContains applies the Contains predicate on the "source" field.
+func SourceContains(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContains(FieldSource, v))
+}
+
+// SourceHasPrefix applies the HasPrefix predicate on the "source" field.
+func SourceHasPrefix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasPrefix(FieldSource, v))
+}
+
+// SourceHasSuffix applies the HasSuffix predicate on the "source" field.
+func SourceHasSuffix(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldHasSuffix(FieldSource, v))
+}
+
+// SourceEqualFold applies the EqualFold predicate on the "source" field.
+func SourceEqualFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEqualFold(FieldSource, v))
+}
+
+// SourceContainsFold applies the ContainsFold predicate on the "source" field.
+func SourceContainsFold(v string) predicate.Invoice {
+	return predicate.Invoice(sql.FieldContainsFold(FieldSource, v))
+}
+
+// TransferDateEQ applies the EQ predicate on the "transfer_date" field.
+func TransferDateEQ(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldTransferDate, v))
+}
+
+// TransferDateNEQ applies the NEQ predicate on the "transfer_date" field.
+func TransferDateNEQ(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldTransferDate, v))
+}
+
+// TransferDateIn applies the In predicate on the "transfer_date" field.
+func TransferDateIn(vs ...time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldTransferDate, vs...))
+}
+
+// TransferDateNotIn applies the NotIn predicate on the "transfer_date" field.
+func TransferDateNotIn(vs ...time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldTransferDate, vs...))
+}
+
+// TransferDateGT applies the GT predicate on the "transfer_date" field.
+func TransferDateGT(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldTransferDate, v))
+}
+
+// TransferDateGTE applies the GTE predicate on the "transfer_date" field.
+func TransferDateGTE(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldTransferDate, v))
+}
+
+// TransferDateLT applies the LT predicate on the "transfer_date" field.
+func TransferDateLT(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldTransferDate, v))
+}
+
+// TransferDateLTE applies the LTE predicate on the "transfer_date" field.
+func TransferDateLTE(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldTransferDate, v))
+}
+
+// TransferDateIsNil applies the IsNil predicate on the "transfer_date" field.
+func TransferDateIsNil() predicate.Invoice {
+	return predicate.Invoice(sql.FieldIsNull(FieldTransferDate))
+}
+
+// TransferDateNotNil applies the NotNil predicate on the "transfer_date" field.
+func TransferDateNotNil() predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotNull(FieldTransferDate))
+}
+
+// TransferConfirmedEQ applies the EQ predicate on the "transfer_confirmed" field.
+func TransferConfirmedEQ(v bool) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldTransferConfirmed, v))
+}
+
+// TransferConfirmedNEQ applies the NEQ predicate on the "transfer_confirmed" field.
+func TransferConfirmedNEQ(v bool) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldTransferConfirmed, v))
+}
+
+// TransferConfirmedAtEQ applies the EQ predicate on the "transfer_confirmed_at" field.
+func TransferConfirmedAtEQ(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldTransferConfirmedAt, v))
+}
+
+// TransferConfirmedAtNEQ applies the NEQ predicate on the "transfer_confirmed_at" field.
+func TransferConfirmedAtNEQ(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldTransferConfirmedAt, v))
+}
+
+// TransferConfirmedAtIn applies the In predicate on the "transfer_confirmed_at" field.
+func TransferConfirmedAtIn(vs ...time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldTransferConfirmedAt, vs...))
+}
+
+// TransferConfirmedAtNotIn applies the NotIn predicate on the "transfer_confirmed_at" field.
+func TransferConfirmedAtNotIn(vs ...time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldTransferConfirmedAt, vs...))
+}
+
+// TransferConfirmedAtGT applies the GT predicate on the "transfer_confirmed_at" field.
+func TransferConfirmedAtGT(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldTransferConfirmedAt, v))
+}
+
+// TransferConfirmedAtGTE applies the GTE predicate on the "transfer_confirmed_at" field.
+func TransferConfirmedAtGTE(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldTransferConfirmedAt, v))
+}
+
+// TransferConfirmedAtLT applies the LT predicate on the "transfer_confirmed_at" field.
+func TransferConfirmedAtLT(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldTransferConfirmedAt, v))
+}
+
+// TransferConfirmedAtLTE applies the LTE predicate on the "transfer_confirmed_at" field.
+func TransferConfirmedAtLTE(v time.Time) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldTransferConfirmedAt, v))
+}
+
+// TransferConfirmedAtIsNil applies the IsNil predicate on the "transfer_confirmed_at" field.
+func TransferConfirmedAtIsNil() predicate.Invoice {
+	return predicate.Invoice(sql.FieldIsNull(FieldTransferConfirmedAt))
+}
+
+// TransferConfirmedAtNotNil applies the NotNil predicate on the "transfer_confirmed_at" field.
+func TransferConfirmedAtNotNil() predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotNull(FieldTransferConfirmedAt))
+}
+
+// TransferConfirmedByEQ applies the EQ predicate on the "transfer_confirmed_by" field.
+func TransferConfirmedByEQ(v int64) predicate.Invoice {
+	return predicate.Invoice(sql.FieldEQ(FieldTransferConfirmedBy, v))
+}
+
+// TransferConfirmedByNEQ applies the NEQ predicate on the "transfer_confirmed_by" field.
+func TransferConfirmedByNEQ(v int64) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNEQ(FieldTransferConfirmedBy, v))
+}
+
+// TransferConfirmedByIn applies the In predicate on the "transfer_confirmed_by" field.
+func TransferConfirmedByIn(vs ...int64) predicate.Invoice {
+	return predicate.Invoice(sql.FieldIn(FieldTransferConfirmedBy, vs...))
+}
+
+// TransferConfirmedByNotIn applies the NotIn predicate on the "transfer_confirmed_by" field.
+func TransferConfirmedByNotIn(vs ...int64) predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotIn(FieldTransferConfirmedBy, vs...))
+}
+
+// TransferConfirmedByGT applies the GT predicate on the "transfer_confirmed_by" field.
+func TransferConfirmedByGT(v int64) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGT(FieldTransferConfirmedBy, v))
+}
+
+// TransferConfirmedByGTE applies the GTE predicate on the "transfer_confirmed_by" field.
+func TransferConfirmedByGTE(v int64) predicate.Invoice {
+	return predicate.Invoice(sql.FieldGTE(FieldTransferConfirmedBy, v))
+}
+
+// TransferConfirmedByLT applies the LT predicate on the "transfer_confirmed_by" field.
+func TransferConfirmedByLT(v int64) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLT(FieldTransferConfirmedBy, v))
+}
+
+// TransferConfirmedByLTE applies the LTE predicate on the "transfer_confirmed_by" field.
+func TransferConfirmedByLTE(v int64) predicate.Invoice {
+	return predicate.Invoice(sql.FieldLTE(FieldTransferConfirmedBy, v))
+}
+
+// TransferConfirmedByIsNil applies the IsNil predicate on the "transfer_confirmed_by" field.
+func TransferConfirmedByIsNil() predicate.Invoice {
+	return predicate.Invoice(sql.FieldIsNull(FieldTransferConfirmedBy))
+}
+
+// TransferConfirmedByNotNil applies the NotNil predicate on the "transfer_confirmed_by" field.
+func TransferConfirmedByNotNil() predicate.Invoice {
+	return predicate.Invoice(sql.FieldNotNull(FieldTransferConfirmedBy))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

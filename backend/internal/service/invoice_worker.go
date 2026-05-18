@@ -313,9 +313,9 @@ func (s *InvoiceService) buildReverseParams(inv *dbent.Invoice, step string) cai
 		}
 	}
 
-	// 行明细：复用 invoice_items
+	// 行明细：复用 invoice_items；对公转账无 items 时按金额合成
 	ctx := context.Background()
-	items, _ := loadInvoiceItemsForProvider(ctx, s.entClient, inv.ID)
+	items, _ := loadInvoiceItemsForProvider(ctx, s.entClient, inv, s.invoiceItemNameOverride(ctx))
 
 	return caiyuntong.ReverseParams{
 		BlueBillNo:       blueBillNo,
@@ -343,8 +343,8 @@ func (s *InvoiceService) buildReverseParams(inv *dbent.Invoice, step string) cai
 
 // dispatchIssue 调 provider.Issue() 把单张发票从 queued 推到 issuing。
 func (s *InvoiceService) dispatchIssue(ctx context.Context, inv *dbent.Invoice, provider *caiyuntong.Provider, cfg *caiyuntong.Config) {
-	// 加载明细
-	items, err := loadInvoiceItemsForProvider(ctx, s.entClient, inv.ID)
+	// 加载明细；对公转账无 items 时按金额合成
+	items, err := loadInvoiceItemsForProvider(ctx, s.entClient, inv, s.invoiceItemNameOverride(ctx))
 	if err != nil {
 		slog.Warn("invoice_dispatch_load_items_failed", "invoice_id", inv.ID, "error", err)
 		return
@@ -771,13 +771,24 @@ func buildCaiyuntongConfig(s *SystemSettings) caiyuntong.Config {
 	}
 }
 
-func loadInvoiceItemsForProvider(ctx context.Context, entClient *dbent.Client, invoiceID int64) ([]caiyuntong.LineItem, error) {
+func loadInvoiceItemsForProvider(ctx context.Context, entClient *dbent.Client, inv *dbent.Invoice, bankTransferItemName string) ([]caiyuntong.LineItem, error) {
 	items, err := entClient.Invoice.Query().
-		Where(invoice.IDEQ(invoiceID)).
+		Where(invoice.IDEQ(inv.ID)).
 		QueryItems().
 		All(ctx)
 	if err != nil {
 		return nil, err
+	}
+	// 对公转账发票没有 invoice_items，按发票金额合成一条明细行。
+	if len(items) == 0 && normalizeInvoiceSource(inv.Source) == InvoiceSourceBankTransfer {
+		name := strings.TrimSpace(bankTransferItemName)
+		if name == "" {
+			name = "技术服务费"
+		}
+		return []caiyuntong.LineItem{{
+			Name:      truncForInvoiceName(name),
+			PayAmount: inv.Amount,
+		}}, nil
 	}
 	out := make([]caiyuntong.LineItem, 0, len(items))
 	for _, it := range items {

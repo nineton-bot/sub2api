@@ -216,6 +216,29 @@ func (Invoice) Fields() []ent.Field {
 		field.Int64("voided_by").
 			Optional().
 			Nillable(),
+
+		// 对公转账（v3 后续）：无系统订单，用户手填金额/日期，需管理员确认收款后才可审批
+		field.String("source").
+			MaxLen(20).
+			Default("order").
+			Comment("order 订单开票 | bank_transfer 对公转账"),
+		field.Time("transfer_date").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
+			Comment("对公转账日期（用户填写）"),
+		field.Bool("transfer_confirmed").
+			Default(false).
+			Comment("对公转账是否已确认收款"),
+		field.Time("transfer_confirmed_at").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "timestamptz"}).
+			Comment("确认收款时间"),
+		field.Int64("transfer_confirmed_by").
+			Optional().
+			Nillable().
+			Comment("确认收款的管理员 user id"),
 	}
 }
 

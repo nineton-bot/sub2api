@@ -337,6 +337,24 @@ func (h *InvoiceHandler) RetryIssue(c *gin.Context) {
 	response.Success(c, gin.H{"message": "queued"})
 }
 
+// ConfirmTransfer 管理员确认对公转账发票已收款，确认后该发票方可审批开票。
+// POST /api/v1/admin/invoices/:id/confirm-transfer
+func (h *InvoiceHandler) ConfirmTransfer(c *gin.Context) {
+	adminID, ok := requireAdminID(c)
+	if !ok {
+		return
+	}
+	id, ok := parseInvoiceIDParam(c)
+	if !ok {
+		return
+	}
+	if err := h.invoiceService.AdminConfirmTransferReceived(c.Request.Context(), adminID, id); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "confirmed"})
+}
+
 // RetryReverse 重新尝试自动红冲（仅 provider_state=reverse_failed 时有效）。
 // POST /api/v1/admin/invoices/:id/retry-reverse
 func (h *InvoiceHandler) RetryReverse(c *gin.Context) {

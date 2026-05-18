@@ -834,6 +834,11 @@ var (
 		{Name: "red_invoice_no", Type: field.TypeString, Size: 64, Default: ""},
 		{Name: "red_pdf_path", Type: field.TypeString, Size: 512, Default: ""},
 		{Name: "voided_by", Type: field.TypeInt64, Nullable: true},
+		{Name: "source", Type: field.TypeString, Size: 20, Default: "order"},
+		{Name: "transfer_date", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "transfer_confirmed", Type: field.TypeBool, Default: false},
+		{Name: "transfer_confirmed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "transfer_confirmed_by", Type: field.TypeInt64, Nullable: true},
 		{Name: "user_id", Type: field.TypeInt64},
 	}
 	// InvoicesTable holds the schema information for the "invoices" table.
@@ -844,7 +849,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "invoices_users_invoices",
-				Columns:    []*schema.Column{InvoicesColumns[43]},
+				Columns:    []*schema.Column{InvoicesColumns[48]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -853,7 +858,7 @@ var (
 			{
 				Name:    "invoice_user_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{InvoicesColumns[43], InvoicesColumns[16]},
+				Columns: []*schema.Column{InvoicesColumns[48], InvoicesColumns[16]},
 			},
 			{
 				Name:    "invoice_status_submitted_at",
