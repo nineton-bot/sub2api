@@ -26,7 +26,7 @@
             />
             只看待审批作废
           </label>
-          <button class="btn btn-secondary" @click="fetchInvoices">
+          <button class="btn btn-secondary" @click="fetchInvoices()">
             <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
           </button>
         </div>
@@ -59,7 +59,7 @@
                 <span class="ml-1 text-xs text-gray-500">({{ t('invoices.titleType.' + inv.title_type) }})</span>
               </td>
               <td class="px-4 py-3 text-right text-sm font-semibold text-emerald-600">¥{{ inv.amount.toFixed(2) }}</td>
-              <td class="px-4 py-3">
+              <td class="whitespace-nowrap px-4 py-3">
                 <InvoiceStatusBadge :status="inv.status" />
                 <div
                   v-if="inv.pending_void_request"
@@ -264,7 +264,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import Pagination from '@/components/common/Pagination.vue'
@@ -282,7 +282,7 @@ import AdminVoidRequestApproveDialog from '@/components/admin/invoice/AdminVoidR
 import AdminVoidRequestRejectDialog from '@/components/admin/invoice/AdminVoidRequestRejectDialog.vue'
 import adminInvoiceAPI from '@/api/admin/invoices'
 import { extractApiErrorMessage } from "@/utils/apiError"
-import type { Invoice, InvoiceDetail } from '@/types/invoice'
+import type { Invoice, InvoiceDetail, ProviderState } from '@/types/invoice'
 
 const { t } = useI18n()
 const loading = ref(false)
@@ -313,8 +313,38 @@ const statusFilters = computed(() => [
   { value: 'voided', label: t('invoices.status.voided') },
 ])
 
-async function fetchInvoices() {
-  loading.value = true
+// 自动开票/红冲进行中的瞬态子状态——列表里只要还有这类发票，就轮询刷新，
+// 让管理员不用手动刷新就能看到「开票排队中 → 开票中 → 已开票」的推进。
+const transientProviderStates: ProviderState[] = [
+  'queued',
+  'issuing',
+  'reverse_pending',
+  'reversing',
+]
+const POLL_INTERVAL_MS = 10000
+let pollTimer: ReturnType<typeof setTimeout> | null = null
+
+function hasTransitioningInvoice(): boolean {
+  return invoices.value.some((inv) => {
+    if (inv.status === 'rejected' || inv.status === 'voided') return false
+    const ps = inv.provider_state
+    return ps != null && transientProviderStates.includes(ps)
+  })
+}
+
+function scheduleNextPoll() {
+  if (pollTimer) {
+    clearTimeout(pollTimer)
+    pollTimer = null
+  }
+  if (hasTransitioningInvoice()) {
+    pollTimer = setTimeout(() => fetchInvoices({ silent: true }), POLL_INTERVAL_MS)
+  }
+}
+
+async function fetchInvoices(opts?: { silent?: boolean }) {
+  const silent = opts?.silent === true
+  if (!silent) loading.value = true
   try {
     const res = await adminInvoiceAPI.list({
       page: pagination.page,
@@ -326,11 +356,15 @@ async function fetchInvoices() {
     invoices.value = res.data.items || []
     pagination.total = res.data.total
   } catch (err) {
-    alert(extractApiErrorMessage(err))
-    invoices.value = []
-    pagination.total = 0
+    // 静默轮询失败不弹窗打扰、也不清空已有数据，留到下一轮重试。
+    if (!silent) {
+      alert(extractApiErrorMessage(err))
+      invoices.value = []
+      pagination.total = 0
+    }
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
+    scheduleNextPoll()
   }
 }
 
@@ -458,6 +492,12 @@ function formatDate(s: string): string {
 }
 
 onMounted(() => fetchInvoices())
+onUnmounted(() => {
+  if (pollTimer) {
+    clearTimeout(pollTimer)
+    pollTimer = null
+  }
+})
 </script>
 
 <style scoped>

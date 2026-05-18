@@ -244,10 +244,10 @@ type QueryResult struct {
 
 // Query 调 POST /invoice/getInvoiceAll 拉取当前票面状态（2.3 发票全票面信息查询）。
 //
-// 文档 2.3.1 InvoiceOpenState 枚举（实测样例）：
-//   "0" 未开 / "1" 开具中 / "2" 开具失败 / "3" 开具成功 / "4" 已作废
+// 文档 2.3.1 InvoiceOpenState 枚举：
+//   "1" 未开票 / "2" 开票中 / "3" 已开票 / "4" 开票失败 / "3999" 全电开票失败(需人脸)
 //
-// 兼容性：万一某些版本字段缺失，我们额外检查 InvalidFlag 与 InvoiceNumeric。
+// 兼容性：额外检查 InvalidFlag 判定平台侧作废。
 func (p *Provider) Query(ctx context.Context, params QueryParams) (*QueryResult, error) {
 	req := QueryInvoiceRequest{
 		RequestID: "Q-" + params.BillNo + "-" + strconv.FormatInt(time.Now().UnixNano(), 10),
@@ -281,31 +281,23 @@ func (p *Provider) Query(ctx context.Context, params QueryParams) (*QueryResult,
 		"billingDate":      entry.BillingDate,
 	}
 
-	// 财云通 getInvoiceAll 每条 Content[].Code 实测枚举：
-	//   "200" / "0000"   = 已开具成功（取出票数据）
-	//   "7777" / "9999"  = 平台还在内部处理 / 校验阶段，**瞬态**，下一轮 poll 会变化
-	//   其它             = 真实业务错误，但我们没拿到完整枚举表，谨慎起见统一当 pending，
-	//                      让 10 分钟 timeout 兜底失败，避免误杀；同时把 Code 记到 payload
-	//                      便于排查。
-	//
-	// 设计权衡：宁可慢一点 timeout，也不要把仍在处理的发票误标 failed 释放掉订单
-	// 锁；实际只有 "200"/"0000" 才会被认为完成。
-	if entry.Code != "" && entry.Code != "200" && entry.Code != "0000" {
-		// 检查 InvoiceOpenState：如果是 "2"（开具失败终态），才能直接判失败
-		if strings.TrimSpace(entry.InvoiceOpenState) == "2" {
-			return &QueryResult{
-				Stage:   "failed",
-				Reason:  extractRealError(entry),
-				Payload: payload,
-			}, nil
-		}
-		// 其他 Code（7777/9999/...）= 仍在处理中
-		payload["transientCode"] = entry.Code
-		return &QueryResult{Stage: "pending", Payload: payload}, nil
+	// 开票状态以 InvoiceOpenState 为权威信号（文档 2.3.1）：
+	//   "1" 未开票 / "2" 开票中 / "3" 已开票 / "4" 开票失败 / "3999" 全电开票失败(需人脸授权)
+	// Content[].Code（"200"/"0000" 成功，"7777"/"9999" 等为平台处理码）不能据此判定
+	// 终态——开票失败时 Code 常为 "9999"，真正的终态信号在 InvoiceOpenState。
+	openState := strings.TrimSpace(entry.InvoiceOpenState)
+
+	// 已作废与开票状态正交：InvalidFlag=1 直接判终态失败。
+	if entry.InvalidFlag == "1" {
+		return &QueryResult{
+			Stage:   "failed",
+			Reason:  "invoice invalidated on platform side",
+			Payload: payload,
+		}, nil
 	}
 
-	switch strings.TrimSpace(entry.InvoiceOpenState) {
-	case "3": // 开具成功
+	switch openState {
+	case "3": // 已开票
 		invoiceNo := entry.InvoiceNumeric
 		if invoiceNo == "" {
 			invoiceNo = entry.InvoiceCode + entry.InvoiceNumeric
@@ -326,22 +318,20 @@ func (p *Provider) Query(ctx context.Context, params QueryParams) (*QueryResult,
 			PDFBytes:  pdfBytes,
 			Payload:   payload,
 		}, nil
-	case "2": // 开具失败
+	case "4", "3999": // 开票失败（含全电需人脸授权失败）
 		return &QueryResult{
 			Stage:   "failed",
-			Reason:  fallback(entry.Message, "open state=2 (failed)"),
+			Reason:  extractRealError(entry),
 			Payload: payload,
 		}, nil
-	case "4": // 已作废
-		if entry.InvalidFlag == "1" {
-			return &QueryResult{
-				Stage:   "failed",
-				Reason:  "invoice invalidated on platform side",
-				Payload: payload,
-			}, nil
+	case "1", "2": // 未开票 / 开票中——仍在进行，继续轮询
+		return &QueryResult{Stage: "pending", Payload: payload}, nil
+	default:
+		// InvoiceOpenState 缺失/未知：保守当作 pending，由 timeout 兜底，
+		// 同时把异常 Code 记进 payload 便于排查。
+		if entry.Code != "" && entry.Code != "200" && entry.Code != "0000" {
+			payload["transientCode"] = entry.Code
 		}
-		fallthrough
-	default: // 0 待开 / 1 开具中 / "" 平台还没受理
 		return &QueryResult{Stage: "pending", Payload: payload}, nil
 	}
 }
@@ -669,7 +659,7 @@ func extractRealError(entry QueryInvoiceDataEntry) string {
 			return prefix + "平台错误：" + msg
 		}
 	}
-	return prefix + "财云通开具失败（InvoiceOpenState=2，未返回详细原因，请联系开票平台技术支持）"
+	return prefix + "财云通开具失败（未返回详细原因，请联系开票平台技术支持）"
 }
 
 // formatTaxRate 输出 4 位以内、小数最多 3 位、不带尾零 0 的税率字符串。

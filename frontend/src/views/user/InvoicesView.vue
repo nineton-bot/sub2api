@@ -75,7 +75,7 @@
               <td class="px-4 py-3 text-right text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                 ¥{{ inv.amount.toFixed(2) }}
               </td>
-              <td class="px-4 py-3">
+              <td class="whitespace-nowrap px-4 py-3">
                 <InvoiceStatusBadge :status="inv.status" />
               </td>
               <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
